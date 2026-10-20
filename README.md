@@ -78,7 +78,7 @@ To clone and replicate this exact rice on your laptop:
 
 ```bash
 # 1. Clone your dotfiles repository
-git clone https://github.com/<your-username>/dotfiles.git ~/dotfiles
+git clone https://github.com/GitTonda/DesktopConfigs.git ~/dotfiles
 
 # 2. Run the automated installer
 cd ~/dotfiles
