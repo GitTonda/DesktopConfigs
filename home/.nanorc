@@ -1,0 +1,19 @@
+# Clean modern nano editor configuration
+set linenumbers
+set tabsize 4
+set tabstospaces
+set autoindent
+set smarthome
+set smooth
+set softwrap
+# Mouse mode disabled so you can drag-select text with mouse to copy/paste in Alacritty:
+# set mouse
+set boldtext
+set constantshow
+set zap
+set indicator
+set afterends
+
+# Syntax highlighting
+include "/usr/share/nano/*.nanorc"
+include "/usr/share/nano/extra/*.nanorc"

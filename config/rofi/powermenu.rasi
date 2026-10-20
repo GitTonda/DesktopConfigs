@@ -1,0 +1,77 @@
+/**
+ * Powermenu Theme - Horizontal Minimal Cards
+ */
+
+* {
+    bg:               #1e1e2e;
+    bg-alt:           #313244;
+    fg:               #cdd6f4;
+    accent:           #89b4fa;
+    red:              #f38ba8;
+    background-color: transparent;
+    text-color:       @fg;
+    font:             "JetBrainsMono Nerd Font 13";
+}
+
+window {
+    transparency:     "real";
+    background-color: @bg;
+    border:           2px;
+    border-color:     @accent;
+    border-radius:    14px;
+    width:            580px;
+    padding:          24px;
+    location:         center;
+    anchor:           center;
+}
+
+mainbox {
+    children:         [ inputbar, listview ];
+    spacing:          20px;
+}
+
+inputbar {
+    children:         [ prompt ];
+    spacing:          0px;
+}
+
+prompt {
+    enabled:          true;
+    padding:          8px 14px;
+    background-color: @bg-alt;
+    border-radius:    8px;
+    text-color:       @accent;
+    font:             "JetBrainsMono Nerd Font Bold 12";
+}
+
+listview {
+    layout:           horizontal;
+    spacing:          16px;
+    cycle:            true;
+    dynamic:          true;
+    scrollbar:        false;
+    lines:            4;
+    columns:          1;
+}
+
+element {
+    background-color: @bg-alt;
+    text-color:       @fg;
+    border-radius:    10px;
+    padding:          22px 10px;
+    cursor:           pointer;
+    width:            118px;
+}
+
+element-text {
+    horizontal-align: 0.5;
+    vertical-align:   0.5;
+    font:             "JetBrainsMono Nerd Font Bold 14";
+    text-color:       inherit;
+    cursor:           inherit;
+}
+
+element selected.normal {
+    background-color: @accent;
+    text-color:       #1e1e2e;
+}
