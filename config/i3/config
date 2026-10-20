@@ -23,6 +23,23 @@ default_floating_border pixel 3
 # Enforce border on all windows
 for_window [class="^.*"] border pixel 3
 
+# Prevent dialogs, popups, and tray applets from tiling as full windows
+for_window [window_role="pop-up"] floating enable
+for_window [window_role="bubble"] floating enable
+for_window [window_role="task_dialog"] floating enable
+for_window [window_role="Preferences"] floating enable
+for_window [window_type="dialog"] floating enable
+for_window [window_type="utility"] floating enable
+for_window [window_type="toolbar"] floating enable
+for_window [window_type="splash"] floating enable
+for_window [window_type="notification"] floating enable
+for_window [class="(?i)nm-applet"] floating enable
+for_window [class="(?i)nm-connection-editor"] floating enable
+for_window [class="(?i)blueman"] floating enable
+for_window [class="(?i)pavucontrol"] floating enable
+for_window [class="(?i)ibus.*"] floating enable
+for_window [title="(?i)ibus.*"] floating enable
+
 # ==============================================================================
 # Color Palette - Catppuccin Mocha Minimal
 # ==============================================================================
