@@ -56,6 +56,7 @@ elif command -v pacman >/dev/null 2>&1; then
         btop \
         network-manager-applet \
         nano \
+        ly \
         curl \
         unzip
 elif command -v dnf >/dev/null 2>&1; then
@@ -145,6 +146,12 @@ EOF
     if [ -n "$DISPLAY" ]; then
         "$HOME/.fehbg" 2>/dev/null || true
     fi
+fi
+
+# 8. Setup Ly Display Manager (if installed)
+if command -v ly >/dev/null 2>&1 && command -v systemctl >/dev/null 2>&1; then
+    echo "==> Enabling Ly display manager..."
+    sudo systemctl enable ly.service 2>/dev/null || true
 fi
 
 echo ""

@@ -1,21 +1,23 @@
 /**
- * Rofi Modern Minimal Theme - Catppuccin Mocha
+ * Rofi Terminal Vibe - Catppuccin Mocha Alacritty Style
  */
 
 configuration {
     modi:                       "drun,run,window";
     show-icons:                 true;
-    display-drun:               "  Apps";
-    display-run:                "  Run";
-    display-window:             "  Windows";
+    display-drun:               "󰅂 run";
+    display-run:                " cli";
+    display-window:             "󰕰 win";
     drun-display-format:        "{name}";
     window-format:              "{w} · {c} · {t}";
-    font:                       "JetBrainsMono Nerd Font 11";
+    font:                       "JetBrainsMono Nerd Font 10.5";
 }
 
 * {
     bg:                         #1e1e2e;
-    bg-alt:                     #313244;
+    bg-alt:                     #181825;
+    surface0:                   #313244;
+    surface1:                   #45475a;
     fg:                         #cdd6f4;
     fg-dim:                     #6c7086;
     accent:                     #89b4fa;
@@ -32,58 +34,57 @@ window {
     location:                   center;
     anchor:                     center;
     fullscreen:                 false;
-    width:                      650px;
-    x-offset:                   0px;
-    y-offset:                   0px;
-
-    enabled:                    true;
+    width:                      620px;
     border:                     2px solid;
     border-color:               @accent;
-    border-radius:              14px;
+    border-radius:              0px;
     background-color:           @bg;
     cursor:                     "default";
 }
 
 mainbox {
     enabled:                    true;
-    spacing:                    15px;
-    padding:                    24px;
+    spacing:                    0px;
+    padding:                    0px;
     background-color:           transparent;
     children:                   [ "inputbar", "listview", "mode-switcher" ];
 }
 
 inputbar {
     enabled:                    true;
-    spacing:                    10px;
-    padding:                    4px;
-    background-color:           transparent;
+    spacing:                    12px;
+    padding:                    14px 16px;
+    background-color:           @bg-alt;
+    border:                     0px 0px 1px 0px solid;
+    border-color:               @surface0;
     children:                   [ "prompt", "entry" ];
 }
 
 prompt {
     enabled:                    true;
-    padding:                    8px 14px;
-    border-radius:              8px;
+    padding:                    4px 10px;
+    border-radius:              0px;
     background-color:           @accent;
     text-color:                 #1e1e2e;
-    font:                       "JetBrainsMono Nerd Font Bold 11";
+    font:                       "JetBrainsMono Nerd Font Bold 10";
 }
 
 entry {
     enabled:                    true;
-    padding:                    8px 14px;
-    border-radius:              8px;
-    background-color:           @bg-alt;
+    padding:                    4px 6px;
+    border-radius:              0px;
+    background-color:           transparent;
     text-color:                 @fg;
     cursor:                     text;
-    placeholder:                "Search applications...";
+    placeholder:                "search applications or commands...";
     placeholder-color:          @fg-dim;
+    font:                       "JetBrainsMono Nerd Font 10.5";
 }
 
 listview {
     enabled:                    true;
     columns:                    1;
-    lines:                      7;
+    lines:                      8;
     cycle:                      true;
     dynamic:                    true;
     scrollbar:                  false;
@@ -91,8 +92,9 @@ listview {
     reverse:                    false;
     fixed-height:               true;
     fixed-columns:              true;
-    spacing:                    6px;
-    background-color:           transparent;
+    spacing:                    4px;
+    padding:                    10px 12px;
+    background-color:           @bg;
     cursor:                     "default";
 }
 
@@ -100,21 +102,23 @@ element {
     enabled:                    true;
     spacing:                    12px;
     padding:                    8px 12px;
-    border-radius:              8px;
+    border-radius:              0px;
     background-color:           transparent;
     text-color:                 @fg;
     cursor:                     pointer;
 }
 
 element selected.normal {
-    background-color:           @accent;
-    text-color:                 #1e1e2e;
+    background-color:           @surface0;
+    text-color:                 @accent;
+    border:                     0px 0px 0px 3px solid;
+    border-color:               @accent;
 }
 
 element-icon {
     background-color:           transparent;
     text-color:                 inherit;
-    size:                       24px;
+    size:                       22px;
     cursor:                     inherit;
 }
 
@@ -125,23 +129,30 @@ element-text {
     cursor:                     inherit;
     vertical-align:             0.5;
     horizontal-align:           0.0;
+    font:                       "JetBrainsMono Nerd Font 10.5";
 }
 
 mode-switcher {
     enabled:                    true;
-    spacing:                    10px;
-    background-color:           transparent;
+    spacing:                    0px;
+    padding:                    0px;
+    background-color:           @bg-alt;
+    border:                     1px 0px 0px 0px solid;
+    border-color:               @surface0;
 }
 
 button {
-    padding:                    6px 12px;
-    border-radius:              8px;
-    background-color:           @bg-alt;
-    text-color:                 @fg;
+    padding:                    8px 16px;
+    border-radius:              0px;
+    background-color:           transparent;
+    text-color:                 @fg-dim;
     cursor:                     pointer;
+    font:                       "JetBrainsMono Nerd Font Bold 10";
 }
 
 button selected {
-    background-color:           @accent;
-    text-color:                 #1e1e2e;
+    background-color:           @surface0;
+    text-color:                 @accent;
+    border:                     0px 0px 2px 0px solid;
+    border-color:               @accent;
 }

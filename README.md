@@ -10,12 +10,13 @@ Designed for power users, developers, and keyboard-driven workflows. Fully porta
 
 | Component | Software | Description |
 |---|---|---|
-| **Window Manager** | `i3` (with native gaps) | Lightweight, manual tiling window manager |
+| **Display Manager** | `ly` | Minimal TUI terminal console display manager |
+| **Window Manager** | `i3` (with native gaps) | Lightweight, manual tiling window manager (crisp squared borders) |
 | **Status Bar** | `polybar` | Clean bar with auto-detecting Wi-Fi, Ethernet, CPU, RAM, Audio, and Laptop Battery support |
 | **Terminal** | `alacritty` | Fast, GPU-accelerated terminal with authentic Mocha colors and blur |
-| **Compositor** | `picom` | Smooth GLX backend with tear-free VSync, soft shadows, and subtle fading |
-| **App Launcher** | `rofi` | Sleek centered modal launcher with search |
-| **Power Menu** | `rofi` | Minimal horizontal card powermenu (`Sleep`, `Reboot`, `Power`, `Logout`) |
+| **Compositor** | `picom` | Smooth GLX backend with tear-free VSync, crisp squared window edges |
+| **App Launcher** | `rofi` | Terminal-vibe CLI popup matching Alacritty palette |
+| **Power Menu** | `rofi` | Monospace terminal modal with direct [1]-[4] key selection |
 | **Notifications** | `dunst` | Low-profile monospace notification popups |
 | **Screenshots** | `maim` + `xclip` | Instant crop-and-copy straight to clipboard |
 | **File Manager** | `ranger` | Terminal-based 3-pane file manager |
