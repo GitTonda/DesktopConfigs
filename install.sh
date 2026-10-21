@@ -150,6 +150,11 @@ fi
 
 # 8. Setup Ly Display Manager (if installed)
 if command -v ly-dm >/dev/null 2>&1 || command -v ly >/dev/null 2>&1; then
+    if [ -f "$DOTFILES_DIR/config/ly/config.ini" ]; then
+        echo "==> Deploying clean Ly configuration..."
+        sudo mkdir -p /etc/ly
+        sudo cp "$DOTFILES_DIR/config/ly/config.ini" /etc/ly/config.ini 2>/dev/null || true
+    fi
     if command -v systemctl >/dev/null 2>&1; then
         echo "==> Enabling Ly display manager..."
         if systemctl list-unit-files ly@.service >/dev/null 2>&1; then
