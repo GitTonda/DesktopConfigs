@@ -198,12 +198,12 @@ bindsym XF86MonBrightnessDown exec --no-startup-id brightnessctl set 10%-
 # Screenshots (Crop & Copy directly to Clipboard)
 # ==============================================================================
 # Crop selection -> Clipboard (Print, F13, or Super+Shift+s)
-bindsym Print exec --no-startup-id bash -c "maim -s -u | xclip -selection clipboard -t image/png && notify-send -t 1500 'Screenshot' 'Cropped area copied to clipboard'"
-bindsym F13 exec --no-startup-id bash -c "maim -s -u | xclip -selection clipboard -t image/png && notify-send -t 1500 'Screenshot' 'Cropped area copied to clipboard'"
-bindsym $mod+Shift+s exec --no-startup-id bash -c "maim -s -u | xclip -selection clipboard -t image/png && notify-send -t 1500 'Screenshot' 'Cropped area copied to clipboard'"
+bindsym Print exec --no-startup-id bash -c "set -o pipefail; maim -s -u | xclip -selection clipboard -t image/png && notify-send -t 1500 'Screenshot' 'Cropped area copied to clipboard'"
+bindsym F13 exec --no-startup-id bash -c "set -o pipefail; maim -s -u | xclip -selection clipboard -t image/png && notify-send -t 1500 'Screenshot' 'Cropped area copied to clipboard'"
+bindsym $mod+Shift+s exec --no-startup-id bash -c "set -o pipefail; maim -s -u | xclip -selection clipboard -t image/png && notify-send -t 1500 'Screenshot' 'Cropped area copied to clipboard'"
 
 # Fullscreen -> Clipboard (Shift+Print)
-bindsym Shift+Print exec --no-startup-id bash -c "maim -u | xclip -selection clipboard -t image/png && notify-send -t 1500 'Screenshot' 'Fullscreen copied to clipboard'"
+bindsym Shift+Print exec --no-startup-id bash -c "set -o pipefail; maim -u | xclip -selection clipboard -t image/png && notify-send -t 1500 'Screenshot' 'Fullscreen copied to clipboard'"
 
 # ==============================================================================
 # Autostart Applications

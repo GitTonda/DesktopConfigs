@@ -29,6 +29,9 @@ if command -v apt >/dev/null 2>&1; then
         mpv \
         ncdu \
         fonts-font-awesome \
+        btop \
+        network-manager-applet \
+        nano \
         curl \
         unzip
 elif command -v pacman >/dev/null 2>&1; then
@@ -50,6 +53,9 @@ elif command -v pacman >/dev/null 2>&1; then
         mpv \
         ncdu \
         ttf-font-awesome \
+        btop \
+        network-manager-applet \
+        nano \
         curl \
         unzip
 elif command -v dnf >/dev/null 2>&1; then
@@ -71,6 +77,9 @@ elif command -v dnf >/dev/null 2>&1; then
         mpv \
         ncdu \
         fontawesome-fonts \
+        btop \
+        network-manager-applet \
+        nano \
         curl \
         unzip
 else
@@ -84,9 +93,10 @@ if ! fc-list : family | grep -qi "JetBrainsMono Nerd Font"; then
     echo "==> Downloading and installing JetBrainsMono Nerd Font..."
     mkdir -p ~/.local/share/fonts/JetBrainsMono
     FONT_URL="https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip"
-    curl -sL "$FONT_URL" -o /tmp/JetBrainsMono.zip
-    unzip -qo /tmp/JetBrainsMono.zip -d ~/.local/share/fonts/JetBrainsMono
-    rm -f /tmp/JetBrainsMono.zip
+    TMP_FONT_DIR="$(mktemp -d)"
+    curl -fsSL "$FONT_URL" -o "$TMP_FONT_DIR/JetBrainsMono.zip"
+    unzip -qo "$TMP_FONT_DIR/JetBrainsMono.zip" -d ~/.local/share/fonts/JetBrainsMono
+    rm -rf "$TMP_FONT_DIR"
     fc-cache -f ~/.local/share/fonts
     echo "==> Font installed successfully!"
 else
@@ -125,9 +135,16 @@ cp -r "$DOTFILES_DIR/wallpapers/"* "$HOME/Pictures/Wallpapers/"
 chmod +x "$HOME/.config/polybar/launch.sh"
 chmod +x "$HOME/.config/rofi/powermenu.sh"
 
-# 7. Initialize wallpaper
+# 7. Initialize wallpaper & create persistent ~/.fehbg
 if [ -f "$HOME/Pictures/Wallpapers/waves_dark.jpg" ]; then
-    feh --bg-fill "$HOME/Pictures/Wallpapers/waves_dark.jpg" 2>/dev/null || true
+    cat << 'EOF' > "$HOME/.fehbg"
+#!/bin/sh
+feh --no-fehbg --bg-fill "$HOME/Pictures/Wallpapers/waves_dark.jpg"
+EOF
+    chmod +x "$HOME/.fehbg"
+    if [ -n "$DISPLAY" ]; then
+        "$HOME/.fehbg" 2>/dev/null || true
+    fi
 fi
 
 echo ""
