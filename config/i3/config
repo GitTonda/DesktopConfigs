@@ -197,19 +197,24 @@ bindsym XF86MonBrightnessDown exec --no-startup-id brightnessctl set 10%-
 # ==============================================================================
 # Screenshots (Crop & Copy directly to Clipboard)
 # ==============================================================================
-# Crop selection -> Clipboard (Print, F13, or Super+Shift+s)
-bindsym Print exec --no-startup-id bash -c "set -o pipefail; maim -s -u | xclip -selection clipboard -t image/png && notify-send -t 1500 'Screenshot' 'Cropped area copied to clipboard'"
-bindsym F13 exec --no-startup-id bash -c "set -o pipefail; maim -s -u | xclip -selection clipboard -t image/png && notify-send -t 1500 'Screenshot' 'Cropped area copied to clipboard'"
-bindsym $mod+Shift+s exec --no-startup-id bash -c "set -o pipefail; maim -s -u | xclip -selection clipboard -t image/png && notify-send -t 1500 'Screenshot' 'Cropped area copied to clipboard'"
+# Crop selection -> Clipboard (Print, F13, XF86Tools, or Super+Shift+s)
+# --release is critical for interactive selection so maim can grab pointer
+bindsym --release Print exec --no-startup-id ~/.config/i3/screenshot.sh
+bindsym --release F13 exec --no-startup-id ~/.config/i3/screenshot.sh
+bindsym --release XF86Tools exec --no-startup-id ~/.config/i3/screenshot.sh
+bindsym --release $mod+Shift+s exec --no-startup-id ~/.config/i3/screenshot.sh
 
 # Fullscreen -> Clipboard (Shift+Print)
-bindsym Shift+Print exec --no-startup-id bash -c "set -o pipefail; maim -u | xclip -selection clipboard -t image/png && notify-send -t 1500 'Screenshot' 'Fullscreen copied to clipboard'"
+bindsym --release Shift+Print exec --no-startup-id ~/.config/i3/screenshot.sh full
 
 # ==============================================================================
 # Autostart Applications
 # ==============================================================================
 # Launch Polybar
 exec_always --no-startup-id ~/.config/polybar/launch.sh
+
+# Map F13 keycodes in X11 (evdev 183 -> X11 keycode 191/183)
+exec_always --no-startup-id xmodmap -e "keycode 183 = F13" -e "keycode 191 = F13"
 
 # Compositor (Picom)
 exec --no-startup-id picom -b
