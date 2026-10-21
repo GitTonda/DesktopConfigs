@@ -149,9 +149,15 @@ EOF
 fi
 
 # 8. Setup Ly Display Manager (if installed)
-if command -v ly >/dev/null 2>&1 && command -v systemctl >/dev/null 2>&1; then
-    echo "==> Enabling Ly display manager..."
-    sudo systemctl enable ly.service 2>/dev/null || true
+if command -v ly-dm >/dev/null 2>&1 || command -v ly >/dev/null 2>&1; then
+    if command -v systemctl >/dev/null 2>&1; then
+        echo "==> Enabling Ly display manager..."
+        if systemctl list-unit-files ly@.service >/dev/null 2>&1; then
+            sudo systemctl enable ly@tty2.service 2>/dev/null || true
+        elif systemctl list-unit-files ly.service >/dev/null 2>&1; then
+            sudo systemctl enable ly.service 2>/dev/null || true
+        fi
+    fi
 fi
 
 echo ""
