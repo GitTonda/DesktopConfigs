@@ -135,6 +135,7 @@ cp -r "$DOTFILES_DIR/wallpapers/"* "$HOME/Pictures/Wallpapers/"
 # 6. Ensure executable permissions on scripts
 chmod +x "$HOME/.config/polybar/launch.sh"
 chmod +x "$HOME/.config/rofi/powermenu.sh"
+chmod +x "$HOME/.config/i3/screenshot.sh"
 
 # 7. Initialize wallpaper & create persistent ~/.fehbg
 if [ -f "$HOME/Pictures/Wallpapers/waves_dark.jpg" ]; then
@@ -154,6 +155,7 @@ if command -v ly-dm >/dev/null 2>&1 || command -v ly >/dev/null 2>&1; then
         echo "==> Deploying clean Ly configuration..."
         sudo mkdir -p /etc/ly
         sudo cp "$DOTFILES_DIR/config/ly/config.ini" /etc/ly/config.ini 2>/dev/null || true
+        [ -f "$DOTFILES_DIR/config/ly/config.lua" ] && sudo cp "$DOTFILES_DIR/config/ly/config.lua" /etc/ly/config.lua 2>/dev/null || true
     fi
     if command -v systemctl >/dev/null 2>&1; then
         echo "==> Enabling Ly display manager..."
