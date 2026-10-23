@@ -27,5 +27,5 @@ mkdir -p "$LOG_DIR"
 # Brief pause to allow X11 to clear tray window claims
 sleep 0.2
 
-# Launch Polybar detached from the script shell
-nohup polybar main >>"$LOG_DIR/polybar.log" 2>&1 & disown
+# Launch Polybar detached from the script shell in its own session
+setsid nohup polybar main >>"$LOG_DIR/polybar.log" 2>&1 &
