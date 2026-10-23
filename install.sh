@@ -39,6 +39,8 @@ if command -v pacman >/dev/null 2>&1; then
         alsa-utils \
         libpulse \
         networkmanager \
+        bluez \
+        bluez-utils \
         brightnessctl \
         playerctl \
         maim \
@@ -71,10 +73,11 @@ if command -v pacman >/dev/null 2>&1; then
         fi
     done
 
-    # Ensure NetworkManager is enabled
+    # Ensure NetworkManager and Bluetooth are enabled
     if command -v systemctl >/dev/null 2>&1; then
-        echo "==> Enabling NetworkManager..."
+        echo "==> Enabling NetworkManager & Bluetooth..."
         sudo systemctl enable NetworkManager.service 2>/dev/null || true
+        sudo systemctl enable bluetooth.service 2>/dev/null || true
     fi
 
 elif command -v apt >/dev/null 2>&1; then
@@ -99,6 +102,8 @@ elif command -v apt >/dev/null 2>&1; then
         alsa-utils \
         pulseaudio-utils \
         network-manager \
+        bluez \
+        rfkill \
         brightnessctl \
         playerctl \
         maim \
@@ -134,6 +139,8 @@ elif command -v dnf >/dev/null 2>&1; then
         alsa-utils \
         pulseaudio-utils \
         NetworkManager \
+        bluez \
+        bluez-tools \
         brightnessctl \
         playerctl \
         maim \
@@ -226,7 +233,9 @@ chmod +x "$HOME/.config/dunst/launch.sh" 2>/dev/null || true
 chmod +x "$HOME/.config/dunst/scripts/"*.sh 2>/dev/null || true
 chmod +x "$HOME/.config/rofi/powermenu.sh"
 chmod +x "$HOME/.config/rofi/wifi.sh" "$HOME/.config/rofi/wifi.py" 2>/dev/null || true
+chmod +x "$HOME/.config/rofi/bluetooth.sh" "$HOME/.config/rofi/bluetooth.py" 2>/dev/null || true
 chmod +x "$HOME/.config/rofi/wallpaper.sh" 2>/dev/null || true
+chmod +x "$HOME/.config/polybar/scripts/"*.sh 2>/dev/null || true
 chmod +x "$HOME/.config/theme/apply-theme.sh" 2>/dev/null || true
 chmod +x "$HOME/.config/i3/screenshot.sh"
 

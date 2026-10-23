@@ -39,7 +39,7 @@ for_window [class="(?i)blueman"] floating enable
 for_window [class="(?i)pavucontrol"] floating enable
 for_window [class="(?i)ibus.*"] floating enable
 for_window [title="(?i)ibus.*"] floating enable
-for_window [class="FloatingTerm|FloatingBtop|FloatingAudio|FloatingWifi"] floating enable, resize set 900 600, move position center
+for_window [class="FloatingTerm|FloatingBtop|FloatingAudio|FloatingWifi|FloatingBluetooth"] floating enable, resize set 900 600, move position center
 for_window [instance="localhost"] floating disable
 for_window [title="(?i)Langflow"] floating disable
 for_window [class="(?i)min"] floating disable
@@ -63,6 +63,7 @@ bindsym $mod+Shift+m exec alacritty --class FloatingBtop -e btop
 
 # Quick applet keybindings
 bindsym $mod+Shift+w exec ~/.config/rofi/wifi.sh
+bindsym $mod+Shift+t exec ~/.config/rofi/bluetooth.sh
 bindsym $mod+Shift+a exec alacritty --class FloatingAudio -e alsamixer
 bindsym $mod+Shift+b exec ~/.config/rofi/wallpaper.sh
 

@@ -39,6 +39,7 @@ Modifier Key: **`Super`** (Windows Key)
 | `Super + Shift + Return` | Launch File Manager (**Ranger**) |
 | `Super + D` | Application Launcher (**Rofi**) |
 | `Super + Shift + W` | Interactive Wi-Fi Applet (**Rofi Wi-Fi**) |
+| `Super + Shift + T` | Interactive Bluetooth Applet & Customizer (**Rofi Bluetooth**) |
 | `Super + Shift + B` | Wallpaper Selector (**Rofi / Visual Gallery**) |
 | `Super + Shift + A` | Audio Mixer Modal (**Alsamixer**) |
 | `Super + Shift + M` | System Monitor Modal (**btop**) |
@@ -52,6 +53,7 @@ Modifier Key: **`Super`** (Windows Key)
 |---|---|---|---|
 | **Date (`󰃭`)** | Monthly Calendar Popup | Monthly Calendar Popup | - |
 | **Volume (`󰕾` / `󰝟`)** | Toggle Mute | Audio Mixer Modal (`alsamixer`) | Volume Up / Down 5% |
+| **Bluetooth (`󰂯` / `󰂱` / `󰂲`)** | Rofi Bluetooth Menu (connect/pair) | Toggle Bluetooth Power (on/off) | Middle-click: Customize Widget |
 | **Wi-Fi (`󰤨`)** | Rofi Wi-Fi Menu (scan & connect) | Network Connections (`nmtui`) | - |
 | **Ethernet (`󰈀`)** | Network Connections (`nmtui`) | Network Connections (`nmtui`) | - |
 | **CPU (`󰍛`) & RAM (`󰘚`)** | Launch `btop` Monitor | Launch `btop` Monitor | - |
