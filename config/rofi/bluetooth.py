@@ -98,14 +98,14 @@ def customize_menu():
         hide_off = cfg.get("HIDE_WHEN_OFF", "false") == "true"
 
         items = [
-            f"{'[✓]' if show_name else '[✗]'}  Show Device Name ({'ON' if show_name else 'OFF'})",
-            f"{'[✓]' if dev_icons else '[✗]'}  Device-Specific Icons (󰋋 󰌌 󰍽: {'ON' if dev_icons else 'OFF'})",
-            f"{'[✓]' if show_bat else '[✗]'}  Show Battery % if available ({'ON' if show_bat else 'OFF'})",
-            f"{'[✓]' if hide_off else '[✗]'}  Hide Widget When Powered Off ({'ON' if hide_off else 'OFF'})",
+            f"[{'ON' if show_name else 'OFF'}]  Show Device Name",
+            f"[{'ON' if dev_icons else 'OFF'}]  Device-Specific Icons (󰋋 󰌌 󰍽)",
+            f"[{'ON' if show_bat else 'OFF'}]  Show Battery Percentage",
+            f"[{'ON' if hide_off else 'OFF'}]  Hide Widget When Powered Off",
             "󰁞  Back to Bluetooth Menu",
         ]
 
-        choice = run_rofi("⚙ widget :~$", items)
+        choice = run_rofi("󰒓 widget :~$", items)
         if choice is None:
             # User pressed Escape -> dismiss completely
             return "close"
@@ -124,7 +124,7 @@ def customize_menu():
             cfg["HIDE_WHEN_OFF"] = "false" if hide_off else "true"
 
         save_config(cfg)
-        notify("⚙️ Widget Config Saved", "Polybar Bluetooth display updated")
+        notify("󰒓 Widget Config Saved", "Polybar Bluetooth display updated")
 
 
 def get_device_details(mac):
@@ -282,15 +282,15 @@ def main():
 
         if not powered:
             items.append("󰂯  Turn Bluetooth ON")
-            items.append("⚙️   Customize Top Bar Widget")
-            items.append("   Interactive CLI (bluetoothctl)")
+            items.append("󰒓  Configure Top Bar Widget")
+            items.append("  Interactive CLI (bluetoothctl)")
             choice = run_rofi("󰂲 bluetooth [off] :~$", items)
             if choice is None:
                 break
             if "Turn Bluetooth ON" in choice:
                 set_power(True)
                 continue
-            elif "Customize" in choice:
+            elif "Configure" in choice or "Widget" in choice or "Customize" in choice:
                 action = customize_menu()
                 if action == "close":
                     break
@@ -337,8 +337,8 @@ def main():
 
         items.append("󰂲  Turn Bluetooth OFF")
         items.append("󰑐  Scan for Nearby Devices")
-        items.append("⚙️   Customize Top Bar Widget")
-        items.append("   Interactive CLI (bluetoothctl)")
+        items.append("󰒓  Configure Top Bar Widget")
+        items.append("  Interactive CLI (bluetoothctl)")
 
         status_tag = f"[{len(connected_macs)} connected]" if connected_macs else "[on]"
         choice = run_rofi(f"󰂯 bluetooth {status_tag} :~$", items)
@@ -353,7 +353,7 @@ def main():
             if action == "close":
                 break
             continue
-        elif "Customize" in choice:
+        elif "Configure" in choice or "Widget" in choice or "Customize" in choice:
             action = customize_menu()
             if action == "close":
                 break
