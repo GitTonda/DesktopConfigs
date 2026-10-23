@@ -310,6 +310,7 @@ fi
 
 echo ""
 echo "=========================================================="
-echo " Setup Complete! "
-echo " You can now start the environment via Ly or run 'startx'."
+echo " ✔ Setup completato con successo!"
+echo " Riavvia il computer con: reboot (o 'sudo reboot')"
+echo " Al riavvio troverai Ly pronto con la sessione i3 preconfigurata."
 echo "=========================================================="
