@@ -53,6 +53,7 @@ if command -v pacman >/dev/null 2>&1; then
         unzip \
         git \
         python \
+        ffmpeg \
         ttf-jetbrains-mono-nerd \
         ttf-font-awesome \
         noto-fonts-emoji \
@@ -112,6 +113,7 @@ elif command -v apt >/dev/null 2>&1; then
         unzip \
         git \
         python3 \
+        ffmpeg \
         fonts-font-awesome
 
 elif command -v dnf >/dev/null 2>&1; then
@@ -146,6 +148,7 @@ elif command -v dnf >/dev/null 2>&1; then
         unzip \
         git \
         python3 \
+        ffmpeg \
         fontawesome-fonts
 else
     echo "==> Warning: Unknown package manager. Please ensure required packages are installed."
@@ -224,10 +227,14 @@ chmod +x "$HOME/.config/dunst/scripts/"*.sh 2>/dev/null || true
 chmod +x "$HOME/.config/rofi/powermenu.sh"
 chmod +x "$HOME/.config/rofi/wifi.sh" "$HOME/.config/rofi/wifi.py" 2>/dev/null || true
 chmod +x "$HOME/.config/rofi/wallpaper.sh" 2>/dev/null || true
+chmod +x "$HOME/.config/theme/apply-theme.sh" 2>/dev/null || true
 chmod +x "$HOME/.config/i3/screenshot.sh"
 
-# 7. Initialize wallpaper & create persistent ~/.fehbg
-if [ -f "$HOME/Pictures/Wallpapers/waves_dark.jpg" ]; then
+# 7. Initialize wallpaper & dynamic accent theme
+if [ -x "$HOME/.config/theme/apply-theme.sh" ] && [ -f "$HOME/Pictures/Wallpapers/waves_dark.jpg" ]; then
+    echo "==> Initializing wallpaper and system-wide accent theme..."
+    "$HOME/.config/theme/apply-theme.sh" "$HOME/Pictures/Wallpapers/waves_dark.jpg" 2>/dev/null || true
+elif [ -f "$HOME/Pictures/Wallpapers/waves_dark.jpg" ]; then
     cat << 'EOF' > "$HOME/.fehbg"
 #!/bin/sh
 feh --no-fehbg --bg-fill "$HOME/Pictures/Wallpapers/waves_dark.jpg"

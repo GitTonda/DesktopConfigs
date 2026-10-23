@@ -7,6 +7,8 @@ configuration {
     show-icons:                 false;
 }
 
+@import "colors.rasi"
+
 * {
     bg:                         #1e1e2e;
     bg-alt:                     #181825;
@@ -14,7 +16,6 @@ configuration {
     surface1:                   #45475a;
     fg:                         #cdd6f4;
     fg-dim:                     #6c7086;
-    accent:                     #89b4fa;
     green:                      #a6e3a1;
     urgent:                     #f38ba8;
 

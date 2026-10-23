@@ -42,17 +42,12 @@ for_window [title="(?i)ibus.*"] floating enable
 for_window [class="FloatingTerm|FloatingBtop|FloatingAudio|FloatingWifi"] floating enable, resize set 900 600, move position center
 for_window [instance="localhost"] floating disable
 for_window [title="(?i)Langflow"] floating disable
+for_window [class="(?i)min"] floating disable
 
 # ==============================================================================
-# Color Palette - Catppuccin Mocha Minimal
+# Color Palette - Catppuccin Mocha Minimal (Dynamic Wallpaper Accent)
 # ==============================================================================
-# class                 border  bground text    indicator child_border
-client.focused          #89b4fa #1e1e2e #cdd6f4 #89b4fa   #89b4fa
-client.focused_inactive #313244 #181825 #a6adc8 #313244   #313244
-client.unfocused        #1e1e2e #11111b #6c7086 #181825   #181825
-client.urgent           #f38ba8 #1e1e2e #f38ba8 #f38ba8   #f38ba8
-client.placeholder      #181825 #11111b #cdd6f4 #181825   #181825
-client.background       #11111b
+include ~/.config/i3/colors.conf
 
 # ==============================================================================
 # Keybindings - Core

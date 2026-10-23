@@ -2,6 +2,8 @@
 # Alacritty Configuration - Catppuccin Mocha Minimal
 # ==============================================================================
 
+import = ["~/.config/alacritty/colors.toml"]
+
 [window]
 padding = { x = 10, y = 10 }
 dynamic_padding = true

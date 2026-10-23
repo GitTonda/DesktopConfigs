@@ -51,23 +51,7 @@ fi
 
 set_wallpaper() {
     local target="$1"
-    local name
-    name=$(basename "$target")
-
-    # Apply via feh
-    feh --no-fehbg --bg-fill "$target"
-
-    # Persist in ~/.fehbg
-    cat << EOF > "$HOME/.fehbg"
-#!/bin/sh
-feh --no-fehbg --bg-fill '$target'
-EOF
-    chmod +x "$HOME/.fehbg"
-
-    # Notify
-    if command -v dunstify >/dev/null 2>&1; then
-        dunstify -r 4444 -u normal -h string:x-dunst-stack-tag:wallpaper "󰸉 Wallpaper Set" "$name"
-    fi
+    "$HOME/.config/theme/apply-theme.sh" "$target"
 }
 
 case "$chosen" in
@@ -81,7 +65,7 @@ case "$chosen" in
         # Launch feh thumbnail browser where clicking any thumbnail applies it as wallpaper
         feh -t -E 180 -y 140 -W 1080 -H 720 \
             --title "Wallpaper Gallery - Click to Apply" \
-            --action "feh --no-fehbg --bg-fill '%f'; printf '#!/bin/sh\nfeh --no-fehbg --bg-fill \x27%%f\x27\n' > \$HOME/.fehbg; chmod +x \$HOME/.fehbg; dunstify -r 4444 '󰸉 Wallpaper Set' '%%n'" \
+            --action "$HOME/.config/theme/apply-theme.sh '%f'" \
             "$WALLPAPER_DIR" &
         ;;
     *"[Folder]"*)

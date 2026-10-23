@@ -126,10 +126,23 @@ sudo bash ~/dotfiles/scripts/optimize_system.sh
 
 ---
 
-## 🎨 Changing Wallpapers
+## 🎨 Changing Wallpapers & Dynamic Theming
 
-Place any image in `~/Pictures/Wallpapers/` and set it with:
+Press **`Super + Shift + B`** to open the Wallpaper Selector:
+- **Visual Thumbnail Gallery:** Launches a high-res thumbnail grid where clicking any image sets it immediately.
+- **Rofi Fast List:** Quick searchable menu of all wallpapers in `~/Pictures/Wallpapers/`.
+- **Random Wallpaper:** Shuffles a fresh wallpaper from your collection.
+
+### 🌟 Dynamic System-Wide Accent Engine
+Whenever a wallpaper is selected (or via `~/.config/theme/apply-theme.sh /path/to/image.png`), the theme engine automatically extracts the dominant vibrant accent color using `ffmpeg` & an HLS saturation/lightness scoring algorithm (<100ms) and dynamically synchronizes:
+- **i3-wm:** Active focused window border
+- **Polybar:** Active workspace highlight, underline, and accent icons
+- **Dunst:** Notification border frames and OSD progress bars
+- **Rofi:** Selected item highlight and borders across all menus
+- **Alacritty:** Terminal cursor and text selection highlight
+- **Persistence:** Automatically updates `~/.fehbg` and theme state across reboots
+
+To set a wallpaper and update accents from the terminal:
 ```bash
-feh --bg-fill ~/Pictures/Wallpapers/your_wallpaper.jpg
+~/.config/theme/apply-theme.sh ~/Pictures/Wallpapers/your_wallpaper.jpg
 ```
-The wallpaper will automatically persist across reboots via `~/.fehbg`.

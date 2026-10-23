@@ -1,0 +1,7 @@
+[colors.cursor]
+text = "#1e1e2e"
+cursor = "#63aeed"
+
+[colors.selection]
+text = "#1e1e2e"
+background = "#63aeed"

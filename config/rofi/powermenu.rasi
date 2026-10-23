@@ -2,6 +2,8 @@
  * Powermenu Theme - Terminal TUI Vibe
  */
 
+@import "colors.rasi"
+
 * {
     bg:                         #1e1e2e;
     bg-alt:                     #181825;
@@ -9,7 +11,6 @@
     surface1:                   #45475a;
     fg:                         #cdd6f4;
     fg-dim:                     #6c7086;
-    accent:                     #89b4fa;
     red:                        #f38ba8;
 
     background-color:           transparent;
