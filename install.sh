@@ -50,6 +50,7 @@ if command -v pacman >/dev/null 2>&1; then
         mpv \
         ncdu \
         btop \
+        nvtop \
         nano \
         curl \
         unzip \
@@ -113,6 +114,7 @@ elif command -v apt >/dev/null 2>&1; then
         mpv \
         ncdu \
         btop \
+        nvtop \
         nano \
         curl \
         unzip \
@@ -150,6 +152,7 @@ elif command -v dnf >/dev/null 2>&1; then
         mpv \
         ncdu \
         btop \
+        nvtop \
         nano \
         curl \
         unzip \
@@ -248,9 +251,13 @@ chmod +x "$HOME/.config/rofi/powermenu.sh"
 chmod +x "$HOME/.config/rofi/wifi.sh" "$HOME/.config/rofi/wifi.py" 2>/dev/null || true
 chmod +x "$HOME/.config/rofi/bluetooth.sh" "$HOME/.config/rofi/bluetooth.py" 2>/dev/null || true
 chmod +x "$HOME/.config/rofi/wallpaper.sh" 2>/dev/null || true
-chmod +x "$HOME/.config/polybar/scripts/"*.sh 2>/dev/null || true
 chmod +x "$HOME/.config/theme/apply-theme.sh" 2>/dev/null || true
 chmod +x "$HOME/.config/i3/screenshot.sh"
+
+# Ensure nvitop is available for NVIDIA GPU monitoring
+if command -v uv >/dev/null 2>&1; then
+    uv tool install nvitop 2>/dev/null || true
+fi
 
 # 7. Initialize wallpaper & dynamic accent theme
 if [ -x "$HOME/.config/theme/apply-theme.sh" ] && [ -f "$HOME/Pictures/Wallpapers/waves_dark.jpg" ]; then

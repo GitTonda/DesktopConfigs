@@ -39,7 +39,7 @@ for_window [class="(?i)blueman"] floating enable
 for_window [class="(?i)pavucontrol"] floating enable
 for_window [class="(?i)ibus.*"] floating enable
 for_window [title="(?i)ibus.*"] floating enable
-for_window [class="FloatingTerm|FloatingBtop|FloatingAudio|FloatingWifi|FloatingBluetooth"] floating enable, resize set 900 600, move position center
+for_window [class="FloatingTerm|FloatingBtop|FloatingGPU|FloatingAudio|FloatingWifi|FloatingBluetooth"] floating enable, resize set 950 620, move position center
 for_window [instance="localhost"] floating disable
 for_window [title="(?i)Langflow"] floating disable
 for_window [class="(?i)min"] floating disable
@@ -60,6 +60,9 @@ bindsym $mod+Shift+Return exec alacritty -e ranger
 
 # Launch system monitor (Btop)
 bindsym $mod+Shift+m exec alacritty --class FloatingBtop -e btop
+
+# Launch GPU monitor (nvitop / nvtop)
+bindsym $mod+Shift+g exec alacritty --class FloatingGPU -e ~/.config/polybar/scripts/gpu-top.sh
 
 # Quick applet keybindings
 bindsym $mod+Shift+w exec ~/.config/rofi/wifi.sh

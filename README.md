@@ -43,6 +43,7 @@ Modifier Key: **`Super`** (Windows Key)
 | `Super + Shift + B` | Wallpaper Selector (**Rofi / Visual Gallery**) |
 | `Super + Shift + A` | Audio Mixer Modal (**Alsamixer**) |
 | `Super + Shift + M` | System Monitor Modal (**btop**) |
+| `Super + Shift + G` | GPU Monitor Modal (**nvitop / nvtop**) |
 | `Super + Q` | **Close / Kill focused window** |
 | `F13` or `Print` or `Super + Shift + S` | **Instant Crop & Copy Screenshot to Clipboard** |
 | `Shift + Print` | Full-screen screenshot to clipboard |
@@ -57,7 +58,7 @@ Modifier Key: **`Super`** (Windows Key)
 | **Wi-Fi (`󰤨`)** | Rofi Wi-Fi Menu (scan & connect) | Network Connections (`nmtui`) | - |
 | **Ethernet (`󰈀`)** | Network Connections (`nmtui`) | Network Connections (`nmtui`) | - |
 | **CPU (`󰍛`) & RAM (`󰘚`)** | Launch `btop` Monitor | Launch `btop` Monitor | - |
-| **GPU (`󰢮`)** | Launch `btop` Monitor | Cycle Display Mode (% / Temp / VRAM) | Middle-click: Detailed GPU Notification |
+| **GPU (`󰢮`)** | Launch GPU Monitor (`nvitop` / `nvtop`) | Cycle Display Mode (% / Temp / VRAM) | Middle-click: Detailed GPU Notification |
 | **Power (`󰐥`)** | Power Menu | Power Menu | - |
 
 ### Navigation & Tiling
