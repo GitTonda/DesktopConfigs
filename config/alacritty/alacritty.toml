@@ -2,8 +2,6 @@
 # Alacritty Configuration - Catppuccin Mocha Minimal
 # ==============================================================================
 
-import = ["~/.config/alacritty/colors.toml"]
-
 [window]
 padding = { x = 10, y = 10 }
 dynamic_padding = true
@@ -36,7 +34,7 @@ bright_foreground = "#cdd6f4"
 
 [colors.cursor]
 text = "#1e1e2e"
-cursor = "#f5e0dc"
+cursor = "#63aeed"
 
 [colors.vi_mode_cursor]
 text = "#1e1e2e"
@@ -44,7 +42,7 @@ cursor = "#b4befe"
 
 [colors.selection]
 text = "#1e1e2e"
-background = "#f5e0dc"
+background = "#63aeed"
 
 [colors.search.matches]
 foreground = "#1e1e2e"

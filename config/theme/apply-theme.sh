@@ -92,17 +92,24 @@ if [ -f "$DUNST_CONFIG" ]; then
     fi
 fi
 
-# 8. Update Alacritty Cursor & Selection
-mkdir -p "$HOME/.config/alacritty"
-cat << ALACRITTY > "$HOME/.config/alacritty/colors.toml"
-[colors.cursor]
-text = "#1e1e2e"
-cursor = "$ACCENT"
-
-[colors.selection]
-text = "#1e1e2e"
-background = "$ACCENT"
-ALACRITTY
+# 8. Update Alacritty Cursor & Selection directly
+ALACRITTY_CONF="$HOME/.config/alacritty/alacritty.toml"
+if [ -f "$ALACRITTY_CONF" ]; then
+    python3 -c "
+import re, sys
+path = sys.argv[1]
+accent = sys.argv[2]
+try:
+    with open(path, 'r') as f:
+        c = f.read()
+    c = re.sub(r'(\[colors\.cursor\][^\[]*?cursor\s*=\s*\")[^\"]*(\")', rf'\g<1>{accent}\2', c, flags=re.DOTALL)
+    c = re.sub(r'(\[colors\.selection\][^\[]*?background\s*=\s*\")[^\"]*(\")', rf'\g<1>{accent}\2', c, flags=re.DOTALL)
+    with open(path, 'w') as f:
+        f.write(c)
+except Exception:
+    pass
+" "$ALACRITTY_CONF" "$ACCENT" 2>/dev/null || true
+fi
 
 # 9. Notify user of change
 WALL_NAME=$(basename "$WALLPAPER")
