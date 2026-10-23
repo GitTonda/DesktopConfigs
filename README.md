@@ -100,11 +100,11 @@ curl -fsSL https://raw.githubusercontent.com/GitTonda/DesktopConfigs/main/bootst
 
 ### Option B: Manual Clone & Run
 ```bash
-# 1. Clone your dotfiles repository
-git clone https://github.com/GitTonda/DesktopConfigs.git ~/dotfiles
+# 1. Clone into hidden XDG data directory (keeps your home directory clean)
+git clone https://github.com/GitTonda/DesktopConfigs.git ~/.local/share/dotfiles
 
 # 2. Run the automated installer
-cd ~/dotfiles
+cd ~/.local/share/dotfiles
 chmod +x ./install.sh
 ./install.sh
 ```
@@ -119,14 +119,22 @@ chmod +x ./install.sh
 
 ---
 
-## 🔄 Multi-Device Synchronization & Upgrades (`dotfiles` CLI)
+## 🔄 Multi-Device Synchronization & Upgrades
 
-The environment comes with a built-in CLI tool (`dotfiles`) to seamlessly sync, update, and manage your configurations across multiple PCs and laptops via Git.
+The environment comes with a built-in command to seamlessly update your configurations across all your PCs and laptops via Git.
 
-### Common Multi-Device Workflow:
+### ⚡ One-Word Desktop Update Command:
+Run anywhere from any terminal:
+```bash
+update-desktop
+```
+This automatically connects to GitHub, fetches and pulls the latest changes, updates `~/.config/` & wallpapers, and live hot-reloads i3, Polybar, Dunst, and your active theme without closing any applications or restarting!
+
+### Full Command Reference:
 | Task | Command | Description |
 |---|---|---|
-| **Pull Updates** | `dotfiles pull` | Pulls latest Git commits, deploys to `~/.config/`, and live-reloads i3, Polybar, Dunst, & themes without restarting. |
+| **Quick System Update** | `update-desktop` | Fetches & pulls latest Git commits and hot-reloads your desktop live. |
+| **Pull Updates** | `dotfiles pull` | Equivalent to `update-desktop` (`--force` available to overwrite local files). |
 | **Push Changes** | `dotfiles push "my tweaks"` | Syncs local configs into the repo, creates a commit, and pushes to GitHub. |
 | **Check Sync Status** | `dotfiles status` | Checks if your local machine is ahead, behind, or up to date with `origin/main`. |
 | **Inspect Differences** | `dotfiles diff` | Shows pending uncommitted changes in your dotfiles repo. |

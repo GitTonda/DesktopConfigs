@@ -197,6 +197,12 @@ ${BOLD}MULTI-DEVICE WORKFLOW:${NC}
 "
 }
 
+CMD_NAME=$(basename "$0")
+if [ "$CMD_NAME" = "update-desktop" ] || [ "$CMD_NAME" = "desktop-update" ]; then
+    do_pull "$@"
+    exit 0
+fi
+
 case "$1" in
     pull|update|sync)
         shift

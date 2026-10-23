@@ -2,7 +2,14 @@
 set -e
 
 REPO_URL="https://github.com/GitTonda/DesktopConfigs.git"
-TARGET_DIR="$HOME/dotfiles"
+TARGET_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/dotfiles"
+
+# Check for legacy ~/dotfiles directory and migrate if present
+if [ ! -d "$TARGET_DIR" ] && [ -d "$HOME/dotfiles/.git" ]; then
+    echo "==> Migrating repository from ~/dotfiles to $TARGET_DIR..."
+    mkdir -p "$(dirname "$TARGET_DIR")"
+    mv "$HOME/dotfiles" "$TARGET_DIR"
+fi
 
 echo "=========================================================="
 echo "    Bootstrap: Antigravity Catppuccin Mocha Setup         "

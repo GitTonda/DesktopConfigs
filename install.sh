@@ -207,10 +207,18 @@ cp "$DOTFILES_DIR/home/.nanorc" "$HOME/.nanorc"
 [ -f "$DOTFILES_DIR/home/.xinitrc" ] && cp "$DOTFILES_DIR/home/.xinitrc" "$HOME/.xinitrc"
 chmod +x "$HOME/.xinitrc" 2>/dev/null || true
 
-# Deploy dotfiles CLI management tool
+# Deploy dotfiles CLI management tools & system update commands
 mkdir -p "$HOME/.local/bin"
 chmod +x "$DOTFILES_DIR/scripts/dotfiles"
 ln -sf "$DOTFILES_DIR/scripts/dotfiles" "$HOME/.local/bin/dotfiles"
+ln -sf "$DOTFILES_DIR/scripts/dotfiles" "$HOME/.local/bin/update-desktop"
+ln -sf "$DOTFILES_DIR/scripts/dotfiles" "$HOME/.local/bin/desktop-update"
+
+# Install system-wide update command if sudo available
+if command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
+    sudo ln -sf "$DOTFILES_DIR/scripts/dotfiles" "/usr/local/bin/update-desktop" 2>/dev/null || true
+    sudo ln -sf "$DOTFILES_DIR/scripts/dotfiles" "/usr/local/bin/desktop-update" 2>/dev/null || true
+fi
 
 # Deploy desktop entry for wallpaper selector
 mkdir -p "$HOME/.local/share/applications"
