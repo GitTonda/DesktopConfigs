@@ -139,7 +139,7 @@ def main():
                 [f"󰌺  Disconnect from {ssid}", f"󰚃  Forget {ssid} (Delete Profile)"]
             )
             if act and "Disconnect" in act:
-                subprocess.run(["nmcli", "device", "disconnect", "wlo1"], check=False)
+                subprocess.run(["nmcli", "connection", "down", ssid], check=False)
                 notify("Wi-Fi", f"Disconnected from {ssid}")
             elif act and "Forget" in act:
                 subprocess.run(["nmcli", "connection", "delete", ssid], check=False)

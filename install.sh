@@ -22,6 +22,7 @@ if command -v pacman >/dev/null 2>&1; then
         xorg-xinit \
         xorg-xrandr \
         xorg-xmodmap \
+        xf86-input-libinput \
         mesa \
         i3-wm \
         polybar \
@@ -30,6 +31,7 @@ if command -v pacman >/dev/null 2>&1; then
         rofi \
         feh \
         dunst \
+        libnotify \
         pipewire \
         pipewire-pulse \
         pipewire-alsa \
@@ -55,6 +57,18 @@ if command -v pacman >/dev/null 2>&1; then
         ttf-font-awesome \
         noto-fonts-emoji \
         ly
+
+    # Ensure user is in necessary hardware groups (video, audio, input) for backlight and sound
+    echo "==> Configuring user hardware permissions..."
+    sudo usermod -a -G video,audio,input "$USER" 2>/dev/null || true
+
+    # Disable conflicting display managers if present
+    for dm in gdm sddm lightdm lxdm; do
+        if systemctl is-enabled "$dm.service" >/dev/null 2>&1; then
+            echo "==> Disabling conflicting display manager: $dm..."
+            sudo systemctl disable "$dm.service" 2>/dev/null || true
+        fi
+    done
 
     # Ensure NetworkManager is enabled
     if command -v systemctl >/dev/null 2>&1; then
@@ -216,9 +230,9 @@ if command -v ly >/dev/null 2>&1 || command -v ly-dm >/dev/null 2>&1; then
 
     if command -v systemctl >/dev/null 2>&1; then
         echo "==> Enabling Ly display manager..."
-        if systemctl list-unit-files ly.service >/dev/null 2>&1; then
+        if systemctl list-unit-files ly.service 2>/dev/null | grep -q "ly.service"; then
             sudo systemctl enable ly.service 2>/dev/null || true
-        elif systemctl list-unit-files ly@.service >/dev/null 2>&1; then
+        elif systemctl list-unit-files ly@.service 2>/dev/null | grep -q "ly@"; then
             sudo systemctl enable ly@tty2.service 2>/dev/null || true
         fi
     fi

@@ -8,7 +8,7 @@ while pgrep -u $UID -x polybar >/dev/null; do sleep 0.1; done
 
 # Detect battery and adapter dynamically
 BATTERY_NAME=$(ls -1 /sys/class/power_supply/ 2>/dev/null | grep -E '^BAT' | head -n 1)
-ADAPTER_NAME=$(ls -1 /sys/class/power_supply/ 2>/dev/null | grep -vE '^BAT' | head -n 1)
+ADAPTER_NAME=$(ls -1 /sys/class/power_supply/ 2>/dev/null | grep -E '^(AC|ADP|A_C)' | head -n 1)
 
 if [ -n "$BATTERY_NAME" ]; then
     export POLYBAR_BATTERY_MODULE="battery"

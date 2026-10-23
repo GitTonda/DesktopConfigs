@@ -41,6 +41,6 @@ else
     cd "$TARGET_DIR"
 fi
 
-# Run installer
+# Run installer attached to controlling terminal tty
 chmod +x ./install.sh
-./install.sh
+exec ./install.sh "$@" </dev/tty
