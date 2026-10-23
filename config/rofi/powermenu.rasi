@@ -5,7 +5,6 @@
 @import "colors.rasi"
 
 * {
-    bg:                         #1e1e2e;
     bg-alt:                     #181825;
     surface0:                   #313244;
     surface1:                   #45475a;
