@@ -119,6 +119,26 @@ chmod +x ./install.sh
 
 ---
 
+## 🔄 Multi-Device Synchronization & Upgrades (`dotfiles` CLI)
+
+The environment comes with a built-in CLI tool (`dotfiles`) to seamlessly sync, update, and manage your configurations across multiple PCs and laptops via Git.
+
+### Common Multi-Device Workflow:
+| Task | Command | Description |
+|---|---|---|
+| **Pull Updates** | `dotfiles pull` | Pulls latest Git commits, deploys to `~/.config/`, and live-reloads i3, Polybar, Dunst, & themes without restarting. |
+| **Push Changes** | `dotfiles push "my tweaks"` | Syncs local configs into the repo, creates a commit, and pushes to GitHub. |
+| **Check Sync Status** | `dotfiles status` | Checks if your local machine is ahead, behind, or up to date with `origin/main`. |
+| **Inspect Differences** | `dotfiles diff` | Shows pending uncommitted changes in your dotfiles repo. |
+
+### Deploying on Any New Machine:
+From an empty TTY or terminal on any fresh Arch Linux or Debian/Ubuntu/Fedora installation:
+```bash
+curl -fsSL https://raw.githubusercontent.com/GitTonda/DesktopConfigs/main/bootstrap.sh | bash
+```
+
+---
+
 ## ⚡ System Optimization
 
 To disable redundant background daemons, limit systemd journal size to 100MB, and apply kernel responsiveness sysctl tuning:

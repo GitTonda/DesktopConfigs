@@ -207,6 +207,11 @@ cp "$DOTFILES_DIR/home/.nanorc" "$HOME/.nanorc"
 [ -f "$DOTFILES_DIR/home/.xinitrc" ] && cp "$DOTFILES_DIR/home/.xinitrc" "$HOME/.xinitrc"
 chmod +x "$HOME/.xinitrc" 2>/dev/null || true
 
+# Deploy dotfiles CLI management tool
+mkdir -p "$HOME/.local/bin"
+chmod +x "$DOTFILES_DIR/scripts/dotfiles"
+ln -sf "$DOTFILES_DIR/scripts/dotfiles" "$HOME/.local/bin/dotfiles"
+
 # Deploy desktop entry for wallpaper selector
 mkdir -p "$HOME/.local/share/applications"
 cat << EOF > "$HOME/.local/share/applications/wallpaper-picker.desktop"
