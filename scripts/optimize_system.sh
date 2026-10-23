@@ -18,10 +18,10 @@ echo "=========================================================="
 echo "[+] Disabling unnecessary background daemons..."
 
 SERVICES_TO_DISABLE=(
-    "ModemManager.service"        # Cellular modem manager (desktop has no WWAN)
-    "cups-browsed.service"       # Remote CUPS printer discovery (high RAM / network chatter)
-    "networkd-dispatcher.service"# Networkd dispatcher (Pop! uses NetworkManager)
-    "apport.service"             # Automatic crash reporting daemon
+    "ModemManager.service"
+    "cups-browsed.service"
+    "networkd-dispatcher.service"
+    "apport.service"
 )
 
 for svc in "${SERVICES_TO_DISABLE[@]}"; do
