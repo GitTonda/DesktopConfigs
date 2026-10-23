@@ -1,6 +1,6 @@
 /**
  * Rofi Modern Application Launcher - Catppuccin Mocha Grid
- * Enhanced with Hover-Select, Dual-Kawase Blur, Crisp Papirus Icons, and Flow Navigation
+ * Enhanced with High-Contrast Card Tiles, Hover-Select, Dual-Kawase Blur, and Papirus Icons
  */
 
 configuration {
@@ -41,7 +41,7 @@ window {
     location:                   center;
     anchor:                     center;
     fullscreen:                 false;
-    width:                      880px;
+    width:                      920px;
     border:                     2px solid;
     border-color:               @accent;
     border-radius:              0px;
@@ -112,24 +112,24 @@ element {
     enabled:                    true;
     orientation:                vertical;
     spacing:                    8px;
-    padding:                    12px 6px;
-    border:                     2px solid;
-    border-color:               transparent;
+    padding:                    14px 8px;
+    border:                     1px solid;
+    border-color:               #ffffff22;
     border-radius:              0px;
-    background-color:           transparent;
+    background-color:           #ffffff14;
     text-color:                 @fg;
     cursor:                     pointer;
 }
 
 element normal.normal {
-    background-color:           transparent;
-    border-color:               transparent;
+    background-color:           #ffffff14;
+    border-color:               #ffffff22;
     text-color:                 @fg;
 }
 
 element normal.active {
-    background-color:           transparent;
-    border-color:               @surface0;
+    background-color:           #ffffff14;
+    border-color:               @accent;
     text-color:                 @accent;
 }
 
@@ -139,14 +139,14 @@ element normal.urgent {
 }
 
 element alternate.normal {
-    background-color:           transparent;
-    border-color:               transparent;
+    background-color:           #ffffff14;
+    border-color:               #ffffff22;
     text-color:                 @fg;
 }
 
 element alternate.active {
-    background-color:           transparent;
-    border-color:               @surface0;
+    background-color:           #ffffff14;
+    border-color:               @accent;
     text-color:                 @accent;
 }
 
@@ -188,5 +188,5 @@ element-text {
     cursor:                     inherit;
     vertical-align:             0.5;
     horizontal-align:           0.5;
-    font:                       "JetBrainsMono Nerd Font 9.5";
+    font:                       "JetBrainsMono Nerd Font 9";
 }

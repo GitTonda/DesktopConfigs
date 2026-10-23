@@ -282,6 +282,17 @@ echo "==> Deploying wallpapers..."
 mkdir -p "$HOME/Pictures/Wallpapers"
 cp -r "$DOTFILES_DIR/wallpapers/"* "$HOME/Pictures/Wallpapers/"
 
+# Deploy custom icons (such as langflow and rofi)
+if [ -d "$DOTFILES_DIR/icons" ]; then
+    echo "==> Deploying custom icons..."
+    mkdir -p "$HOME/.local/share/icons/hicolor/scalable/apps"
+    cp -r "$DOTFILES_DIR/icons/"* "$HOME/.local/share/icons/" 2>/dev/null || true
+    cp -r "$DOTFILES_DIR/icons/"*.svg "$HOME/.local/share/icons/hicolor/scalable/apps/" 2>/dev/null || true
+    if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+        gtk-update-icon-cache "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
+    fi
+fi
+
 # 6. Ensure executable permissions on scripts
 chmod +x "$HOME/.config/polybar/launch.sh"
 chmod +x "$HOME/.config/polybar/scripts/"*.sh 2>/dev/null || true
