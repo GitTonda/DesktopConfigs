@@ -8,6 +8,12 @@ echo "      Antigravity / Catppuccin Mocha Dotfiles Installer   "
 echo "=========================================================="
 echo ""
 
+if [ "$EUID" -eq 0 ]; then
+    echo "[-] Please run this installer as your regular user (with sudo access), NOT as root."
+    echo "    Running as root would place configurations in /root instead of your home directory."
+    exit 1
+fi
+
 # 1. Package Installation
 if command -v pacman >/dev/null 2>&1; then
     echo "==> Detected Arch Linux. Installing complete desktop environment..."
@@ -16,6 +22,7 @@ if command -v pacman >/dev/null 2>&1; then
         xorg-xinit \
         xorg-xrandr \
         xorg-xmodmap \
+        mesa \
         i3-wm \
         polybar \
         alacritty \

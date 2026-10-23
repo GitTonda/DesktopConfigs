@@ -9,6 +9,12 @@ echo "    Bootstrap: Antigravity Catppuccin Mocha Setup         "
 echo "=========================================================="
 echo ""
 
+if [ "$EUID" -eq 0 ]; then
+    echo "[-] Please run this bootstrap script as your regular user (with sudo access), NOT as root."
+    echo "    Running as root would place configurations in /root instead of your home directory."
+    exit 1
+fi
+
 # Ensure git is installed
 if ! command -v git >/dev/null 2>&1; then
     echo "==> Git is required. Installing git..."
