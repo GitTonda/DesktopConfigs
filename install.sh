@@ -126,6 +126,7 @@ echo "==> Deploying configurations..."
 mkdir -p "$HOME/.config"
 cp -r "$DOTFILES_DIR/config/"* "$HOME/.config/"
 cp "$DOTFILES_DIR/home/.nanorc" "$HOME/.nanorc"
+[ -f "$DOTFILES_DIR/home/.xinputrc" ] && cp "$DOTFILES_DIR/home/.xinputrc" "$HOME/.xinputrc"
 
 # 5. Deploy Wallpapers
 echo "==> Deploying wallpapers..."
@@ -134,7 +135,9 @@ cp -r "$DOTFILES_DIR/wallpapers/"* "$HOME/Pictures/Wallpapers/"
 
 # 6. Ensure executable permissions on scripts
 chmod +x "$HOME/.config/polybar/launch.sh"
+chmod +x "$HOME/.config/polybar/scripts/"*.sh 2>/dev/null || true
 chmod +x "$HOME/.config/rofi/powermenu.sh"
+chmod +x "$HOME/.config/rofi/wifi.sh" "$HOME/.config/rofi/wifi.py" 2>/dev/null || true
 chmod +x "$HOME/.config/i3/screenshot.sh"
 
 # 7. Initialize wallpaper & create persistent ~/.fehbg
