@@ -30,6 +30,8 @@ Designed for power users, developers, and keyboard-driven workflows. Fully porta
 
 ## ⌨️ Keybindings Cheat-Sheet
 
+> 📖 **Full Keybindings Reference:** See [KEYBINDINGS.md](KEYBINDINGS.md) for the complete searchable cheat-sheet, top bar interactions, and how to create/edit custom shortcuts.
+
 Modifier Key: **`Super`** (Windows Key)
 
 ### Applications & Applets
@@ -38,12 +40,13 @@ Modifier Key: **`Super`** (Windows Key)
 | `Super + Return` | Launch Terminal (**Alacritty**) |
 | `Super + Shift + Return` | Launch File Manager (**Ranger**) |
 | `Super + D` | Application Launcher (**Rofi**) |
+| `Super + Shift + M` | System Monitor Modal (**btop**) |
+| `Super + Shift + G` | GPU Monitor Modal (**nvitop / nvtop**) |
 | `Super + Shift + W` | Interactive Wi-Fi Applet (**Rofi Wi-Fi**) |
 | `Super + Shift + T` | Interactive Bluetooth Applet & Customizer (**Rofi Bluetooth**) |
 | `Super + Shift + B` | Wallpaper Selector (**Rofi / Visual Gallery**) |
 | `Super + Shift + A` | Audio Mixer Modal (**Alsamixer**) |
-| `Super + Shift + M` | System Monitor Modal (**btop**) |
-| `Super + Shift + G` | GPU Monitor Modal (**nvitop / nvtop**) |
+| `Super + F1` or `Super + /` | **Shortcuts Manager & Live Cheat-Sheet** (**Rofi**) |
 | `Super + Q` | **Close / Kill focused window** |
 | `F13` or `Print` or `Super + Shift + S` | **Instant Crop & Copy Screenshot to Clipboard** |
 | `Shift + Print` | Full-screen screenshot to clipboard |

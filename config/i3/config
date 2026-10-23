@@ -69,6 +69,8 @@ bindsym $mod+Shift+w exec ~/.config/rofi/wifi.sh
 bindsym $mod+Shift+t exec ~/.config/rofi/bluetooth.sh
 bindsym $mod+Shift+a exec alacritty --class FloatingAudio -e alsamixer
 bindsym $mod+Shift+b exec ~/.config/rofi/wallpaper.sh
+bindsym $mod+F1 exec ~/.config/rofi/shortcuts.sh
+bindsym $mod+slash exec ~/.config/rofi/shortcuts.sh
 
 # Launch application launcher (Rofi)
 bindsym $mod+d exec rofi -show drun
@@ -231,3 +233,8 @@ exec --no-startup-id ~/.fehbg
 
 # Notification daemon (Dynamic DPI & Gap Detection)
 exec_always --no-startup-id ~/.config/dunst/launch.sh
+
+# ==============================================================================
+# Custom User Shortcuts
+# ==============================================================================
+include ~/.config/i3/custom_shortcuts.conf

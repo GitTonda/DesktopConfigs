@@ -243,6 +243,7 @@ chmod +x "$DOTFILES_DIR/scripts/dotfiles"
 ln -sf "$DOTFILES_DIR/scripts/dotfiles" "$HOME/.local/bin/dotfiles"
 ln -sf "$DOTFILES_DIR/scripts/dotfiles" "$HOME/.local/bin/update-desktop"
 ln -sf "$DOTFILES_DIR/scripts/dotfiles" "$HOME/.local/bin/desktop-update"
+ln -sf "$HOME/.config/rofi/shortcuts.py" "$HOME/.local/bin/shortcuts-manager"
 
 # Ensure ~/.local/bin is in PATH for bash
 if [ -f "$HOME/.bashrc" ] && ! grep -q '\.local/bin' "$HOME/.bashrc"; then
@@ -253,6 +254,7 @@ fi
 if command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
     sudo ln -sf "$DOTFILES_DIR/scripts/dotfiles" "/usr/local/bin/update-desktop" 2>/dev/null || true
     sudo ln -sf "$DOTFILES_DIR/scripts/dotfiles" "/usr/local/bin/desktop-update" 2>/dev/null || true
+    sudo ln -sf "$HOME/.config/rofi/shortcuts.py" "/usr/local/bin/shortcuts-manager" 2>/dev/null || true
 fi
 
 # Deploy desktop entry for wallpaper selector
@@ -282,6 +284,7 @@ chmod +x "$HOME/.config/dunst/scripts/"*.sh 2>/dev/null || true
 chmod +x "$HOME/.config/rofi/powermenu.sh"
 chmod +x "$HOME/.config/rofi/wifi.sh" "$HOME/.config/rofi/wifi.py" 2>/dev/null || true
 chmod +x "$HOME/.config/rofi/bluetooth.sh" "$HOME/.config/rofi/bluetooth.py" 2>/dev/null || true
+chmod +x "$HOME/.config/rofi/shortcuts.sh" "$HOME/.config/rofi/shortcuts.py" 2>/dev/null || true
 chmod +x "$HOME/.config/rofi/wallpaper.sh" 2>/dev/null || true
 chmod +x "$HOME/.config/theme/apply-theme.sh" 2>/dev/null || true
 chmod +x "$HOME/.config/i3/screenshot.sh"

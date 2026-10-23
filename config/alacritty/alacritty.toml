@@ -27,37 +27,37 @@ style = "Italic"
 # Catppuccin Mocha Colorway
 # ==============================================================================
 [colors.primary]
-background = "#111317"
+background = "#171211"
 foreground = "#cdd6f4"
 dim_foreground = "#7f849c"
 bright_foreground = "#cdd6f4"
 
 [colors.cursor]
-text = "#111317"
-cursor = "#89b4fa"
+text = "#171211"
+cursor = "#f3c0b4"
 
 [colors.vi_mode_cursor]
-text = "#111317"
-cursor = "#89b4fa"
+text = "#171211"
+cursor = "#f3c0b4"
 
 [colors.selection]
-text = "#111317"
-background = "#89b4fa"
+text = "#171211"
+background = "#f3c0b4"
 
 [colors.search.matches]
 foreground = "#1e1e2e"
 background = "#a6adc8"
 
 [colors.search.focused_match]
-foreground = "#111317"
-background = "#89b4fa"
+foreground = "#171211"
+background = "#f3c0b4"
 
 [colors.normal]
 black = "#45475a"
 red = "#f38ba8"
 green = "#a6e3a1"
 yellow = "#f9e2af"
-blue = "#89b4fa"
+blue = "#f3c0b4"
 magenta = "#f5c2e7"
 cyan = "#94e2d5"
 white = "#bac2de"
@@ -67,7 +67,7 @@ black = "#585b70"
 red = "#f38ba8"
 green = "#a6e3a1"
 yellow = "#f9e2af"
-blue = "#89b4fa"
+blue = "#f3c0b4"
 magenta = "#f5c2e7"
 cyan = "#94e2d5"
 white = "#a6adc8"
