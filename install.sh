@@ -18,61 +18,68 @@ fi
 if command -v pacman >/dev/null 2>&1; then
     echo "==> Detected Arch Linux. Installing complete desktop environment..."
 
-    # Pre-resolve PulseAudio / PipeWire conflicts for non-interactive pacman
-    if pacman -Qq pulseaudio >/dev/null 2>&1 || pacman -Qq pipewire-media-session >/dev/null 2>&1; then
-        echo "==> Replacing legacy PulseAudio / media-session with modern PipeWire & WirePlumber..."
-        sudo pacman -Rdd --noconfirm pulseaudio pulseaudio-alsa pulseaudio-bluetooth pipewire-media-session 2>/dev/null || true
+    # Pre-resolve any audio stack conflicts (pulseaudio* vs pipewire, jack2 vs pipewire-jack, media-session vs wireplumber)
+    CONFLICTING_AUDIO=$(pacman -Qq 2>/dev/null | grep -E '^(pulseaudio|jack2|pipewire-media-session)' || true)
+    if [ -n "$CONFLICTING_AUDIO" ]; then
+        echo "==> Removing conflicting legacy audio packages: $CONFLICTING_AUDIO..."
+        sudo pacman -Rdd --noconfirm $CONFLICTING_AUDIO 2>/dev/null || true
     fi
 
-    sudo pacman -Syu --needed --noconfirm \
-        xorg-server \
-        xorg-xinit \
-        xorg-xrandr \
-        xorg-xmodmap \
-        xorg-xauth \
-        xorg-xrdb \
-        xorg-xwininfo \
-        xf86-input-libinput \
-        mesa \
-        i3-wm \
-        polybar \
-        alacritty \
-        picom \
-        rofi \
-        feh \
-        dunst \
-        libnotify \
-        pipewire \
-        pipewire-pulse \
-        pipewire-alsa \
-        wireplumber \
-        alsa-utils \
-        libpulse \
-        networkmanager \
-        bluez \
-        bluez-utils \
-        brightnessctl \
-        playerctl \
-        maim \
-        xclip \
-        xdotool \
-        which \
-        ranger \
-        mpv \
-        ncdu \
-        btop \
-        nvtop \
-        uv \
-        nano \
-        curl \
-        unzip \
-        git \
-        python \
-        ffmpeg \
-        ttf-jetbrains-mono-nerd \
-        ttf-font-awesome \
-        noto-fonts-emoji \
+    PACMAN_PKGS=(
+        xorg-server
+        xorg-xinit
+        xorg-xrandr
+        xorg-xmodmap
+        xorg-xauth
+        xorg-xrdb
+        xorg-xwininfo
+        xf86-input-libinput
+        mesa
+        i3-wm
+        polybar
+        alacritty
+        picom
+        rofi
+        feh
+        dunst
+        libnotify
+        pipewire
+        pipewire-pulse
+        pipewire-alsa
+        wireplumber
+        alsa-utils
+        libpulse
+        networkmanager
+        bluez
+        bluez-utils
+        brightnessctl
+        playerctl
+        maim
+        xclip
+        xdotool
+        which
+        ranger
+        mpv
+        ncdu
+        btop
+        nvtop
+        uv
+        nano
+        curl
+        unzip
+        git
+        python
+        ffmpeg
+        ttf-jetbrains-mono-nerd
+        otf-font-awesome
+        noto-fonts-emoji
         ly
+    )
+
+    if ! sudo pacman -Syu --needed --noconfirm "${PACMAN_PKGS[@]}"; then
+        echo "==> Pacman encountered an interactive prompt. Retrying with interactive confirmation..."
+        sudo pacman -Syu --needed "${PACMAN_PKGS[@]}" </dev/tty
+    fi
 
     # Ensure user is in necessary hardware groups (video, audio, input) for backlight and sound
     echo "==> Configuring user hardware permissions..."
