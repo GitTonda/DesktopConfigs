@@ -197,6 +197,20 @@ cp "$DOTFILES_DIR/home/.nanorc" "$HOME/.nanorc"
 [ -f "$DOTFILES_DIR/home/.xinitrc" ] && cp "$DOTFILES_DIR/home/.xinitrc" "$HOME/.xinitrc"
 chmod +x "$HOME/.xinitrc" 2>/dev/null || true
 
+# Deploy desktop entry for wallpaper selector
+mkdir -p "$HOME/.local/share/applications"
+cat << EOF > "$HOME/.local/share/applications/wallpaper-picker.desktop"
+[Desktop Entry]
+Type=Application
+Name=Wallpaper Selector
+Comment=Change desktop wallpaper with Rofi or Visual Gallery
+Exec=$HOME/.config/rofi/wallpaper.sh
+Icon=preferences-desktop-wallpaper
+Terminal=false
+Categories=Utility;Settings;DesktopSettings;
+Keywords=wallpaper;background;feh;catppuccin;
+EOF
+
 # 5. Deploy Wallpapers
 echo "==> Deploying wallpapers..."
 mkdir -p "$HOME/Pictures/Wallpapers"
@@ -208,6 +222,7 @@ chmod +x "$HOME/.config/polybar/scripts/"*.sh 2>/dev/null || true
 chmod +x "$HOME/.config/dunst/scripts/"*.sh 2>/dev/null || true
 chmod +x "$HOME/.config/rofi/powermenu.sh"
 chmod +x "$HOME/.config/rofi/wifi.sh" "$HOME/.config/rofi/wifi.py" 2>/dev/null || true
+chmod +x "$HOME/.config/rofi/wallpaper.sh" 2>/dev/null || true
 chmod +x "$HOME/.config/i3/screenshot.sh"
 
 # 7. Initialize wallpaper & create persistent ~/.fehbg

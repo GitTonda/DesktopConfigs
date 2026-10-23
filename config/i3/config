@@ -17,11 +17,11 @@ floating_modifier $mod
 gaps inner 5
 gaps outer 2
 
-default_border pixel 3
-default_floating_border pixel 3
+default_border pixel 2
+default_floating_border pixel 2
 
 # Enforce border on all windows
-for_window [class="^.*"] border pixel 3
+for_window [class="^.*"] border pixel 2
 
 # Prevent dialogs, popups, and tray applets from tiling as full windows
 for_window [window_role="pop-up"] floating enable
@@ -68,6 +68,7 @@ bindsym $mod+Shift+m exec alacritty --class FloatingBtop -e btop
 # Quick applet keybindings
 bindsym $mod+Shift+w exec ~/.config/rofi/wifi.sh
 bindsym $mod+Shift+a exec alacritty --class FloatingAudio -e alsamixer
+bindsym $mod+Shift+b exec ~/.config/rofi/wallpaper.sh
 
 # Launch application launcher (Rofi)
 bindsym $mod+d exec rofi -show drun

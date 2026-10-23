@@ -39,6 +39,7 @@ Modifier Key: **`Super`** (Windows Key)
 | `Super + Shift + Return` | Launch File Manager (**Ranger**) |
 | `Super + D` | Application Launcher (**Rofi**) |
 | `Super + Shift + W` | Interactive Wi-Fi Applet (**Rofi Wi-Fi**) |
+| `Super + Shift + B` | Wallpaper Selector (**Rofi / Visual Gallery**) |
 | `Super + Shift + A` | Audio Mixer Modal (**Alsamixer**) |
 | `Super + Shift + M` | System Monitor Modal (**btop**) |
 | `Super + Q` | **Close / Kill focused window** |
