@@ -1,22 +1,21 @@
 /**
- * Rofi Terminal Vibe - Catppuccin Mocha Alacritty Style
+ * Rofi Modern Grid Application Launcher
+ * Catppuccin Mocha Clean Minimal Grid
  */
 
 configuration {
-    modi:                       "drun,run,window";
+    modi:                       "drun,run";
     show-icons:                 true;
-    display-drun:               "󰅂 run";
-    display-run:                " cli";
-    display-window:             "󰕰 win";
+    display-drun:               "󰍉";
+    display-run:                "";
     drun-display-format:        "{name}";
-    window-format:              "{w} · {c} · {t}";
     font:                       "JetBrainsMono Nerd Font 10.5";
 }
 
 @import "colors.rasi"
 
 * {
-    bg-alt:                     #181825;
+    bg-base:                    #11111b;
     surface0:                   #313244;
     surface1:                   #45475a;
     fg:                         #cdd6f4;
@@ -34,12 +33,13 @@ window {
     location:                   center;
     anchor:                     center;
     fullscreen:                 false;
-    width:                      620px;
+    width:                      880px;
     border:                     2px solid;
     border-color:               @accent;
     border-radius:              0px;
     background-color:           @bg;
     cursor:                     "default";
+    padding:                    24px;
 }
 
 mainbox {
@@ -47,44 +47,44 @@ mainbox {
     spacing:                    0px;
     padding:                    0px;
     background-color:           transparent;
-    children:                   [ "inputbar", "listview", "mode-switcher" ];
+    children:                   [ "inputbar", "listview" ];
 }
 
 inputbar {
     enabled:                    true;
     spacing:                    12px;
-    padding:                    14px 16px;
-    background-color:           @bg-alt;
-    border:                     0px 0px 1px 0px solid;
+    padding:                    12px 18px;
+    margin:                     0px 0px 20px 0px;
+    background-color:           #181825;
+    border:                     1px solid;
     border-color:               @surface0;
+    border-radius:              0px;
     children:                   [ "prompt", "entry" ];
 }
 
 prompt {
     enabled:                    true;
-    padding:                    4px 10px;
-    border-radius:              0px;
-    background-color:           @accent;
-    text-color:                 #1e1e2e;
-    font:                       "JetBrainsMono Nerd Font Bold 10";
+    padding:                    2px 0px 0px 0px;
+    background-color:           transparent;
+    text-color:                 @accent;
+    font:                       "JetBrainsMono Nerd Font Bold 12";
 }
 
 entry {
     enabled:                    true;
-    padding:                    4px 6px;
-    border-radius:              0px;
+    padding:                    2px 0px;
     background-color:           transparent;
     text-color:                 @fg;
     cursor:                     text;
-    placeholder:                "search applications or commands...";
+    placeholder:                "Cerca applicazioni...";
     placeholder-color:          @fg-dim;
     font:                       "JetBrainsMono Nerd Font 10.5";
 }
 
 listview {
     enabled:                    true;
-    columns:                    1;
-    lines:                      8;
+    columns:                    5;
+    lines:                      4;
     cycle:                      true;
     dynamic:                    true;
     scrollbar:                  false;
@@ -92,34 +92,85 @@ listview {
     reverse:                    false;
     fixed-height:               true;
     fixed-columns:              true;
-    spacing:                    4px;
-    padding:                    10px 12px;
-    background-color:           @bg;
+    spacing:                    12px;
+    padding:                    0px;
+    border:                     0px solid;
+    border-color:               transparent;
+    background-color:           transparent;
     cursor:                     "default";
 }
 
 element {
     enabled:                    true;
-    spacing:                    12px;
-    padding:                    8px 12px;
+    orientation:                vertical;
+    spacing:                    8px;
+    padding:                    14px 8px;
+    border:                     1px solid;
+    border-color:               #31324440;
     border-radius:              0px;
-    background-color:           transparent;
+    background-color:           #18182560;
     text-color:                 @fg;
     cursor:                     pointer;
 }
 
+element normal.normal {
+    background-color:           #18182560;
+    border-color:               #31324440;
+    text-color:                 @fg;
+}
+
+element normal.active {
+    background-color:           #18182560;
+    border-color:               @accent;
+    text-color:                 @accent;
+}
+
+element normal.urgent {
+    background-color:           @urgent;
+    text-color:                 @bg-base;
+}
+
+element alternate.normal {
+    background-color:           #18182560;
+    border-color:               #31324440;
+    text-color:                 @fg;
+}
+
+element alternate.active {
+    background-color:           #18182560;
+    border-color:               @accent;
+    text-color:                 @accent;
+}
+
+element alternate.urgent {
+    background-color:           @urgent;
+    text-color:                 @bg-base;
+}
+
 element selected.normal {
     background-color:           @surface0;
-    text-color:                 @accent;
-    border:                     0px 0px 0px 3px solid;
     border-color:               @accent;
+    text-color:                 @accent;
+}
+
+element selected.active {
+    background-color:           @surface0;
+    border-color:               @accent;
+    text-color:                 @accent;
+}
+
+element selected.urgent {
+    background-color:           @urgent;
+    text-color:                 @bg-base;
 }
 
 element-icon {
     background-color:           transparent;
     text-color:                 inherit;
-    size:                       22px;
+    size:                       42px;
     cursor:                     inherit;
+    horizontal-align:           0.5;
+    vertical-align:             0.5;
 }
 
 element-text {
@@ -128,31 +179,6 @@ element-text {
     highlight:                  inherit;
     cursor:                     inherit;
     vertical-align:             0.5;
-    horizontal-align:           0.0;
-    font:                       "JetBrainsMono Nerd Font 10.5";
-}
-
-mode-switcher {
-    enabled:                    true;
-    spacing:                    0px;
-    padding:                    0px;
-    background-color:           @bg-alt;
-    border:                     1px 0px 0px 0px solid;
-    border-color:               @surface0;
-}
-
-button {
-    padding:                    8px 16px;
-    border-radius:              0px;
-    background-color:           transparent;
-    text-color:                 @fg-dim;
-    cursor:                     pointer;
-    font:                       "JetBrainsMono Nerd Font Bold 10";
-}
-
-button selected {
-    background-color:           @surface0;
-    text-color:                 @accent;
-    border:                     0px 0px 2px 0px solid;
-    border-color:               @accent;
+    horizontal-align:           0.5;
+    font:                       "JetBrainsMono Nerd Font 10";
 }
