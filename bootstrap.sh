@@ -19,20 +19,34 @@ echo ""
 if [ "$EUID" -eq 0 ]; then
     echo "[-] Please run this bootstrap script as your regular user (with sudo access), NOT as root."
     echo "    Running as root would place configurations in /root instead of your home directory."
+    echo ""
+    echo "    If you just installed Arch Linux and are logged in as root, create your user first:"
+    echo "      pacman -S --needed sudo"
+    echo "      useradd -m -G wheel,video,audio,input -s /bin/bash <username>"
+    echo "      passwd <username>"
+    echo "      echo '%wheel ALL=(ALL:ALL) ALL' > /etc/sudoers.d/wheel"
+    echo "      su - <username>"
+    echo "      curl -fsSL https://raw.githubusercontent.com/GitTonda/DesktopConfigs/main/bootstrap.sh | bash"
     exit 1
 fi
 
-# Ensure git is installed
-if ! command -v git >/dev/null 2>&1; then
-    echo "==> Git is required. Installing git..."
+# Ensure sudo is installed
+if ! command -v sudo >/dev/null 2>&1; then
+    echo "[-] Error: 'sudo' is required. Please install sudo and grant your user privileges."
+    exit 1
+fi
+
+# Ensure git and curl are installed
+if ! command -v git >/dev/null 2>&1 || ! command -v curl >/dev/null 2>&1; then
+    echo "==> Git / Curl required. Installing..."
     if command -v pacman >/dev/null 2>&1; then
-        sudo pacman -Syu --needed --noconfirm git
+        sudo pacman -Syu --needed --noconfirm git curl
     elif command -v apt >/dev/null 2>&1; then
-        sudo apt update && sudo apt install -y git
+        sudo apt update && sudo apt install -y git curl
     elif command -v dnf >/dev/null 2>&1; then
-        sudo dnf install -y git
+        sudo dnf install -y git curl
     else
-        echo "[-] Error: Please install git and re-run."
+        echo "[-] Error: Please install git and curl, then re-run."
         exit 1
     fi
 fi

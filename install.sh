@@ -22,6 +22,9 @@ if command -v pacman >/dev/null 2>&1; then
         xorg-xinit \
         xorg-xrandr \
         xorg-xmodmap \
+        xorg-xauth \
+        xorg-xrdb \
+        xorg-xwininfo \
         xf86-input-libinput \
         mesa \
         i3-wm \
@@ -46,11 +49,13 @@ if command -v pacman >/dev/null 2>&1; then
         maim \
         xclip \
         xdotool \
+        which \
         ranger \
         mpv \
         ncdu \
         btop \
         nvtop \
+        uv \
         nano \
         curl \
         unzip \
@@ -217,6 +222,11 @@ ln -sf "$DOTFILES_DIR/scripts/dotfiles" "$HOME/.local/bin/dotfiles"
 ln -sf "$DOTFILES_DIR/scripts/dotfiles" "$HOME/.local/bin/update-desktop"
 ln -sf "$DOTFILES_DIR/scripts/dotfiles" "$HOME/.local/bin/desktop-update"
 
+# Ensure ~/.local/bin is in PATH for bash
+if [ -f "$HOME/.bashrc" ] && ! grep -q '\.local/bin' "$HOME/.bashrc"; then
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
+fi
+
 # Install system-wide update command if sudo available
 if command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
     sudo ln -sf "$DOTFILES_DIR/scripts/dotfiles" "/usr/local/bin/update-desktop" 2>/dev/null || true
@@ -282,11 +292,18 @@ if command -v ly >/dev/null 2>&1 || command -v ly-dm >/dev/null 2>&1; then
     [ -f "$DOTFILES_DIR/config/ly/config.lua" ] && sudo cp "$DOTFILES_DIR/config/ly/config.lua" /etc/ly/config.lua 2>/dev/null || true
 
     if command -v systemctl >/dev/null 2>&1; then
-        echo "==> Enabling Ly display manager..."
-        if systemctl list-unit-files ly.service 2>/dev/null | grep -q "ly.service"; then
-            sudo systemctl enable ly.service 2>/dev/null || true
-        elif systemctl list-unit-files ly@.service 2>/dev/null | grep -q "ly@"; then
+        echo "==> Enabling Ly display manager & configuring systemd boot..."
+        sudo systemctl set-default graphical.target 2>/dev/null || true
+
+        # Modern Arch template service
+        if systemctl list-unit-files 'ly@*.service' 2>/dev/null | grep -q "ly@"; then
+            sudo systemctl disable getty@tty2.service 2>/dev/null || true
             sudo systemctl enable ly@tty2.service 2>/dev/null || true
+        elif systemctl list-unit-files ly.service 2>/dev/null | grep -q "ly.service"; then
+            sudo systemctl enable ly.service 2>/dev/null || true
+        else
+            sudo systemctl disable getty@tty2.service 2>/dev/null || true
+            sudo systemctl enable ly@tty2.service 2>/dev/null || sudo systemctl enable ly.service 2>/dev/null || true
         fi
     fi
 fi
