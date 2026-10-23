@@ -17,6 +17,13 @@ fi
 # 1. Package Installation
 if command -v pacman >/dev/null 2>&1; then
     echo "==> Detected Arch Linux. Installing complete desktop environment..."
+
+    # Pre-resolve PulseAudio / PipeWire conflicts for non-interactive pacman
+    if pacman -Qq pulseaudio >/dev/null 2>&1 || pacman -Qq pipewire-media-session >/dev/null 2>&1; then
+        echo "==> Replacing legacy PulseAudio / media-session with modern PipeWire & WirePlumber..."
+        sudo pacman -Rdd --noconfirm pulseaudio pulseaudio-alsa pulseaudio-bluetooth pipewire-media-session 2>/dev/null || true
+    fi
+
     sudo pacman -Syu --needed --noconfirm \
         xorg-server \
         xorg-xinit \
@@ -88,6 +95,10 @@ if command -v pacman >/dev/null 2>&1; then
 
 elif command -v apt >/dev/null 2>&1; then
     echo "==> Detected Debian/Ubuntu/Pop!_OS. Installing packages..."
+    if dpkg -l 2>/dev/null | grep -q "^ii\s*pulseaudio\s"; then
+        echo "==> Removing legacy PulseAudio daemon in favor of PipeWire..."
+        sudo apt remove -y pulseaudio 2>/dev/null || true
+    fi
     sudo apt update
     sudo apt install -y \
         xorg \
@@ -130,6 +141,10 @@ elif command -v apt >/dev/null 2>&1; then
 
 elif command -v dnf >/dev/null 2>&1; then
     echo "==> Detected Fedora. Installing packages..."
+    if rpm -q pulseaudio >/dev/null 2>&1; then
+        echo "==> Swapping PulseAudio for PipeWire..."
+        sudo dnf swap -y pulseaudio pipewire-pulseaudio 2>/dev/null || true
+    fi
     sudo dnf install -y \
         xorg-x11-server-Xorg \
         xorg-x11-xinit \
