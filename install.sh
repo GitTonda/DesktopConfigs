@@ -9,34 +9,13 @@ echo "=========================================================="
 echo ""
 
 # 1. Package Installation
-if command -v apt >/dev/null 2>&1; then
-    echo "==> Detected Debian/Ubuntu/Pop!_OS. Installing packages..."
-    sudo apt update
-    sudo apt install -y \
-        i3 \
-        polybar \
-        alacritty \
-        picom \
-        rofi \
-        feh \
-        dunst \
-        maim \
-        xclip \
-        xdotool \
-        brightnessctl \
-        playerctl \
-        ranger \
-        mpv \
-        ncdu \
-        fonts-font-awesome \
-        btop \
-        network-manager-applet \
-        nano \
-        curl \
-        unzip
-elif command -v pacman >/dev/null 2>&1; then
-    echo "==> Detected Arch Linux. Installing packages..."
+if command -v pacman >/dev/null 2>&1; then
+    echo "==> Detected Arch Linux. Installing complete desktop environment..."
     sudo pacman -Syu --needed --noconfirm \
+        xorg-server \
+        xorg-xinit \
+        xorg-xrandr \
+        xorg-xmodmap \
         i3-wm \
         polybar \
         alacritty \
@@ -44,24 +23,46 @@ elif command -v pacman >/dev/null 2>&1; then
         rofi \
         feh \
         dunst \
+        pipewire \
+        pipewire-pulse \
+        pipewire-alsa \
+        wireplumber \
+        alsa-utils \
+        libpulse \
+        networkmanager \
+        brightnessctl \
+        playerctl \
         maim \
         xclip \
         xdotool \
-        brightnessctl \
-        playerctl \
         ranger \
         mpv \
         ncdu \
-        ttf-font-awesome \
         btop \
-        network-manager-applet \
         nano \
-        ly \
         curl \
-        unzip
-elif command -v dnf >/dev/null 2>&1; then
-    echo "==> Detected Fedora. Installing packages..."
-    sudo dnf install -y \
+        unzip \
+        git \
+        python \
+        ttf-jetbrains-mono-nerd \
+        ttf-font-awesome \
+        noto-fonts-emoji \
+        ly
+
+    # Ensure NetworkManager is enabled
+    if command -v systemctl >/dev/null 2>&1; then
+        echo "==> Enabling NetworkManager..."
+        sudo systemctl enable NetworkManager.service 2>/dev/null || true
+    fi
+
+elif command -v apt >/dev/null 2>&1; then
+    echo "==> Detected Debian/Ubuntu/Pop!_OS. Installing packages..."
+    sudo apt update
+    sudo apt install -y \
+        xorg \
+        xinit \
+        x11-xserver-utils \
+        x11-xkb-utils \
         i3 \
         polybar \
         alacritty \
@@ -69,20 +70,62 @@ elif command -v dnf >/dev/null 2>&1; then
         rofi \
         feh \
         dunst \
+        pipewire \
+        pipewire-pulse \
+        pipewire-alsa \
+        wireplumber \
+        alsa-utils \
+        pulseaudio-utils \
+        network-manager \
+        brightnessctl \
+        playerctl \
         maim \
         xclip \
         xdotool \
-        brightnessctl \
-        playerctl \
         ranger \
         mpv \
         ncdu \
-        fontawesome-fonts \
         btop \
-        network-manager-applet \
         nano \
         curl \
-        unzip
+        unzip \
+        git \
+        python3 \
+        fonts-font-awesome
+
+elif command -v dnf >/dev/null 2>&1; then
+    echo "==> Detected Fedora. Installing packages..."
+    sudo dnf install -y \
+        xorg-x11-server-Xorg \
+        xorg-x11-xinit \
+        i3 \
+        polybar \
+        alacritty \
+        picom \
+        rofi \
+        feh \
+        dunst \
+        pipewire \
+        pipewire-pulseaudio \
+        wireplumber \
+        alsa-utils \
+        pulseaudio-utils \
+        NetworkManager \
+        brightnessctl \
+        playerctl \
+        maim \
+        xclip \
+        xdotool \
+        ranger \
+        mpv \
+        ncdu \
+        btop \
+        nano \
+        curl \
+        unzip \
+        git \
+        python3 \
+        fontawesome-fonts
 else
     echo "==> Warning: Unknown package manager. Please ensure required packages are installed."
 fi
@@ -119,6 +162,9 @@ done
 if [ -f "$HOME/.nanorc" ]; then
     cp "$HOME/.nanorc" "$BACKUP_DIR/" 2>/dev/null || true
 fi
+if [ -f "$HOME/.xinitrc" ]; then
+    cp "$HOME/.xinitrc" "$BACKUP_DIR/" 2>/dev/null || true
+fi
 
 # 4. Deploy Dotfiles
 echo ""
@@ -127,6 +173,8 @@ mkdir -p "$HOME/.config"
 cp -r "$DOTFILES_DIR/config/"* "$HOME/.config/"
 cp "$DOTFILES_DIR/home/.nanorc" "$HOME/.nanorc"
 [ -f "$DOTFILES_DIR/home/.xinputrc" ] && cp "$DOTFILES_DIR/home/.xinputrc" "$HOME/.xinputrc"
+[ -f "$DOTFILES_DIR/home/.xinitrc" ] && cp "$DOTFILES_DIR/home/.xinitrc" "$HOME/.xinitrc"
+chmod +x "$HOME/.xinitrc" 2>/dev/null || true
 
 # 5. Deploy Wallpapers
 echo "==> Deploying wallpapers..."
@@ -153,19 +201,18 @@ EOF
 fi
 
 # 8. Setup Ly Display Manager (if installed)
-if command -v ly-dm >/dev/null 2>&1 || command -v ly >/dev/null 2>&1; then
-    if [ -f "$DOTFILES_DIR/config/ly/config.ini" ]; then
-        echo "==> Deploying clean Ly configuration..."
-        sudo mkdir -p /etc/ly
-        sudo cp "$DOTFILES_DIR/config/ly/config.ini" /etc/ly/config.ini 2>/dev/null || true
-        [ -f "$DOTFILES_DIR/config/ly/config.lua" ] && sudo cp "$DOTFILES_DIR/config/ly/config.lua" /etc/ly/config.lua 2>/dev/null || true
-    fi
+if command -v ly >/dev/null 2>&1 || command -v ly-dm >/dev/null 2>&1; then
+    echo "==> Deploying clean Ly configuration..."
+    sudo mkdir -p /etc/ly
+    [ -f "$DOTFILES_DIR/config/ly/config.ini" ] && sudo cp "$DOTFILES_DIR/config/ly/config.ini" /etc/ly/config.ini 2>/dev/null || true
+    [ -f "$DOTFILES_DIR/config/ly/config.lua" ] && sudo cp "$DOTFILES_DIR/config/ly/config.lua" /etc/ly/config.lua 2>/dev/null || true
+
     if command -v systemctl >/dev/null 2>&1; then
         echo "==> Enabling Ly display manager..."
-        if systemctl list-unit-files ly@.service >/dev/null 2>&1; then
-            sudo systemctl enable ly@tty2.service 2>/dev/null || true
-        elif systemctl list-unit-files ly.service >/dev/null 2>&1; then
+        if systemctl list-unit-files ly.service >/dev/null 2>&1; then
             sudo systemctl enable ly.service 2>/dev/null || true
+        elif systemctl list-unit-files ly@.service >/dev/null 2>&1; then
+            sudo systemctl enable ly@tty2.service 2>/dev/null || true
         fi
     fi
 fi
@@ -173,5 +220,5 @@ fi
 echo ""
 echo "=========================================================="
 echo " Setup Complete! "
-echo " You can now log into i3 and enjoy your rice."
+echo " You can now start the environment via Ly or run 'startx'."
 echo "=========================================================="
