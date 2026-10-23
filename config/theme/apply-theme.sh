@@ -92,7 +92,7 @@ if [ -f "$DUNST_CONFIG" ]; then
     fi
 fi
 
-# 8. Update Alacritty Cursor & Selection directly
+# 8. Update Alacritty Accent & Colorway directly
 ALACRITTY_CONF="$HOME/.config/alacritty/alacritty.toml"
 if [ -f "$ALACRITTY_CONF" ]; then
     python3 -c "
@@ -103,7 +103,11 @@ try:
     with open(path, 'r') as f:
         c = f.read()
     c = re.sub(r'(\[colors\.cursor\][^\[]*?cursor\s*=\s*\")[^\"]*(\")', rf'\g<1>{accent}\2', c, flags=re.DOTALL)
+    c = re.sub(r'(\[colors\.vi_mode_cursor\][^\[]*?cursor\s*=\s*\")[^\"]*(\")', rf'\g<1>{accent}\2', c, flags=re.DOTALL)
     c = re.sub(r'(\[colors\.selection\][^\[]*?background\s*=\s*\")[^\"]*(\")', rf'\g<1>{accent}\2', c, flags=re.DOTALL)
+    c = re.sub(r'(\[colors\.search\.focused_match\][^\[]*?background\s*=\s*\")[^\"]*(\")', rf'\g<1>{accent}\2', c, flags=re.DOTALL)
+    c = re.sub(r'(\[colors\.normal\][^\[]*?blue\s*=\s*\")[^\"]*(\")', rf'\g<1>{accent}\2', c, flags=re.DOTALL)
+    c = re.sub(r'(\[colors\.bright\][^\[]*?blue\s*=\s*\")[^\"]*(\")', rf'\g<1>{accent}\2', c, flags=re.DOTALL)
     with open(path, 'w') as f:
         f.write(c)
 except Exception:
