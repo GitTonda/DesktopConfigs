@@ -84,6 +84,12 @@ def save_config(cfg):
 
 
 def customize_menu():
+    """
+    Widget Customizer Menu.
+    Returns:
+        'back'  - User explicitly clicked 'Back to Bluetooth Menu'
+        'close' - User pressed Escape to close Rofi
+    """
     while True:
         cfg = load_config()
         show_name = cfg.get("SHOW_NAME", "true") == "true"
@@ -100,8 +106,13 @@ def customize_menu():
         ]
 
         choice = run_rofi("⚙ widget :~$", items)
-        if not choice or "Back to Bluetooth" in choice:
-            break
+        if choice is None:
+            # User pressed Escape -> dismiss completely
+            return "close"
+
+        if "Back to Bluetooth" in choice:
+            # User explicitly requested to navigate to the Bluetooth menu
+            return "back"
 
         if "Show Device Name" in choice:
             cfg["SHOW_NAME"] = "false" if show_name else "true"
@@ -164,7 +175,6 @@ def get_icon(icon_type, connected=False):
 def scan_devices():
     notify("󰑐 Bluetooth Scanning", "Scanning for nearby discoverable devices (5s)...")
     try:
-        # Start scan in background
         proc = subprocess.Popen(["bluetoothctl", "scan", "on"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         time.sleep(4.5)
         subprocess.run(["bluetoothctl", "scan", "off"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
@@ -192,12 +202,17 @@ def scan_devices():
 
         if not unpaired:
             notify("Scan Complete", "No new unpaired devices discovered.")
-            return
+            return "back"
 
         items = [f"󰂱  Pair & Connect: {name} [{mac}]" for mac, name in unpaired]
-        items.append("󰁞  Cancel")
+        items.append("󰁞  Back to Bluetooth Menu")
         choice = run_rofi("󰑐 pair :~$", items)
-        if choice and "Pair & Connect:" in choice:
+        if choice is None:
+            return "close"
+        if "Back to Bluetooth" in choice:
+            return "back"
+
+        if "Pair & Connect:" in choice:
             m = re.search(r"\[([0-9A-Fa-f:]+)\]", choice)
             if m:
                 target_mac = m.group(1)
@@ -209,15 +224,16 @@ def scan_devices():
                     notify("󰂱 Connected", f"Successfully paired with {target_mac}")
                 else:
                     notify("Pairing Result", res.stdout.strip()[:100] or "Check device is in pairing mode")
+        return "back"
     except Exception as e:
         notify("Scan Error", str(e), urgency="critical")
+        return "back"
 
 
 def device_menu(mac, name, is_conn):
     info = get_device_details(mac)
-    status_str = "Connected" if is_conn else "Disconnected"
     bat_str = f" | Battery: {info['battery']}%" if info['battery'] else ""
-    
+
     items = []
     if is_conn:
         items.append(f"󰂲  Disconnect from {name}")
@@ -225,11 +241,13 @@ def device_menu(mac, name, is_conn):
         items.append(f"󰂱  Connect to {name}")
     items.append(f"󰅖  Unpair / Forget {name}")
     items.append(f"󰋼  Device Info (MAC: {mac}{bat_str})")
-    items.append("󰁞  Back to Devices")
+    items.append("󰁞  Back to Bluetooth Menu")
 
     choice = run_rofi(f"󰂯 {name[:18]} :~$", items)
-    if not choice or "Back to Devices" in choice:
-        return
+    if choice is None:
+        return "close"
+    if "Back to Bluetooth" in choice:
+        return "back"
 
     if "Connect to" in choice:
         notify("Connecting...", f"Connecting to {name}")
@@ -248,11 +266,15 @@ def device_menu(mac, name, is_conn):
         raw_info = subprocess.check_output(["bluetoothctl", "info", mac], text=True, stderr=subprocess.DEVNULL)
         notify(f"Info: {name}", raw_info[:200])
 
+    return "back"
+
 
 def main():
     if len(sys.argv) > 1 and sys.argv[1] == "--customize":
-        customize_menu()
-        return
+        action = customize_menu()
+        if action != "back":
+            return
+        # If user explicitly clicked 'Back to Bluetooth Menu', transition smoothly into the main menu!
 
     while True:
         powered = is_powered_on()
@@ -263,13 +285,15 @@ def main():
             items.append("⚙️   Customize Top Bar Widget")
             items.append("   Interactive CLI (bluetoothctl)")
             choice = run_rofi("󰂲 bluetooth [off] :~$", items)
-            if not choice:
+            if choice is None:
                 break
             if "Turn Bluetooth ON" in choice:
                 set_power(True)
                 continue
             elif "Customize" in choice:
-                customize_menu()
+                action = customize_menu()
+                if action == "close":
+                    break
                 continue
             elif "Interactive CLI" in choice:
                 subprocess.Popen(["alacritty", "--class", "FloatingBluetooth", "-e", "bluetoothctl"])
@@ -318,27 +342,37 @@ def main():
 
         status_tag = f"[{len(connected_macs)} connected]" if connected_macs else "[on]"
         choice = run_rofi(f"󰂯 bluetooth {status_tag} :~$", items)
-        if not choice:
+        if choice is None:
             break
 
         if "Turn Bluetooth OFF" in choice:
             set_power(False)
             break
         elif "Scan for Nearby" in choice:
-            scan_devices()
+            action = scan_devices()
+            if action == "close":
+                break
             continue
         elif "Customize" in choice:
-            customize_menu()
+            action = customize_menu()
+            if action == "close":
+                break
             continue
         elif "Interactive CLI" in choice:
             subprocess.Popen(["alacritty", "--class", "FloatingBluetooth", "-e", "bluetoothctl"])
             break
         else:
             # A device was selected
+            matched = False
             for mac, name, is_conn, menu_str in device_entries:
                 if choice == menu_str:
-                    device_menu(mac, name, is_conn)
+                    matched = True
+                    action = device_menu(mac, name, is_conn)
+                    if action == "close":
+                        return
                     break
+            if not matched:
+                break
 
 
 if __name__ == "__main__":
