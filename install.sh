@@ -57,6 +57,7 @@ if command -v pacman >/dev/null 2>&1; then
         maim
         xclip
         xdotool
+        xdg-utils
         which
         ranger
         mpv
@@ -133,6 +134,7 @@ elif command -v apt >/dev/null 2>&1; then
         maim \
         xclip \
         xdotool \
+        xdg-utils \
         ranger \
         mpv \
         ncdu \
@@ -175,6 +177,7 @@ elif command -v dnf >/dev/null 2>&1; then
         maim \
         xclip \
         xdotool \
+        xdg-utils \
         ranger \
         mpv \
         ncdu \

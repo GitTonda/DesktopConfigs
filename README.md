@@ -116,7 +116,7 @@ chmod +x ./install.sh
 
 ### What `install.sh` handles automatically on Arch:
 1. **Full X11 & Audio Stack:** Installs `xorg-server`, `xorg-xinit`, `pipewire`, `pipewire-pulse`, `wireplumber`, and `alsa-utils`.
-2. **Desktop & Rice Packages:** Installs `i3-wm`, `polybar`, `alacritty`, `picom`, `rofi`, `feh`, `dunst`, `btop`, `ranger`, `mpv`.
+2. **Desktop & Rice Packages:** Installs `i3-wm`, `polybar`, `alacritty`, `picom`, `rofi`, `feh`, `dunst`, `btop`, `ranger`, `mpv`, `xdg-utils`.
 3. **Fonts:** Installs `ttf-jetbrains-mono-nerd`, `ttf-font-awesome`, and `noto-fonts-emoji` natively via pacman.
 4. **Networking:** Installs `networkmanager` and automatically enables `NetworkManager.service`.
 5. **Display Manager:** Installs `ly`, deploys corner-free styling, and enables `ly.service`.
