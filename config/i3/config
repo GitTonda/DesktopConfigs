@@ -40,6 +40,7 @@ for_window [class="(?i)pavucontrol"] floating enable
 for_window [class="(?i)ibus.*"] floating enable
 for_window [title="(?i)ibus.*"] floating enable
 for_window [class="FloatingTerm|FloatingBtop|FloatingAudio|FloatingWifi"] floating enable, resize set 900 600, move position center
+for_window [instance="localhost"] floating disable
 for_window [title="(?i)Langflow"] floating disable
 
 # ==============================================================================
@@ -229,5 +230,5 @@ exec --no-startup-id picom -b
 # Wallpaper (restores last selected wallpaper)
 exec --no-startup-id ~/.fehbg
 
-# Notification daemon
-exec --no-startup-id dunst
+# Notification daemon (Dynamic DPI & Gap Detection)
+exec_always --no-startup-id ~/.config/dunst/launch.sh

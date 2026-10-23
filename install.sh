@@ -219,6 +219,7 @@ cp -r "$DOTFILES_DIR/wallpapers/"* "$HOME/Pictures/Wallpapers/"
 # 6. Ensure executable permissions on scripts
 chmod +x "$HOME/.config/polybar/launch.sh"
 chmod +x "$HOME/.config/polybar/scripts/"*.sh 2>/dev/null || true
+chmod +x "$HOME/.config/dunst/launch.sh" 2>/dev/null || true
 chmod +x "$HOME/.config/dunst/scripts/"*.sh 2>/dev/null || true
 chmod +x "$HOME/.config/rofi/powermenu.sh"
 chmod +x "$HOME/.config/rofi/wifi.sh" "$HOME/.config/rofi/wifi.py" 2>/dev/null || true
