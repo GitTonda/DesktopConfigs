@@ -5,10 +5,10 @@
 [global]
     monitor = 0
     follow = mouse
-    width = (280, 380)
-    height = (0, 300)
+    width = 380
+    height = 300
     origin = top-right
-    offset = (16, 44)
+    offset = 7x44
     scale = 0
     notification_limit = 5
 
