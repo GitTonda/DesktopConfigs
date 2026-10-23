@@ -74,6 +74,7 @@ if command -v pacman >/dev/null 2>&1; then
         ttf-jetbrains-mono-nerd
         otf-font-awesome
         noto-fonts-emoji
+        papirus-icon-theme
         ly
     )
 
@@ -146,7 +147,8 @@ elif command -v apt >/dev/null 2>&1; then
         git \
         python3 \
         ffmpeg \
-        fonts-font-awesome
+        fonts-font-awesome \
+        papirus-icon-theme
 
 elif command -v dnf >/dev/null 2>&1; then
     echo "==> Detected Fedora. Installing packages..."
@@ -189,7 +191,8 @@ elif command -v dnf >/dev/null 2>&1; then
         git \
         python3 \
         ffmpeg \
-        fontawesome-fonts
+        fontawesome-fonts \
+        papirus-icon-theme
 else
     echo "==> Warning: Unknown package manager. Please ensure required packages are installed."
 fi
