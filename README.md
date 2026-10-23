@@ -57,6 +57,7 @@ Modifier Key: **`Super`** (Windows Key)
 | **Wi-Fi (`󰤨`)** | Rofi Wi-Fi Menu (scan & connect) | Network Connections (`nmtui`) | - |
 | **Ethernet (`󰈀`)** | Network Connections (`nmtui`) | Network Connections (`nmtui`) | - |
 | **CPU (`󰍛`) & RAM (`󰘚`)** | Launch `btop` Monitor | Launch `btop` Monitor | - |
+| **GPU (`󰢮`)** | Launch `btop` Monitor | Cycle Display Mode (% / Temp / VRAM) | Middle-click: Detailed GPU Notification |
 | **Power (`󰐥`)** | Power Menu | Power Menu | - |
 
 ### Navigation & Tiling
