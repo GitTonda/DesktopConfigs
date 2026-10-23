@@ -76,15 +76,14 @@ if [ -n "$DISPLAY" ]; then
     i3-msg reload >/dev/null 2>&1 || true
 fi
 
-# 5. Update Polybar Accent & Base
+# 5. Update Polybar Accent
 mkdir -p "$HOME/.config/polybar"
 cat << PBAR > "$HOME/.config/polybar/colors.ini"
 [colors]
 accent = $ACCENT
-base = $BG_DARK
 PBAR
 if [ -n "$DISPLAY" ]; then
-    polybar-msg cmd restart >/dev/null 2>&1 || true
+    "$HOME/.config/polybar/launch.sh" >/dev/null 2>&1 || true
 fi
 
 # 6. Update Rofi Theme Accent & Background
