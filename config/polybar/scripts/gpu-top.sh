@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-# Dedicated GPU TUI Monitor launcher (Catppuccin Mocha Colorful)
+# Dedicated GPU TUI Monitor launcher
 if command -v nvitop >/dev/null 2>&1; then
-    exec nvitop --colorful "$@"
+    exec nvitop "$@"
 elif [ -x "$HOME/.local/bin/nvitop" ]; then
-    exec "$HOME/.local/bin/nvitop" --colorful "$@"
+    exec "$HOME/.local/bin/nvitop" "$@"
 elif command -v nvtop >/dev/null 2>&1; then
     exec nvtop "$@"
 elif command -v nvidia-smi >/dev/null 2>&1; then
