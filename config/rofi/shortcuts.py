@@ -18,7 +18,7 @@ CORE_DESCRIPTIONS = {
     "$mod+Return": "Terminale (Alacritty)",
     "$mod+Shift+Return": "File Manager (Ranger)",
     "$mod+Shift+m": "Monitor di Sistema (Btop)",
-    "$mod+Shift+g": "Monitor GPU (nvitop / nvtop)",
+    "$mod+Shift+g": "Dashboard & Control GPU (Rofi)",
     "$mod+Shift+w": "Menu Wi-Fi (Rofi)",
     "$mod+Shift+t": "Menu Bluetooth & Personalizzazione (Rofi)",
     "$mod+Shift+a": "Mixer Audio Modal (Alsamixer)",

@@ -41,7 +41,7 @@ Modifier Key: **`Super`** (Windows Key)
 | `Super + Shift + Return` | Launch File Manager (**Ranger**) |
 | `Super + D` | Application Launcher (**Rofi**) |
 | `Super + Shift + M` | System Monitor Modal (**btop**) |
-| `Super + Shift + G` | GPU Monitor Modal (**nvitop / nvtop**) |
+| `Super + Shift + G` | GPU Dashboard & Performance Card (**Rofi**) |
 | `Super + Shift + W` | Interactive Wi-Fi Applet (**Rofi Wi-Fi**) |
 | `Super + Shift + T` | Interactive Bluetooth Applet & Customizer (**Rofi Bluetooth**) |
 | `Super + Shift + B` | Wallpaper Selector (**Rofi / Visual Gallery**) |
@@ -61,7 +61,7 @@ Modifier Key: **`Super`** (Windows Key)
 | **Wi-Fi (`󰤨`)** | Rofi Wi-Fi Menu (scan & connect) | Network Connections (`nmtui`) | - |
 | **Ethernet (`󰈀`)** | Network Connections (`nmtui`) | Network Connections (`nmtui`) | - |
 | **CPU (`󰍛`) & RAM (`󰘚`)** | Launch `btop` Monitor | Launch `btop` Monitor | - |
-| **GPU (`󰢮`)** | Launch GPU Monitor (`nvitop --colorful`) | Right-Click / Scroll Wheel: Cycle Display Modes (Compact / Thermal / VRAM / Pro Telemetry) | Middle-Click: Detailed GPU OSD Card with Progress Bar |
+| **GPU (`󰢮`)** | Launch GPU Dashboard (**Rofi**) | Cycle Display Mode (% / Temp / VRAM) | Middle-click: Detailed GPU Notification |
 | **Power (`󰐥`)** | Power Menu | Power Menu | - |
 
 ### Navigation & Tiling

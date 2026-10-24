@@ -302,6 +302,7 @@ chmod +x "$HOME/.config/rofi/powermenu.sh"
 chmod +x "$HOME/.config/rofi/wifi.sh" "$HOME/.config/rofi/wifi.py" 2>/dev/null || true
 chmod +x "$HOME/.config/rofi/bluetooth.sh" "$HOME/.config/rofi/bluetooth.py" 2>/dev/null || true
 chmod +x "$HOME/.config/rofi/shortcuts.sh" "$HOME/.config/rofi/shortcuts.py" 2>/dev/null || true
+chmod +x "$HOME/.config/rofi/gpu.sh" "$HOME/.config/rofi/gpu.py" 2>/dev/null || true
 chmod +x "$HOME/.config/rofi/wallpaper.sh" 2>/dev/null || true
 chmod +x "$HOME/.config/theme/apply-theme.sh" 2>/dev/null || true
 chmod +x "$HOME/.config/i3/screenshot.sh"

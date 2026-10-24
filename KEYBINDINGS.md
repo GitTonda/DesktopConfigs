@@ -14,7 +14,7 @@ Il tasto modificatore principale è **`Super`** (noto anche come tasto **Windows
 | **`Super + Shift + Return`** | **File Manager** | Apre Ranger (gestore file a 3 colonne) |
 | **`Super + D`** | **Launcher Applicazioni** | Menu di avvio Rofi (`rofi -show drun`) |
 | **`Super + Shift + M`** | **Monitor di Sistema** | Apre `btop` in finestra flottante centrata |
-| **`Super + Shift + G`** | **Monitor GPU** | Apre `nvitop` / `nvtop` (processi GPU, VRAM e wattaggio) |
+| **`Super + Shift + G`** | **Dashboard GPU** | Apre la dashboard prestazionale Rofi (telemetria, VRAM, app attive e power mode) |
 | **`Super + Shift + W`** | **Gestore Wi-Fi** | Applet Rofi per scansionare reti e connettersi |
 | **`Super + Shift + T`** | **Gestore Bluetooth** | Menu Rofi per accendere, scansionare e accoppiare dispositivi |
 | **`Super + Shift + A`** | **Mixer Audio** | Apre `alsamixer` modale in finestra flottante |
@@ -88,7 +88,7 @@ Il tasto modificatore principale è **`Super`** (noto anche come tasto **Windows
 |---|---|---|---|
 | **Data / Orologio (`󰃭`)** | Calendario del Mese | Calendario del Mese | - |
 | **Volume Audio (`󰕾` / `󰝟`)** | Muto On/Off | Mixer Audio Modale (`alsamixer`) | Scroll: Volume +5% / -5% |
-| **Monitor GPU (`󰢮`)** | Apre monitor **`nvitop`** | **Cicla modalità di vista** (`%` / `Temp` / `VRAM`) | Notifica OSD dettagliata specifiche GPU |
+| **GPU (`󰢮`)** | Apre dashboard **Rofi** | **Cicla modalità di vista** (`%` / `Temp` / `VRAM`) | Notifica OSD dettagliata specifiche GPU |
 | **CPU (`󰍛`) & RAM (`󰘚`)** | Apre monitor `btop` | Apre monitor `btop` | - |
 | **Bluetooth (`󰂯`)** | Menu Rofi Bluetooth | Accendi / Spegni Bluetooth | Click Centrale: Personalizza Widget |
 | **Wi-Fi (`󰤨`)** | Menu Rofi Wi-Fi | Impostazioni di Rete (`nmtui`) | - |

@@ -61,8 +61,8 @@ bindsym $mod+Shift+Return exec alacritty -e ranger
 # Launch system monitor (Btop)
 bindsym $mod+Shift+m exec alacritty --class FloatingBtop -e btop
 
-# Launch GPU monitor (nvitop / nvtop)
-bindsym $mod+Shift+g exec alacritty --class FloatingGPU -e ~/.config/polybar/scripts/gpu-top.sh
+# Launch GPU monitor & dashboard (Rofi / nvitop)
+bindsym $mod+Shift+g exec ~/.config/rofi/gpu.sh
 
 # Quick applet keybindings
 bindsym $mod+Shift+w exec ~/.config/rofi/wifi.sh
