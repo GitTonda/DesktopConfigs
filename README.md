@@ -61,7 +61,7 @@ Modifier Key: **`Super`** (Windows Key)
 | **Wi-Fi (`󰤨`)** | Rofi Wi-Fi Menu (scan & connect) | Network Connections (`nmtui`) | - |
 | **Ethernet (`󰈀`)** | Network Connections (`nmtui`) | Network Connections (`nmtui`) | - |
 | **CPU (`󰍛`) & RAM (`󰘚`)** | Launch `btop` Monitor | Launch `btop` Monitor | - |
-| **GPU (`󰢮`)** | Launch GPU Monitor (`nvitop` / `nvtop`) | Cycle Display Mode (% / Temp / VRAM) | Middle-click: Detailed GPU Notification |
+| **GPU (`󰢮`)** | Launch GPU Monitor (`nvitop --colorful`) | Right-Click / Scroll Wheel: Cycle Display Modes (Compact / Thermal / VRAM / Pro Telemetry) | Middle-Click: Detailed GPU OSD Card with Progress Bar |
 | **Power (`󰐥`)** | Power Menu | Power Menu | - |
 
 ### Navigation & Tiling
