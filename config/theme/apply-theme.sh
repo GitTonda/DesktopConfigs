@@ -91,10 +91,10 @@ mkdir -p "$HOME/.config/rofi"
 cat << ROFI > "$HOME/.config/rofi/colors.rasi"
 * {
     accent:     $ACCENT;
-    bg:         rgba(17, 17, 27, 0.78);
-    bg-alt:     rgba(24, 24, 37, 0.72);
-    bg-frosted: rgba(17, 17, 27, 0.78);
-    bg-header:  rgba(24, 24, 37, 0.72);
+    bg:         rgba(17, 17, 27, 0.60);
+    bg-alt:     rgba(24, 24, 37, 0.52);
+    bg-frosted: rgba(17, 17, 27, 0.60);
+    bg-header:  rgba(24, 24, 37, 0.52);
 }
 ROFI
 
