@@ -54,7 +54,7 @@ CONNECTED=$(bluetoothctl devices Connected 2>/dev/null | grep "^Device ")
 
 if [ -z "$CONNECTED" ]; then
     # Powered on, but no active connection
-    echo "%{F#89b4fa}󰂯%{F-} %{F#a6adc8}on%{F-}"
+    echo "%{F${ACCENT}}󰂯%{F-} %{F#a6adc8}on%{F-}"
     exit 0
 fi
 
