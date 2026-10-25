@@ -228,6 +228,7 @@ bindsym --release Shift+Print exec --no-startup-id ~/.config/i3/screenshot.sh fu
 exec_always --no-startup-id ~/.config/polybar/launch.sh
 
 # Set cursor theme and root pointer
+exec_always --no-startup-id xrdb -merge ~/.Xresources
 exec_always --no-startup-id xsetroot -cursor_name left_ptr
 
 # Map F13 keycodes in X11 (evdev 183 -> X11 keycode 191/183)

@@ -187,12 +187,23 @@ xres_path = f'{home}/.Xresources'
 with open(xres_path, 'w') as f:
     f.write(f'Xcursor.theme: {theme}\nXcursor.size: 24\n')
 
+with open(f'{home}/.gtkrc-2.0', 'w') as f:
+    f.write(f'gtk-theme-name="Adwaita-dark"\ngtk-icon-theme-name="Papirus-Dark"\ngtk-cursor-theme-name="{theme}"\ngtk-cursor-theme-size=24\ngtk-font-name="JetBrainsMono Nerd Font 10"\n')
+
 for gtk_ver in ['gtk-3.0', 'gtk-4.0']:
     gtk_path = f'{home}/.config/{gtk_ver}/settings.ini'
     os.makedirs(os.path.dirname(gtk_path), exist_ok=True)
     with open(gtk_path, 'w') as f:
         f.write(f'[Settings]\ngtk-theme-name=Adwaita-dark\ngtk-icon-theme-name=Papirus-Dark\ngtk-cursor-theme-name={theme}\ngtk-cursor-theme-size=24\ngtk-font-name=JetBrainsMono Nerd Font 10\ngtk-application-prefer-dark-theme=1\n')
 
+xprof_path = f'{home}/.xprofile'
+with open(xprof_path, 'w') as f:
+    f.write(f'#!/bin/sh\nexport XCURSOR_THEME="{theme}"\nexport XCURSOR_SIZE="24"\nxrdb -merge "$HOME/.Xresources" 2>/dev/null || true\nxsetroot -cursor_name left_ptr 2>/dev/null || true\n')
+os.chmod(xprof_path, 0o755)
+
+subprocess.run(['flatpak', 'override', '--user', '--filesystem=~/.icons:ro', '--filesystem=~/.local/share/icons:ro', f'--env=XCURSOR_THEME={theme}', '--env=XCURSOR_SIZE=24'], check=False)
+subprocess.run(['systemctl', '--user', 'set-environment', f'XCURSOR_THEME={theme}', 'XCURSOR_SIZE=24'], check=False)
+subprocess.run(['dbus-update-activation-environment', '--systemd', f'XCURSOR_THEME={theme}', 'XCURSOR_SIZE=24'], check=False)
 subprocess.run(['xrdb', '-merge', xres_path], check=False)
 subprocess.run(['gsettings', 'set', 'org.gnome.desktop.interface', 'cursor-theme', theme], check=False)
 subprocess.run(['gsettings', 'set', 'org.gnome.desktop.interface', 'cursor-size', '24'], check=False)

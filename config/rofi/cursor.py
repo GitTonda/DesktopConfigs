@@ -133,7 +133,17 @@ def apply_cursor_theme(theme_id, theme_name):
         f.write(f"Xcursor.theme: {theme_id}\nXcursor.size: 24\n")
     subprocess.run(["xrdb", "-merge", xres_path], check=False)
 
-    # 3. Update GTK 3 & GTK 4
+    # 3. Update GTK 2 (~/.gtkrc-2.0)
+    with open(f"{home}/.gtkrc-2.0", "w") as f:
+        f.write(
+            f'gtk-theme-name="Adwaita-dark"\n'
+            f'gtk-icon-theme-name="Papirus-Dark"\n'
+            f'gtk-cursor-theme-name="{theme_id}"\n'
+            f'gtk-cursor-theme-size=24\n'
+            f'gtk-font-name="JetBrainsMono Nerd Font 10"\n'
+        )
+
+    # 4. Update GTK 3 & GTK 4
     for gtk_ver in ["gtk-3.0", "gtk-4.0"]:
         gtk_path = f"{home}/.config/{gtk_ver}/settings.ini"
         os.makedirs(os.path.dirname(gtk_path), exist_ok=True)
@@ -148,14 +158,41 @@ def apply_cursor_theme(theme_id, theme_name):
                 f"gtk-application-prefer-dark-theme=1\n"
             )
 
-    # 4. GSettings (Portal / Flatpaks / GNOME apps)
+    # 5. GSettings (Portal / GNOME apps)
     subprocess.run(["gsettings", "set", "org.gnome.desktop.interface", "cursor-theme", theme_id], check=False)
     subprocess.run(["gsettings", "set", "org.gnome.desktop.interface", "cursor-size", "24"], check=False)
 
-    # 5. X11 root window pointer update
+    # 6. Update ~/.xprofile & environment
+    xprof_path = f"{home}/.xprofile"
+    with open(xprof_path, "w") as f:
+        f.write(
+            f'#!/bin/sh\n'
+            f'export XCURSOR_THEME="{theme_id}"\n'
+            f'export XCURSOR_SIZE="24"\n'
+            f'xrdb -merge "$HOME/.Xresources" 2>/dev/null || true\n'
+            f'xsetroot -cursor_name left_ptr 2>/dev/null || true\n'
+        )
+    os.chmod(xprof_path, 0o755)
+
+    # 7. Update Flatpak Overrides (Global for Chrome, Tidal, Discord, etc.)
+    subprocess.run([
+        "flatpak", "override", "--user",
+        "--filesystem=~/.icons:ro",
+        "--filesystem=~/.local/share/icons:ro",
+        f"--env=XCURSOR_THEME={theme_id}",
+        "--env=XCURSOR_SIZE=24"
+    ], check=False)
+
+    # 8. Update DBus / systemd activation environment
+    os.environ["XCURSOR_THEME"] = theme_id
+    os.environ["XCURSOR_SIZE"] = "24"
+    subprocess.run(["systemctl", "--user", "set-environment", f"XCURSOR_THEME={theme_id}", "XCURSOR_SIZE=24"], check=False)
+    subprocess.run(["dbus-update-activation-environment", "--systemd", f"XCURSOR_THEME={theme_id}", "XCURSOR_SIZE=24"], check=False)
+
+    # 9. X11 root window pointer update
     subprocess.run(["xsetroot", "-cursor_name", "left_ptr"], check=False)
 
-    notify("󰍽 Cursor Theme Applied", f"Active Cursor: <b>{theme_name}</b>\n(Changes take effect immediately)")
+    notify("󰍽 Cursor Theme Applied", f"Active Cursor: <b>{theme_name}</b>\n(Synced across Native, GTK 2/3/4, Qt, and Flatpaks)")
 
 
 def main():
