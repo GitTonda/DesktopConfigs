@@ -27,37 +27,37 @@ style = "Italic"
 # Catppuccin Mocha Colorway
 # ==============================================================================
 [colors.primary]
-background = "#111617"
+background = "#111417"
 foreground = "#cdd6f4"
 dim_foreground = "#7f849c"
 bright_foreground = "#cdd6f4"
 
 [colors.cursor]
-text = "#111617"
-cursor = "#51c1d2"
+text = "#111417"
+cursor = "#2977af"
 
 [colors.vi_mode_cursor]
-text = "#111617"
-cursor = "#51c1d2"
+text = "#111417"
+cursor = "#2977af"
 
 [colors.selection]
-text = "#111617"
-background = "#51c1d2"
+text = "#111417"
+background = "#2977af"
 
 [colors.search.matches]
 foreground = "#1e1e2e"
 background = "#a6adc8"
 
 [colors.search.focused_match]
-foreground = "#111617"
-background = "#51c1d2"
+foreground = "#111417"
+background = "#2977af"
 
 [colors.normal]
 black = "#45475a"
 red = "#f38ba8"
 green = "#a6e3a1"
 yellow = "#f9e2af"
-blue = "#51c1d2"
+blue = "#2977af"
 magenta = "#f5c2e7"
 cyan = "#94e2d5"
 white = "#bac2de"
@@ -67,7 +67,7 @@ black = "#585b70"
 red = "#f38ba8"
 green = "#a6e3a1"
 yellow = "#f9e2af"
-blue = "#51c1d2"
+blue = "#2977af"
 magenta = "#f5c2e7"
 cyan = "#94e2d5"
 white = "#a6adc8"

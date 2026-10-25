@@ -98,7 +98,7 @@ do_push() {
     cd "$DOTFILES_DIR"
 
     # Sync changed configs into dotfiles repo
-    for dir in alacritty dunst i3 ly picom polybar rofi systemd theme; do
+    for dir in alacritty dunst i3 ly openrgb picom polybar rofi systemd theme; do
         if [ -d "$HOME/.config/$dir" ]; then
             mkdir -p "$DOTFILES_DIR/config/$dir"
             cp -a "$HOME/.config/$dir/"* "$DOTFILES_DIR/config/$dir/" 2>/dev/null || true

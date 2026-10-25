@@ -135,6 +135,11 @@ except Exception:
 " "$ALACRITTY_CONF" "$ACCENT" "$BG_DARK" 2>/dev/null || true
 fi
 
+# 10. Synchronize Hardware RGB Lights (Fans, RAM, GPU) via OpenRGB
+if [ -f "$HOME/.config/theme/sync-rgb.sh" ]; then
+    "$HOME/.config/theme/sync-rgb.sh" "$ACCENT" >/dev/null 2>&1 &
+fi
+
 # 9. Notify user of change
 WALL_NAME=$(basename "$WALLPAPER")
 if command -v dunstify >/dev/null 2>&1 && [ -n "$DISPLAY" ]; then
