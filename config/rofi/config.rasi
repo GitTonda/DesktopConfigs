@@ -112,21 +112,21 @@ element {
     spacing:                    8px;
     padding:                    14px 8px;
     border:                     1px solid;
-    border-color:               #ffffff22;
+    border-color:               #ffffff15;
     border-radius:              0px;
-    background-color:           #ffffff14;
+    background-color:           transparent;
     text-color:                 @fg;
     cursor:                     pointer;
 }
 
 element normal.normal {
-    background-color:           #ffffff14;
-    border-color:               #ffffff22;
+    background-color:           transparent;
+    border-color:               #ffffff15;
     text-color:                 @fg;
 }
 
 element normal.active {
-    background-color:           #ffffff14;
+    background-color:           transparent;
     border-color:               @accent;
     text-color:                 @accent;
 }
@@ -137,13 +137,13 @@ element normal.urgent {
 }
 
 element alternate.normal {
-    background-color:           #ffffff14;
-    border-color:               #ffffff22;
+    background-color:           transparent;
+    border-color:               #ffffff15;
     text-color:                 @fg;
 }
 
 element alternate.active {
-    background-color:           #ffffff14;
+    background-color:           transparent;
     border-color:               @accent;
     text-color:                 @accent;
 }

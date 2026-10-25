@@ -129,7 +129,7 @@ def get_power_mode():
 def inspect_processes(procs):
     if not procs:
         run_rofi("active apps :~$", ["  󰋔  No active graphical processes found on GPU"])
-        return
+        return "back"
 
     items = []
     for p in procs:
@@ -138,7 +138,9 @@ def inspect_processes(procs):
     items.append("󰌍  Back to Dashboard")
 
     choice = run_rofi("active apps :~$", items)
-    if choice and "Back to Dashboard" not in choice and not choice.startswith("──"):
+    if not choice or "Back to Dashboard" in choice:
+        return "back"
+    if not choice.startswith("──"):
         for p in procs:
             if f"PID {p['pid']}" in choice:
                 action = run_rofi(f"pid {p['pid']} ({p['name']}) :~$", [
@@ -152,103 +154,100 @@ def inspect_processes(procs):
                     except Exception as e:
                         notify("Process Error", str(e), urgency="critical")
                 break
+    return None
 
 
 def main():
-    while True:
-        data = get_nvidia_data()
-        if not data:
-            run_rofi("gpu :~$", [
-                "󰢮  No active NVIDIA GPU detected or driver unavailable",
-                "󰌍  Exit"
-            ])
-            break
+    data = get_nvidia_data()
+    if not data:
+        run_rofi("gpu :~$", [
+            "󰢮  No active NVIDIA GPU detected or driver unavailable",
+            "󰌍  Exit"
+        ])
+        return
 
-        vram_used_gb = data["vram_used_mb"] / 1024.0
-        vram_tot_gb = data["vram_tot_mb"] / 1024.0
-        vram_pct = int(round((data["vram_used_mb"] / data["vram_tot_mb"]) * 100.0))
-        power_pct = int(round((data["power_w"] / max(1.0, data["power_limit_w"])) * 100.0))
+    vram_used_gb = data["vram_used_mb"] / 1024.0
+    vram_tot_gb = data["vram_tot_mb"] / 1024.0
+    vram_pct = int(round((data["vram_used_mb"] / data["vram_tot_mb"]) * 100.0))
+    power_pct = int(round((data["power_w"] / max(1.0, data["power_limit_w"])) * 100.0))
 
-        load_meter = make_meter(data["util"])
-        vram_meter = make_meter(vram_pct)
+    load_meter = make_meter(data["util"])
+    vram_meter = make_meter(vram_pct)
 
-        # Thermal status
-        if data["temp"] >= 80:
-            thermal_status = f"{data['temp']}°C (Hot! Fan: {data['fan']}%)"
-        elif data["temp"] >= 65:
-            thermal_status = f"{data['temp']}°C (Warm · Fan: {data['fan']}%)"
-        else:
-            thermal_status = f"{data['temp']}°C (Cool · Fan: {data['fan']}%)"
+    # Thermal status
+    if data["temp"] >= 80:
+        thermal_status = f"{data['temp']}°C (Hot! Fan: {data['fan']}%)"
+    elif data["temp"] >= 65:
+        thermal_status = f"{data['temp']}°C (Warm · Fan: {data['fan']}%)"
+    else:
+        thermal_status = f"{data['temp']}°C (Cool · Fan: {data['fan']}%)"
 
-        procs = get_gpu_processes()
-        power_mode = get_power_mode()
+    procs = get_gpu_processes()
+    power_mode = get_power_mode()
 
-        items = [
-            f"󰢮  {data['name']} (Driver: {data['driver']})",
-            f"󰍛  GPU Load:     [{load_meter}] {data['util']:2d}% ({data['clk']} MHz)",
-            f"󰘚  VRAM Usage:   [{vram_meter}] {vram_used_gb:.1f} / {vram_tot_gb:.1f} GB ({vram_pct}%)",
-            f"󱤓  Temperature:  {thermal_status}",
-            f"󱐋  Power Draw:   {data['power_w']:.0f}W / {data['power_limit_w']:.0f}W ({power_pct}%) · Mode: {power_mode}",
-            f"󰒋  Active Apps:  {len(procs)} processes running on GPU",
-            "────────────────────────────────────────────────────────────",
-            "󰓅  Launch Live Terminal Monitor (nvitop)",
-            "󰒓  Launch NVIDIA Settings Control Panel",
-            "󱐋  Switch Power Profile...",
-            "󰆏  Copy GPU Telemetry to Clipboard",
-            "󰑐  Refresh Dashboard"
-        ]
+    items = [
+        f"󰢮  {data['name']} (Driver: {data['driver']})",
+        f"󰍛  GPU Load:     [{load_meter}] {data['util']:2d}% ({data['clk']} MHz)",
+        f"󰘚  VRAM Usage:   [{vram_meter}] {vram_used_gb:.1f} / {vram_tot_gb:.1f} GB ({vram_pct}%)",
+        f"󱤓  Temperature:  {thermal_status}",
+        f"󱐋  Power Draw:   {data['power_w']:.0f}W / {data['power_limit_w']:.0f}W ({power_pct}%) · Mode: {power_mode}",
+        f"󰒋  Active Apps:  {len(procs)} processes running on GPU",
+        "────────────────────────────────────────────────────────────",
+        "󰓅  Launch Live Terminal Monitor (nvitop)",
+        "󰒓  Launch NVIDIA Settings Control Panel",
+        "󱐋  Switch Power Profile...",
+        "󰆏  Copy GPU Telemetry to Clipboard",
+        "󰑐  Refresh Dashboard"
+    ]
 
-        choice = run_rofi("󰢮 gpu :~$", items)
-        if not choice:
-            break
+    choice = run_rofi("󰢮 gpu :~$", items)
+    if not choice:
+        return
 
-        if "Launch Live Terminal Monitor" in choice:
-            subprocess.Popen(["alacritty", "--class", "FloatingGPU", "-e", os.path.expanduser("~/.config/polybar/scripts/gpu-top.sh")])
-            break
-        elif "Launch NVIDIA Settings Control Panel" in choice:
-            subprocess.Popen(["nvidia-settings"])
-            break
-        elif "Switch Power Profile" in choice:
-            profile_choice = run_rofi("power profile :~$", [
-                "  󱐋  Prefer Maximum Performance (Locks highest clocks)",
-                "  󰌍  Adaptive (Dynamically scales clock speeds)",
-                "  󰌍  Auto (Driver default policy)",
-                "  󰌍  Back to Dashboard"
-            ])
-            if profile_choice:
-                if "Maximum Performance" in profile_choice:
-                    subprocess.run(["nvidia-settings", "-a", "[gpu:0]/GPUPowerMizerMode=1"], check=False, stdout=subprocess.DEVNULL)
-                    notify("GPU Power Mode", "Power mode set to: Prefer Maximum Performance")
-                elif "Adaptive" in profile_choice:
-                    subprocess.run(["nvidia-settings", "-a", "[gpu:0]/GPUPowerMizerMode=0"], check=False, stdout=subprocess.DEVNULL)
-                    notify("GPU Power Mode", "Power mode set to: Adaptive")
-                elif "Auto" in profile_choice:
-                    subprocess.run(["nvidia-settings", "-a", "[gpu:0]/GPUPowerMizerMode=2"], check=False, stdout=subprocess.DEVNULL)
-                    notify("GPU Power Mode", "Power mode set to: Auto")
-        elif "Copy GPU Telemetry to Clipboard" in choice:
-            proc_list = "\n".join([f"  - {p['name']} (PID: {p['pid']}, VRAM: {p['mem']})" for p in procs])
-            summary = (
-                f"GPU: {data['name']}\n"
-                f"Driver: {data['driver']}\n"
-                f"Utilization: {data['util']}%\n"
-                f"Temperature: {data['temp']}°C (Fan: {data['fan']}%)\n"
-                f"VRAM: {vram_used_gb:.2f} GB / {vram_tot_gb:.2f} GB ({vram_pct}%)\n"
-                f"Power Draw: {data['power_w']:.1f}W / {data['power_limit_w']:.1f}W\n"
-                f"Clock: {data['clk']} MHz / {data['clk_max']} MHz\n"
-                f"Active Processes ({len(procs)}):\n{proc_list}\n"
-            )
-            if shutil.which("xclip"):
-                p = subprocess.Popen(["xclip", "-selection", "clipboard"], stdin=subprocess.PIPE, text=True)
-                p.communicate(summary)
-                notify("GPU Telemetry Copied", "Hardware stats copied to system clipboard.")
-        elif "Active Apps" in choice or "Active processes" in choice or "GPU Load" in choice or "VRAM Usage" in choice:
-            inspect_processes(procs)
-        elif "Refresh Dashboard" in choice:
-            continue
-        elif choice.startswith("──") or "GeForce RTX" in choice:
-            continue
-        else:
-            continue
+    if "Launch Live Terminal Monitor" in choice:
+        subprocess.Popen(["alacritty", "--class", "FloatingGPU", "-e", os.path.expanduser("~/.config/polybar/scripts/gpu-top.sh")])
+    elif "Launch NVIDIA Settings Control Panel" in choice:
+        subprocess.Popen(["nvidia-settings"])
+    elif "Switch Power Profile" in choice:
+        profile_choice = run_rofi("power profile :~$", [
+            "  󱐋  Prefer Maximum Performance (Locks highest clocks)",
+            "  󰌍  Adaptive (Dynamically scales clock speeds)",
+            "  󰌍  Auto (Driver default policy)",
+            "  󰌍  Back to Dashboard"
+        ])
+        if profile_choice:
+            if "Back" in profile_choice:
+                main()
+            elif "Maximum Performance" in profile_choice:
+                subprocess.run(["nvidia-settings", "-a", "[gpu:0]/GPUPowerMizerMode=1"], check=False, stdout=subprocess.DEVNULL)
+                notify("GPU Power Mode", "Power mode set to: Prefer Maximum Performance")
+            elif "Adaptive" in profile_choice:
+                subprocess.run(["nvidia-settings", "-a", "[gpu:0]/GPUPowerMizerMode=0"], check=False, stdout=subprocess.DEVNULL)
+                notify("GPU Power Mode", "Power mode set to: Adaptive")
+            elif "Auto" in profile_choice:
+                subprocess.run(["nvidia-settings", "-a", "[gpu:0]/GPUPowerMizerMode=2"], check=False, stdout=subprocess.DEVNULL)
+                notify("GPU Power Mode", "Power mode set to: Auto")
+    elif "Copy GPU Telemetry to Clipboard" in choice:
+        proc_list = "\n".join([f"  - {p['name']} (PID: {p['pid']}, VRAM: {p['mem']})" for p in procs])
+        summary = (
+            f"GPU: {data['name']}\n"
+            f"Driver: {data['driver']}\n"
+            f"Utilization: {data['util']}%\n"
+            f"Temperature: {data['temp']}°C (Fan: {data['fan']}%)\n"
+            f"VRAM: {vram_used_gb:.2f} GB / {vram_tot_gb:.2f} GB ({vram_pct}%)\n"
+            f"Power Draw: {data['power_w']:.1f}W / {data['power_limit_w']:.1f}W\n"
+            f"Clock: {data['clk']} MHz / {data['clk_max']} MHz\n"
+            f"Active Processes ({len(procs)}):\n{proc_list}\n"
+        )
+        if shutil.which("xclip"):
+            p = subprocess.Popen(["xclip", "-selection", "clipboard"], stdin=subprocess.PIPE, text=True)
+            p.communicate(summary)
+            notify("GPU Telemetry Copied", "Hardware stats copied to system clipboard.")
+    elif "Active Apps" in choice or "Active processes" in choice or "GPU Load" in choice or "VRAM Usage" in choice:
+        if inspect_processes(procs) == "back":
+            main()
+    elif "Refresh Dashboard" in choice:
+        main()
 
 
 if __name__ == "__main__":

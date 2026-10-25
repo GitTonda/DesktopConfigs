@@ -410,30 +410,29 @@ def action_list(is_gui=True):
 
 def main_gui():
     ensure_custom_conf()
-    while True:
-        menu_items = [
-            "󰌌  Visualizza tutte le scorciatoie (Cerca...)",
-            "󰐕  Aggiungi nuova scorciatoia",
-            "󰏫  Modifica scorciatoia personalizzata",
-            "󰅖  Elimina scorciatoia personalizzata",
-            "󰑐  Ricarica configurazione i3",
-            "󰈆  Esci"
-        ]
-        choice = run_rofi("󰌌 Shortcuts Manager :~$", menu_items, message="Gestore Scorciatoie da Tastiera i3wm")
-        if not choice or "Esci" in choice:
-            break
+    menu_items = [
+        "󰌌  Visualizza tutte le scorciatoie (Cerca...)",
+        "󰐕  Aggiungi nuova scorciatoia",
+        "󰏫  Modifica scorciatoia personalizzata",
+        "󰅖  Elimina scorciatoia personalizzata",
+        "󰑐  Ricarica configurazione i3",
+        "󰈆  Esci"
+    ]
+    choice = run_rofi("󰌌 Shortcuts Manager :~$", menu_items, message="Gestore Scorciatoie da Tastiera i3wm")
+    if not choice or "Esci" in choice:
+        return
 
-        if "Visualizza tutte" in choice:
-            action_list(is_gui=True)
-        elif "Aggiungi nuova" in choice:
-            action_add(is_gui=True)
-        elif "Modifica scorciatoia" in choice:
-            action_edit(is_gui=True)
-        elif "Elimina scorciatoia" in choice:
-            action_delete(is_gui=True)
-        elif "Ricarica configurazione" in choice:
-            subprocess.run(["i3-msg", "reload"], check=False)
-            notify("󰑐 i3 Ricaricato", "Tutte le scorciatoie sono state ricaricate in memoria")
+    if "Visualizza tutte" in choice:
+        action_list(is_gui=True)
+    elif "Aggiungi nuova" in choice:
+        action_add(is_gui=True)
+    elif "Modifica scorciatoia" in choice:
+        action_edit(is_gui=True)
+    elif "Elimina scorciatoia" in choice:
+        action_delete(is_gui=True)
+    elif "Ricarica configurazione" in choice:
+        subprocess.run(["i3-msg", "reload"], check=False)
+        notify("󰑐 i3 Ricaricato", "Tutte le scorciatoie sono state ricaricate in memoria")
 
 def main():
     if len(sys.argv) > 1:

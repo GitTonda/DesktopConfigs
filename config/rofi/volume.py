@@ -209,7 +209,9 @@ def switch_output_device(sinks, current_def):
     items.append("󰌍  Back to Audio Dashboard")
 
     choice = run_rofi("output device :~$", items)
-    if choice and "Back to Audio Dashboard" not in choice and not choice.startswith("──"):
+    if not choice or "Back to Audio Dashboard" in choice:
+        return "back"
+    if not choice.startswith("──"):
         for s in sinks:
             if s.get("desc") in choice:
                 subprocess.run(["pactl", "set-default-sink", s["name"]], check=False)
@@ -223,6 +225,7 @@ def switch_output_device(sinks, current_def):
                     pass
                 notify("󰓃 Output Switched", f"Audio output switched to:\n{s.get('desc')}")
                 break
+    return None
 
 
 def switch_input_device(sources, current_def):
@@ -236,18 +239,21 @@ def switch_input_device(sources, current_def):
     items.append("󰌍  Back to Audio Dashboard")
 
     choice = run_rofi("microphone device :~$", items)
-    if choice and "Back to Audio Dashboard" not in choice and not choice.startswith("──"):
+    if not choice or "Back to Audio Dashboard" in choice:
+        return "back"
+    if not choice.startswith("──"):
         for s in sources:
             if s.get("desc") in choice:
                 subprocess.run(["pactl", "set-default-source", s["name"]], check=False)
                 notify("󰍬 Microphone Switched", f"Default input switched to:\n{s.get('desc')}")
                 break
+    return None
 
 
 def manage_app_streams(streams):
     if not streams:
         run_rofi("active streams :~$", ["  󰎆  No active application audio streams", "󰌍  Back to Dashboard"])
-        return
+        return "back"
 
     items = []
     for app in streams:
@@ -258,7 +264,9 @@ def manage_app_streams(streams):
     items.append("󰌍  Back to Audio Dashboard")
 
     choice = run_rofi("app streams :~$", items)
-    if choice and "Back to Audio Dashboard" not in choice and not choice.startswith("──"):
+    if not choice or "Back to Audio Dashboard" in choice:
+        return "back"
+    if not choice.startswith("──"):
         for app in streams:
             if f"(ID: {app['id']})" in choice:
                 action = run_rofi(f"{app.get('app', 'app')} volume :~$", [
@@ -269,7 +277,7 @@ def manage_app_streams(streams):
                     f"  󰝟  Toggle Mute",
                     "  󰌍  Cancel"
                 ])
-                if action:
+                if action and "Cancel" not in action:
                     if "100%" in action:
                         subprocess.run(["pactl", "set-sink-input-volume", app["id"], "100%"], check=False)
                     elif "75%" in action:
@@ -281,120 +289,122 @@ def manage_app_streams(streams):
                     elif "Toggle Mute" in action:
                         subprocess.run(["pactl", "set-sink-input-mute", app["id"], "toggle"], check=False)
                 break
+    return None
 
 
 def main():
-    while True:
-        state = get_audio_state()
-        sink = state["active_sink"]
-        src = state["active_source"]
+    state = get_audio_state()
+    sink = state["active_sink"]
+    src = state["active_source"]
 
-        sink_vol = sink["vol"] if sink else 0
-        sink_muted = sink["muted"] if sink else False
-        sink_desc = sink.get("desc", "Default Audio Sink") if sink else "No active output"
+    sink_vol = sink["vol"] if sink else 0
+    sink_muted = sink["muted"] if sink else False
+    sink_desc = sink.get("desc", "Default Audio Sink") if sink else "No active output"
 
-        src_vol = src["vol"] if src else 0
-        src_muted = src["muted"] if src else False
-        src_desc = src.get("desc", "Default Microphone") if src else "No active input"
+    src_vol = src["vol"] if src else 0
+    src_muted = src["muted"] if src else False
+    src_desc = src.get("desc", "Default Microphone") if src else "No active input"
 
-        vol_meter = make_meter(sink_vol if not sink_muted else 0)
-        mic_meter = make_meter(src_vol if not src_muted else 0)
+    vol_meter = make_meter(sink_vol if not sink_muted else 0)
+    mic_meter = make_meter(src_vol if not src_muted else 0)
 
-        out_status = "Muted" if sink_muted else f"{sink_vol}%"
-        mic_status = "Muted" if src_muted else f"{src_vol}%"
+    out_status = "Muted" if sink_muted else f"{sink_vol}%"
+    mic_status = "Muted" if src_muted else f"{src_vol}%"
 
-        out_icon = "󰝟" if sink_muted else ("󰕾" if sink_vol >= 65 else ("󰖀" if sink_vol >= 30 else "󰕿"))
-        mic_icon = "󰍭" if src_muted else "󰍬"
+    out_icon = "󰝟" if sink_muted else ("󰕾" if sink_vol >= 65 else ("󰖀" if sink_vol >= 30 else "󰕿"))
+    mic_icon = "󰍭" if src_muted else "󰍬"
 
-        active_apps = state["app_streams"]
-        apps_summary = f"{len(active_apps)} app(s) playing" if active_apps else "Idle (no audio playing)"
+    active_apps = state["app_streams"]
+    apps_summary = f"{len(active_apps)} app(s) playing" if active_apps else "Idle (no audio playing)"
 
-        items = [
-            f"{out_icon}  Active Output: {sink_desc}",
-            f"󰕾  Output Volume: [{vol_meter}] {out_status}",
-            f"{mic_icon}  Microphone:    [{mic_meter}] {mic_status} ({src_desc})",
-            f"󰎆  Playing Audio: {apps_summary}",
-            "────────────────────────────────────────────────────────────",
-            f"󰝟  Toggle Output Mute ({'Unmute' if sink_muted else 'Mute'})",
-            f"󰍭  Toggle Microphone Mute ({'Unmute' if src_muted else 'Mute'})",
-            "󰓃  Switch Audio Output Device...",
-            "󰍬  Switch Microphone / Input Source...",
-            f"󰎆  Manage Per-Application Audio Streams ({len(active_apps)})...",
-            "󰕾  Set Output Volume: 100% (Maximum)",
-            "󰕾  Set Output Volume:  80% (High)",
-            "󰖀  Set Output Volume:  60% (Medium)",
-            "󰖀  Set Output Volume:  40% (Moderate)",
-            "󰕿  Set Output Volume:  20% (Low)",
-            "󰓅  Launch Interactive Terminal Mixer (alsamixer)",
-            "󰆏  Copy Audio Diagnostics to Clipboard",
-            "󰑐  Refresh Audio Dashboard"
-        ]
+    items = [
+        f"{out_icon}  Active Output: {sink_desc}",
+        f"󰕾  Output Volume: [{vol_meter}] {out_status}",
+        f"{mic_icon}  Microphone:    [{mic_meter}] {mic_status} ({src_desc})",
+        f"󰎆  Playing Audio: {apps_summary}",
+        "────────────────────────────────────────────────────────────",
+        f"󰝟  Toggle Output Mute ({'Unmute' if sink_muted else 'Mute'})",
+        f"󰍭  Toggle Microphone Mute ({'Unmute' if src_muted else 'Mute'})",
+        "󰓃  Switch Audio Output Device...",
+        "󰍬  Switch Microphone / Input Source...",
+        f"󰎆  Manage Per-Application Audio Streams ({len(active_apps)})...",
+        "󰕾  Set Output Volume: 100% (Maximum)",
+        "󰕾  Set Output Volume:  80% (High)",
+        "󰖀  Set Output Volume:  60% (Medium)",
+        "󰖀  Set Output Volume:  40% (Moderate)",
+        "󰕿  Set Output Volume:  20% (Low)",
+        "󰓅  Launch Interactive Terminal Mixer (alsamixer)",
+        "󰆏  Copy Audio Diagnostics to Clipboard",
+        "󰑐  Refresh Audio Dashboard"
+    ]
 
-        choice = run_rofi("󰕾 audio :~$", items)
-        if not choice:
-            break
+    choice = run_rofi("󰕾 audio :~$", items)
+    if not choice:
+        return
 
-        # Check if user typed a raw volume number e.g. "75" or "80%"
-        m = re.match(r"^(\d+)\s*%?$", choice.strip())
-        if m:
-            val = int(m.group(1))
-            set_sink_volume(val)
-            continue
+    # Check if user typed a raw volume number e.g. "75" or "80%"
+    m = re.match(r"^(\d+)\s*%?$", choice.strip())
+    if m:
+        val = int(m.group(1))
+        set_sink_volume(val)
+        return
 
-        if "Toggle Output Mute" in choice:
-            toggle_sink_mute()
-        elif "Toggle Microphone Mute" in choice:
-            toggle_source_mute()
-        elif "Switch Audio Output Device" in choice or "Active Output" in choice:
-            switch_output_device(state["sinks"], state["def_sink"])
-        elif "Switch Microphone" in choice or "Microphone:" in choice:
-            switch_input_device(state["sources"], state["def_source"])
-        elif "Manage Per-Application" in choice or "Playing Audio" in choice:
-            manage_app_streams(state["app_streams"])
-        elif "Set Output Volume: 100%" in choice:
-            set_sink_volume(100)
-        elif "Set Output Volume:  80%" in choice:
-            set_sink_volume(80)
-        elif "Set Output Volume:  60%" in choice:
-            set_sink_volume(60)
-        elif "Set Output Volume:  40%" in choice:
-            set_sink_volume(40)
-        elif "Set Output Volume:  20%" in choice:
-            set_sink_volume(20)
-        elif "Output Volume:" in choice:
-            # Clicked volume gauge -> prompt quick volume selector
-            vol_choice = run_rofi("set volume % :~$", [
-                "  󰕾  100%", "  󰕾  90%", "  󰕾  80%", "  󰖀  70%", "  󰖀  60%",
-                "  󰖀  50%", "  󰕿  40%", "  󰕿  30%", "  󰕿  20%", "  󰕿  10%",
-                "  󰝟   0% (Mute)", "  󰌍  Back to Dashboard"
-            ])
-            if vol_choice and "Back" not in vol_choice:
+    if "Toggle Output Mute" in choice:
+        toggle_sink_mute()
+    elif "Toggle Microphone Mute" in choice:
+        toggle_source_mute()
+    elif "Switch Audio Output Device" in choice or "Active Output" in choice:
+        if switch_output_device(state["sinks"], state["def_sink"]) == "back":
+            main()
+    elif "Switch Microphone" in choice or "Microphone:" in choice:
+        if switch_input_device(state["sources"], state["def_source"]) == "back":
+            main()
+    elif "Manage Per-Application" in choice or "Playing Audio" in choice:
+        if manage_app_streams(state["app_streams"]) == "back":
+            main()
+    elif "Set Output Volume: 100%" in choice:
+        set_sink_volume(100)
+    elif "Set Output Volume:  80%" in choice:
+        set_sink_volume(80)
+    elif "Set Output Volume:  60%" in choice:
+        set_sink_volume(60)
+    elif "Set Output Volume:  40%" in choice:
+        set_sink_volume(40)
+    elif "Set Output Volume:  20%" in choice:
+        set_sink_volume(20)
+    elif "Output Volume:" in choice:
+        vol_choice = run_rofi("set volume % :~$", [
+            "  󰕾  100%", "  󰕾  90%", "  󰕾  80%", "  󰖀  70%", "  󰖀  60%",
+            "  󰖀  50%", "  󰕿  40%", "  󰕿  30%", "  󰕿  20%", "  󰕿  10%",
+            "  󰝟   0% (Mute)", "  󰌍  Back to Dashboard"
+        ])
+        if vol_choice:
+            if "Back" in vol_choice:
+                main()
+            else:
                 vm = re.search(r"(\d+)%", vol_choice)
                 if vm:
                     set_sink_volume(int(vm.group(1)))
-        elif "Launch Interactive Terminal Mixer" in choice:
-            subprocess.Popen(["alacritty", "--class", "FloatingAudio", "-e", "alsamixer"])
-            break
-        elif "Copy Audio Diagnostics" in choice:
-            sink_list = "\n".join([f"  - [{s.get('id')}] {s.get('desc')} (Vol: {s.get('vol')}%, Muted: {s.get('muted')})" for s in state['sinks']])
-            src_list = "\n".join([f"  - [{s.get('id')}] {s.get('desc')} (Vol: {s.get('vol')}%, Muted: {s.get('muted')})" for s in state['sources']])
-            app_list = "\n".join([f"  - {a.get('app', 'app')} (ID: {a['id']}, Vol: {a['vol']}%, Muted: {a['muted']})" for a in state['app_streams']]) or "  (None)"
-            summary = (
-                f"Audio Server: PipeWire 1.6.8\n"
-                f"Default Sink: {sink_desc} (Vol: {sink_vol}%, Muted: {sink_muted})\n"
-                f"Default Source: {src_desc} (Vol: {src_vol}%, Muted: {src_muted})\n"
-                f"\nOutput Sinks:\n{sink_list}\n"
-                f"\nInput Sources:\n{src_list}\n"
-                f"\nActive App Streams:\n{app_list}\n"
-            )
-            if shutil.which("xclip"):
-                p = subprocess.Popen(["xclip", "-selection", "clipboard"], stdin=subprocess.PIPE, text=True)
-                p.communicate(summary)
-                notify("Audio Diagnostics Copied", "Audio server details copied to clipboard.")
-        elif "Refresh Audio Dashboard" in choice:
-            continue
-        else:
-            continue
+    elif "Launch Interactive Terminal Mixer" in choice:
+        subprocess.Popen(["alacritty", "--class", "FloatingAudio", "-e", "alsamixer"])
+    elif "Copy Audio Diagnostics" in choice:
+        sink_list = "\n".join([f"  - [{s.get('id')}] {s.get('desc')} (Vol: {s.get('vol')}%, Muted: {s.get('muted')})" for s in state['sinks']])
+        src_list = "\n".join([f"  - [{s.get('id')}] {s.get('desc')} (Vol: {s.get('vol')}%, Muted: {s.get('muted')})" for s in state['sources']])
+        app_list = "\n".join([f"  - {a.get('app', 'app')} (ID: {a['id']}, Vol: {a['vol']}%, Muted: {a['muted']})" for a in state['app_streams']]) or "  (None)"
+        summary = (
+            f"Audio Server: PipeWire 1.6.8\n"
+            f"Default Sink: {sink_desc} (Vol: {sink_vol}%, Muted: {sink_muted})\n"
+            f"Default Source: {src_desc} (Vol: {src_vol}%, Muted: {src_muted})\n"
+            f"\nOutput Sinks:\n{sink_list}\n"
+            f"\nInput Sources:\n{src_list}\n"
+            f"\nActive App Streams:\n{app_list}\n"
+        )
+        if shutil.which("xclip"):
+            p = subprocess.Popen(["xclip", "-selection", "clipboard"], stdin=subprocess.PIPE, text=True)
+            p.communicate(summary)
+            notify("Audio Diagnostics Copied", "PipeWire and PulseAudio state copied to clipboard.")
+    elif "Refresh Audio Dashboard" in choice:
+        main()
 
 
 if __name__ == "__main__":

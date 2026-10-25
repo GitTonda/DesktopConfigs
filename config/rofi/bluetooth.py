@@ -256,15 +256,19 @@ def device_menu(mac, name, is_conn):
             notify("󰂱 Connected", f"Connected to {name}")
         else:
             notify("Connection Failed", res.stdout.strip()[:80] or "Check device is turned on")
+        return "close"
     elif "Disconnect" in choice:
         subprocess.run(["bluetoothctl", "disconnect", mac], check=False)
         notify("󰂲 Disconnected", f"Disconnected from {name}")
+        return "close"
     elif "Unpair" in choice:
         subprocess.run(["bluetoothctl", "remove", mac], check=False)
         notify("󰅖 Unpaired", f"Forgot {name} [{mac}]")
+        return "close"
     elif "Device Info" in choice:
         raw_info = subprocess.check_output(["bluetoothctl", "info", mac], text=True, stderr=subprocess.DEVNULL)
         notify(f"Info: {name}", raw_info[:200])
+        return "close"
 
     return "back"
 

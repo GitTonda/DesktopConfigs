@@ -62,63 +62,58 @@ def apply_color(hex_code, label="Custom Color"):
 def main():
     accent = get_current_accent()
 
-    while True:
-        items = [
-            f"󰸉  Sync with Wallpaper Accent ({accent})",
-            "────────────────────────────────────────────────────────────",
-            "󰏘  Cyan          (#51c1d2)",
-            "󰏘  Sky Blue      (#89b4fa)",
-            "󰏘  Lavender      (#cba6f7)",
-            "󰏘  Mint Green    (#a6e3a1)",
-            "󰏘  Warm Peach    (#fab387)",
-            "󰏘  Crimson Red   (#f38ba8)",
-            "󰏘  Gold Yellow   (#f9e2af)",
-            "󰏘  Pure White    (#ffffff)",
-            "󰐥  Stealth Mode  (Turn LEDs OFF)",
-            "────────────────────────────────────────────────────────────",
-            "󰒓  Launch OpenRGB GUI Studio",
-            "󰑐  Refresh RGB Status"
-        ]
+    items = [
+        f"󰸉  Sync with Wallpaper Accent ({accent})",
+        "────────────────────────────────────────────────────────────",
+        "󰏘  Cyan          (#51c1d2)",
+        "󰏘  Sky Blue      (#89b4fa)",
+        "󰏘  Lavender      (#cba6f7)",
+        "󰏘  Mint Green    (#a6e3a1)",
+        "󰏘  Warm Peach    (#fab387)",
+        "󰏘  Crimson Red   (#f38ba8)",
+        "󰏘  Gold Yellow   (#f9e2af)",
+        "󰏘  Pure White    (#ffffff)",
+        "󰐥  Stealth Mode  (Turn LEDs OFF)",
+        "────────────────────────────────────────────────────────────",
+        "󰒓  Launch OpenRGB GUI Studio",
+        "󰑐  Refresh RGB Status"
+    ]
 
-        choice = run_rofi("󰸉 rgb lights :~$", items)
-        if not choice:
-            break
+    choice = run_rofi("󰸉 rgb lights :~$", items)
+    if not choice:
+        return
 
-        # Check if user typed a direct hex color e.g. "#ff0055" or "00ffcc"
-        m = re.match(r"^#?([0-9a-fA-F]{6})$", choice.strip())
-        if m:
-            hex_val = m.group(1)
-            apply_color(hex_val, f"#{hex_val}")
-            continue
+    # Check if user typed a direct hex color e.g. "#ff0055" or "00ffcc"
+    m = re.match(r"^#?([0-9a-fA-F]{6})$", choice.strip())
+    if m:
+        hex_val = m.group(1)
+        apply_color(hex_val, f"#{hex_val}")
+        return
 
-        if "Sync with Wallpaper Accent" in choice:
-            apply_color(accent, "System Wallpaper Accent")
-        elif "Cyan" in choice:
-            apply_color("51c1d2", "Cyan")
-        elif "Sky Blue" in choice:
-            apply_color("89b4fa", "Sky Blue")
-        elif "Lavender" in choice:
-            apply_color("cba6f7", "Lavender")
-        elif "Mint Green" in choice:
-            apply_color("a6e3a1", "Mint Green")
-        elif "Warm Peach" in choice:
-            apply_color("fab387", "Warm Peach")
-        elif "Crimson Red" in choice:
-            apply_color("f38ba8", "Crimson Red")
-        elif "Gold Yellow" in choice:
-            apply_color("f9e2af", "Gold Yellow")
-        elif "Pure White" in choice:
-            apply_color("ffffff", "Pure White")
-        elif "Stealth Mode" in choice:
-            apply_color("000000", "Stealth Mode (OFF)")
-        elif "Launch OpenRGB GUI Studio" in choice:
-            subprocess.Popen(["openrgb", "--gui"])
-            break
-        elif "Refresh" in choice:
-            accent = get_current_accent()
-            continue
-        else:
-            continue
+    if "Sync with Wallpaper Accent" in choice:
+        apply_color(accent, "System Wallpaper Accent")
+    elif "Cyan" in choice:
+        apply_color("51c1d2", "Cyan")
+    elif "Sky Blue" in choice:
+        apply_color("89b4fa", "Sky Blue")
+    elif "Lavender" in choice:
+        apply_color("cba6f7", "Lavender")
+    elif "Mint Green" in choice:
+        apply_color("a6e3a1", "Mint Green")
+    elif "Warm Peach" in choice:
+        apply_color("fab387", "Warm Peach")
+    elif "Crimson Red" in choice:
+        apply_color("f38ba8", "Crimson Red")
+    elif "Gold Yellow" in choice:
+        apply_color("f9e2af", "Gold Yellow")
+    elif "Pure White" in choice:
+        apply_color("ffffff", "Pure White")
+    elif "Stealth Mode" in choice:
+        apply_color("000000", "Stealth Mode (OFF)")
+    elif "Launch OpenRGB GUI Studio" in choice:
+        subprocess.Popen(["openrgb", "--gui"])
+    elif "Refresh" in choice:
+        main()
 
 
 if __name__ == "__main__":

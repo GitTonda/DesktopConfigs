@@ -86,7 +86,7 @@ listview {
     fixed-columns:              true;
     spacing:                    2px;
     padding:                    8px 10px;
-    background-color:           @bg;
+    background-color:           transparent;
 }
 
 element {

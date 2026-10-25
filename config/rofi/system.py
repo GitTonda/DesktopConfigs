@@ -228,54 +228,51 @@ def get_top_processes(sort_by="cpu", limit=12):
 
 
 def inspect_processes(sort_by="cpu"):
-    while True:
-        procs = get_top_processes(sort_by=sort_by, limit=15)
-        if not procs:
-            run_rofi("active apps :~$", ["  󰋔  No running processes detected"])
-            return
+    procs = get_top_processes(sort_by=sort_by, limit=15)
+    if not procs:
+        run_rofi("active apps :~$", ["  󰋔  No running processes detected"])
+        return "back"
 
-        header_icon = "󰍛" if sort_by == "cpu" else "󰘚"
-        items = []
-        for p in procs:
-            val_str = f"CPU: {p['cpu']:4.1f}% · RAM: {p['mem']:3.1f}%"
-            items.append(f"󰒋  PID {p['pid']:<6} {p['name']:<18} ({val_str})")
-        items.append("────────────────────────────────────────────────────────────")
-        toggle_label = "󰘚  Sort by Memory (%MEM)" if sort_by == "cpu" else "󰍛  Sort by Processor (%CPU)"
-        items.append(toggle_label)
-        items.append("󰌍  Back to System Dashboard")
+    items = []
+    for p in procs:
+        val_str = f"CPU: {p['cpu']:4.1f}% · RAM: {p['mem']:3.1f}%"
+        items.append(f"󰒋  PID {p['pid']:<6} {p['name']:<18} ({val_str})")
+    items.append("────────────────────────────────────────────────────────────")
+    toggle_label = "󰘚  Sort by Memory (%MEM)" if sort_by == "cpu" else "󰍛  Sort by Processor (%CPU)"
+    items.append(toggle_label)
+    items.append("󰌍  Back to System Dashboard")
 
-        prompt_str = f"top apps ({sort_by}) :~$"
-        choice = run_rofi(prompt_str, items)
-        if not choice or "Back to System Dashboard" in choice:
+    prompt_str = f"top apps ({sort_by}) :~$"
+    choice = run_rofi(prompt_str, items)
+    if not choice or "Back to System Dashboard" in choice:
+        return "back"
+
+    if "Sort by" in choice:
+        return inspect_processes(sort_by="mem" if sort_by == "cpu" else "cpu")
+
+    if choice.startswith("──"):
+        return "back"
+
+    # Process chosen
+    for p in procs:
+        if f"PID {p['pid']}" in choice:
+            action = run_rofi(f"pid {p['pid']} ({p['name']}) :~$", [
+                f"  󰗨  Kill process (SIGKILL {p['pid']})",
+                f"  󰜎  Terminate gracefully (SIGTERM {p['pid']})",
+                "  󰌍  Cancel"
+            ])
+            if action and "Kill process" in action:
+                subprocess.run(["kill", "-9", p['pid']], check=False)
+                notify("Process Terminated", f"Sent SIGKILL to PID {p['pid']} ({p['name']})")
+            elif action and "Terminate gracefully" in action:
+                subprocess.run(["kill", "-15", p['pid']], check=False)
+                notify("Process Terminated", f"Sent SIGTERM to PID {p['pid']} ({p['name']})")
             break
-
-        if "Sort by" in choice:
-            sort_by = "mem" if sort_by == "cpu" else "cpu"
-            continue
-
-        if choice.startswith("──"):
-            continue
-
-        # Process chosen
-        for p in procs:
-            if f"PID {p['pid']}" in choice:
-                action = run_rofi(f"pid {p['pid']} ({p['name']}) :~$", [
-                    f"  󰗨  Kill process (SIGKILL {p['pid']})",
-                    f"  󰜎  Terminate gracefully (SIGTERM {p['pid']})",
-                    "  󰌍  Cancel"
-                ])
-                if action and "Kill process" in action:
-                    subprocess.run(["kill", "-9", p['pid']], check=False)
-                    notify("Process Terminated", f"Sent SIGKILL to PID {p['pid']} ({p['name']})")
-                elif action and "Terminate gracefully" in action:
-                    subprocess.run(["kill", "-15", p['pid']], check=False)
-                    notify("Process Terminated", f"Sent SIGTERM to PID {p['pid']} ({p['name']})")
-                break
+    return None
 
 
 def drop_system_caches():
     try:
-        # Check if sudo or pkexec is available
         if shutil.which("pkexec"):
             cmd = "sync && echo 3 > /proc/sys/vm/drop_caches"
             subprocess.run(["pkexec", "sh", "-c", cmd], check=False)
@@ -287,90 +284,87 @@ def drop_system_caches():
 
 
 def main():
-    while True:
-        cpu = get_cpu_data()
-        mem = get_memory_data()
-        disk = get_disk_data("/")
-        uptime = get_uptime()
+    cpu = get_cpu_data()
+    mem = get_memory_data()
+    disk = get_disk_data("/")
+    uptime = get_uptime()
 
-        if not cpu or not mem:
-            run_rofi("system :~$", ["󰍛  Unable to read system metrics", "󰌍  Exit"])
-            break
+    if not cpu or not mem:
+        run_rofi("system :~$", ["󰍛  Unable to read system metrics", "󰌍  Exit"])
+        return
 
-        cpu_meter = make_meter(cpu["util"])
-        ram_meter = make_meter(mem["pct"])
-        swap_meter = make_meter(mem["swap_pct"])
-        disk_meter = make_meter(disk["pct"])
+    cpu_meter = make_meter(cpu["util"])
+    ram_meter = make_meter(mem["pct"])
+    swap_meter = make_meter(mem["swap_pct"])
+    disk_meter = make_meter(disk["pct"])
 
-        # Thermal label
-        if cpu["temp"] >= 80:
-            thermal_str = f"{cpu['temp']}°C (Hot!)"
-        elif cpu["temp"] >= 65:
-            thermal_str = f"{cpu['temp']}°C (Warm)"
-        elif cpu["temp"] > 0:
-            thermal_str = f"{cpu['temp']}°C (Cool)"
-        else:
-            thermal_str = "Normal"
+    # Thermal label
+    if cpu["temp"] >= 80:
+        thermal_str = f"{cpu['temp']}°C (Hot!)"
+    elif cpu["temp"] >= 65:
+        thermal_str = f"{cpu['temp']}°C (Warm)"
+    elif cpu["temp"] > 0:
+        thermal_str = f"{cpu['temp']}°C (Cool)"
+    else:
+        thermal_str = "Normal"
 
-        freq_str = f"{cpu['avg_freq_mhz'] / 1000.0:.2f} GHz" if cpu['avg_freq_mhz'] >= 1000 else f"{cpu['avg_freq_mhz']} MHz"
+    freq_str = f"{cpu['avg_freq_mhz'] / 1000.0:.2f} GHz" if cpu['avg_freq_mhz'] >= 1000 else f"{cpu['avg_freq_mhz']} MHz"
 
-        top_procs = get_top_processes(sort_by="cpu", limit=4)
-        top_str = ", ".join([f"{p['name']} ({p['cpu']:.0f}%)" for p in top_procs])
+    top_procs = get_top_processes(sort_by="cpu", limit=4)
+    top_str = ", ".join([f"{p['name']} ({p['cpu']:.0f}%)" for p in top_procs])
 
-        items = [
-            f"󰍛  {cpu['model']} ({cpu['cores']} Threads)",
-            f"󰍛  CPU Load:     [{cpu_meter}] {cpu['util']:2d}% ({freq_str})",
-            f"󱤓  Thermal:      {thermal_str} · Load: {cpu['loadavg']}",
-            f"󰘚  RAM Usage:    [{ram_meter}] {mem['used_gb']:.1f} / {mem['total_gb']:.1f} GB ({mem['pct']}%)",
-            f"󰓅  Swap Usage:   [{swap_meter}] {mem['swap_used_gb']:.1f} / {mem['swap_tot_gb']:.1f} GB ({mem['swap_pct']}%)",
-            f"󰋊  Root Disk:    [{disk_meter}] {disk['used_gb']:.0f} / {disk['total_gb']:.0f} GB ({disk['pct']}%) · Free: {disk['avail_gb']:.0f}G",
-            f"󱑂  System Up:    {uptime} · Top: {top_str}",
-            "────────────────────────────────────────────────────────────",
-            "󰒋  Inspect & Manage Heavy Processes...",
-            "󰓅  Launch Live Terminal Monitor (btop)",
-            "󰚥  System Summary & Hardware Specs (Fastfetch)",
-            "󰃢  Drop PageCache & Free Unused RAM",
-            "󰆏  Copy System Telemetry to Clipboard",
-            "󰑐  Refresh Dashboard"
-        ]
+    items = [
+        f"󰍛  {cpu['model']} ({cpu['cores']} Threads)",
+        f"󰍛  CPU Load:     [{cpu_meter}] {cpu['util']:2d}% ({freq_str})",
+        f"󱤓  Thermal:      {thermal_str} · Load: {cpu['loadavg']}",
+        f"󰘚  RAM Usage:    [{ram_meter}] {mem['used_gb']:.1f} / {mem['total_gb']:.1f} GB ({mem['pct']}%)",
+        f"󰓅  Swap Usage:   [{swap_meter}] {mem['swap_used_gb']:.1f} / {mem['swap_tot_gb']:.1f} GB ({mem['swap_pct']}%)",
+        f"󰋊  Root Disk:    [{disk_meter}] {disk['used_gb']:.0f} / {disk['total_gb']:.0f} GB ({disk['pct']}%) · Free: {disk['avail_gb']:.0f}G",
+        f"󱑂  System Up:    {uptime} · Top: {top_str}",
+        "────────────────────────────────────────────────────────────",
+        "󰒋  Inspect & Manage Heavy Processes...",
+        "󰓅  Launch Live Terminal Monitor (btop)",
+        "󰚥  System Summary & Hardware Specs (Fastfetch)",
+        "󰃢  Drop PageCache & Free Unused RAM",
+        "󰆏  Copy System Telemetry to Clipboard",
+        "󰑐  Refresh Dashboard"
+    ]
 
-        choice = run_rofi("󰍛 system :~$", items)
-        if not choice:
-            break
+    choice = run_rofi("󰍛 system :~$", items)
+    if not choice:
+        return
 
-        if "Launch Live Terminal Monitor" in choice:
-            subprocess.Popen(["alacritty", "--class", "FloatingBtop", "-e", "btop"])
-            break
-        elif "Inspect & Manage Heavy Processes" in choice:
-            inspect_processes(sort_by="cpu")
-        elif "System Summary & Hardware Specs" in choice:
-            subprocess.Popen(["alacritty", "--class", "FloatingTerm", "-e", "bash", "-c", "fastfetch; echo ''; read -n 1 -s -r -p 'Press any key to close...'"])
-            break
-        elif "Drop PageCache" in choice:
-            drop_system_caches()
-        elif "Copy System Telemetry" in choice:
-            proc_lines = "\n".join([f"  - {p['name']} (PID: {p['pid']}, CPU: {p['cpu']}%, RAM: {p['mem']}%)" for p in top_procs])
-            summary = (
-                f"OS: Pop!_OS 24.04 LTS\n"
-                f"CPU: {cpu['model']} ({cpu['cores']} Threads)\n"
-                f"CPU Load: {cpu['util']}% ({freq_str}, {thermal_str})\n"
-                f"Load Average: {cpu['loadavg']}\n"
-                f"RAM: {mem['used_gb']:.2f} / {mem['total_gb']:.2f} GB ({mem['pct']}%)\n"
-                f"Swap: {mem['swap_used_gb']:.2f} / {mem['swap_tot_gb']:.2f} GB\n"
-                f"Disk (/): {disk['used_gb']:.1f} / {disk['total_gb']:.1f} GB ({disk['pct']}%)\n"
-                f"Uptime: {uptime}\n"
-                f"Top Processes:\n{proc_lines}\n"
-            )
-            if shutil.which("xclip"):
-                p = subprocess.Popen(["xclip", "-selection", "clipboard"], stdin=subprocess.PIPE, text=True)
-                p.communicate(summary)
-                notify("System Telemetry Copied", "Hardware telemetry copied to system clipboard.")
-        elif "Refresh Dashboard" in choice:
-            continue
-        elif any(header in choice for header in ["CPU Load", "RAM Usage", "Swap Usage", "Root Disk", "Top:"]):
-            inspect_processes(sort_by="mem" if "RAM" in choice else "cpu")
-        else:
-            continue
+    if "Launch Live Terminal Monitor" in choice:
+        subprocess.Popen(["alacritty", "--class", "FloatingBtop", "-e", "btop"])
+    elif "Inspect & Manage Heavy Processes" in choice:
+        if inspect_processes(sort_by="cpu") == "back":
+            main()
+    elif "System Summary & Hardware Specs" in choice:
+        subprocess.Popen(["alacritty", "--class", "FloatingTerm", "-e", "bash", "-c", "fastfetch; echo ''; read -n 1 -s -r -p 'Press any key to close...'"])
+    elif "Drop PageCache" in choice:
+        drop_system_caches()
+    elif "Copy System Telemetry" in choice:
+        proc_lines = "\n".join([f"  - {p['name']} (PID: {p['pid']}, CPU: {p['cpu']}%, RAM: {p['mem']}%)" for p in top_procs])
+        summary = (
+            f"OS: Pop!_OS 24.04 LTS\n"
+            f"CPU: {cpu['model']} ({cpu['cores']} Threads)\n"
+            f"CPU Load: {cpu['util']}% ({freq_str}, {thermal_str})\n"
+            f"Load Average: {cpu['loadavg']}\n"
+            f"RAM: {mem['used_gb']:.2f} / {mem['total_gb']:.2f} GB ({mem['pct']}%)\n"
+            f"Swap: {mem['swap_used_gb']:.2f} / {mem['swap_tot_gb']:.2f} GB\n"
+            f"Disk (/): {disk['used_gb']:.1f} / {disk['total_gb']:.1f} GB ({disk['pct']}%)\n"
+            f"Uptime: {uptime}\n"
+            f"Top Processes:\n{proc_lines}\n"
+        )
+        if shutil.which("xclip"):
+            p = subprocess.Popen(["xclip", "-selection", "clipboard"], stdin=subprocess.PIPE, text=True)
+            p.communicate(summary)
+            notify("System Telemetry Copied", "Hardware telemetry copied to system clipboard.")
+    elif "Refresh Dashboard" in choice:
+        main()
+    elif any(header in choice for header in ["CPU Load", "RAM Usage", "Swap Usage", "Root Disk", "Top:"]):
+        if inspect_processes(sort_by="mem" if "RAM" in choice else "cpu") == "back":
+            main()
 
 
 if __name__ == "__main__":
