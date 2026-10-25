@@ -72,6 +72,7 @@ bindsym $mod+Shift+a exec ~/.config/rofi/volume.sh
 bindsym $mod+Ctrl+a exec alacritty --class FloatingAudio -e alsamixer
 bindsym $mod+Shift+b exec ~/.config/rofi/wallpaper.sh
 bindsym $mod+Shift+o exec ~/.config/rofi/rgb.sh
+bindsym $mod+Shift+x exec ~/.config/rofi/cursor.sh
 bindsym $mod+Shift+p exec --no-startup-id ~/.config/polybar/launch.sh
 bindsym $mod+F1 exec ~/.config/rofi/shortcuts.sh
 bindsym $mod+slash exec ~/.config/rofi/shortcuts.sh

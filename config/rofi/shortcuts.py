@@ -26,6 +26,7 @@ CORE_DESCRIPTIONS = {
     "$mod+Ctrl+a": "Mixer Audio Terminale (Alsamixer)",
     "$mod+Shift+b": "Selettore Sfondo & Tema Dinamico (Rofi)",
     "$mod+Shift+o": "Controllo Luci Hardware RGB (Fans, RAM, GPU)",
+    "$mod+Shift+x": "Selettore Tema Cursore Mouse (Rofi)",
     "$mod+Shift+p": "Riavvia Barra Superiore (Polybar)",
     "$mod+d": "Launcher Applicazioni (Rofi drun)",
     "$mod+q": "Chiudi finestra attiva",

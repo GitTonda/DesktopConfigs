@@ -86,12 +86,15 @@ if [ -n "$DISPLAY" ]; then
     "$HOME/.config/polybar/launch.sh" >/dev/null 2>&1 || true
 fi
 
-# 6. Update Rofi Theme Accent & Background
+# 6. Update Rofi Theme Accent & Background (Uniform Frosted Transparency)
 mkdir -p "$HOME/.config/rofi"
 cat << ROFI > "$HOME/.config/rofi/colors.rasi"
 * {
-    accent: $ACCENT;
-    bg:     $BG_DARK;
+    accent:     $ACCENT;
+    bg:         rgba(17, 17, 27, 0.78);
+    bg-alt:     rgba(24, 24, 37, 0.72);
+    bg-frosted: rgba(17, 17, 27, 0.78);
+    bg-header:  rgba(24, 24, 37, 0.72);
 }
 ROFI
 
@@ -140,29 +143,44 @@ if [ -f "$HOME/.config/theme/sync-rgb.sh" ]; then
     "$HOME/.config/theme/sync-rgb.sh" "$ACCENT" >/dev/null 2>&1 &
 fi
 
-# 11. Update Cursor Theme to match system colorway
+# 11. Update Cursor Theme (preserves user preference if set to Bibata/Nordzy/Qogir)
 python3 -c "
 import colorsys, subprocess, os
 
-accent = '$ACCENT'.lstrip('#')
-try:
-    r, g, b = int(accent[0:2], 16)/255.0, int(accent[2:4], 16)/255.0, int(accent[4:6], 16)/255.0
-    h, l, s = colorsys.rgb_to_hls(r, g, b)
-    if 0.42 <= h <= 0.54:
-        theme = 'catppuccin-mocha-teal-cursors'
-    elif 0.54 < h <= 0.68:
-        theme = 'catppuccin-mocha-blue-cursors'
-    elif 0.68 < h <= 0.82:
-        theme = 'catppuccin-mocha-lavender-cursors'
-    else:
-        theme = 'catppuccin-mocha-dark-cursors'
-except Exception:
-    theme = 'catppuccin-mocha-teal-cursors'
-
 home = os.path.expanduser('~')
-for idx_path in [f'{home}/.icons/default/index.theme', f'{home}/.local/share/icons/default/index.theme']:
-    os.makedirs(os.path.dirname(idx_path), exist_ok=True)
-    with open(idx_path, 'w') as f:
+idx_path = f'{home}/.icons/default/index.theme'
+current_theme = 'Bibata-Modern-Classic'
+if os.path.exists(idx_path):
+    try:
+        with open(idx_path, 'r') as f:
+            for line in f:
+                if line.startswith('Inherits='):
+                    current_theme = line.split('=', 1)[1].strip()
+    except Exception:
+        pass
+
+# Only auto-shift if user is using a dynamic catppuccin theme
+if current_theme.startswith('catppuccin-mocha'):
+    accent = '$ACCENT'.lstrip('#')
+    try:
+        r, g, b = int(accent[0:2], 16)/255.0, int(accent[2:4], 16)/255.0, int(accent[4:6], 16)/255.0
+        h, l, s = colorsys.rgb_to_hls(r, g, b)
+        if 0.42 <= h <= 0.54:
+            theme = 'catppuccin-mocha-teal-cursors'
+        elif 0.54 < h <= 0.68:
+            theme = 'catppuccin-mocha-blue-cursors'
+        elif 0.68 < h <= 0.82:
+            theme = 'catppuccin-mocha-lavender-cursors'
+        else:
+            theme = 'catppuccin-mocha-dark-cursors'
+    except Exception:
+        theme = current_theme
+else:
+    theme = current_theme
+
+for p in [idx_path, f'{home}/.local/share/icons/default/index.theme']:
+    os.makedirs(os.path.dirname(p), exist_ok=True)
+    with open(p, 'w') as f:
         f.write(f'[Icon Theme]\nName=Default\nComment=Default Cursor Theme\nInherits={theme}\n')
 
 xres_path = f'{home}/.Xresources'
