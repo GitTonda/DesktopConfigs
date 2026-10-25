@@ -140,6 +140,47 @@ if [ -f "$HOME/.config/theme/sync-rgb.sh" ]; then
     "$HOME/.config/theme/sync-rgb.sh" "$ACCENT" >/dev/null 2>&1 &
 fi
 
+# 11. Update Cursor Theme to match system colorway
+python3 -c "
+import colorsys, subprocess, os
+
+accent = '$ACCENT'.lstrip('#')
+try:
+    r, g, b = int(accent[0:2], 16)/255.0, int(accent[2:4], 16)/255.0, int(accent[4:6], 16)/255.0
+    h, l, s = colorsys.rgb_to_hls(r, g, b)
+    if 0.42 <= h <= 0.54:
+        theme = 'catppuccin-mocha-teal-cursors'
+    elif 0.54 < h <= 0.68:
+        theme = 'catppuccin-mocha-blue-cursors'
+    elif 0.68 < h <= 0.82:
+        theme = 'catppuccin-mocha-lavender-cursors'
+    else:
+        theme = 'catppuccin-mocha-dark-cursors'
+except Exception:
+    theme = 'catppuccin-mocha-teal-cursors'
+
+home = os.path.expanduser('~')
+for idx_path in [f'{home}/.icons/default/index.theme', f'{home}/.local/share/icons/default/index.theme']:
+    os.makedirs(os.path.dirname(idx_path), exist_ok=True)
+    with open(idx_path, 'w') as f:
+        f.write(f'[Icon Theme]\nName=Default\nComment=Default Cursor Theme\nInherits={theme}\n')
+
+xres_path = f'{home}/.Xresources'
+with open(xres_path, 'w') as f:
+    f.write(f'Xcursor.theme: {theme}\nXcursor.size: 24\n')
+
+for gtk_ver in ['gtk-3.0', 'gtk-4.0']:
+    gtk_path = f'{home}/.config/{gtk_ver}/settings.ini'
+    os.makedirs(os.path.dirname(gtk_path), exist_ok=True)
+    with open(gtk_path, 'w') as f:
+        f.write(f'[Settings]\ngtk-theme-name=Adwaita-dark\ngtk-icon-theme-name=Papirus-Dark\ngtk-cursor-theme-name={theme}\ngtk-cursor-theme-size=24\ngtk-font-name=JetBrainsMono Nerd Font 10\ngtk-application-prefer-dark-theme=1\n')
+
+subprocess.run(['xrdb', '-merge', xres_path], check=False)
+subprocess.run(['gsettings', 'set', 'org.gnome.desktop.interface', 'cursor-theme', theme], check=False)
+subprocess.run(['gsettings', 'set', 'org.gnome.desktop.interface', 'cursor-size', '24'], check=False)
+subprocess.run(['xsetroot', '-cursor_name', 'left_ptr'], check=False)
+" 2>/dev/null || true
+
 # 9. Notify user of change
 WALL_NAME=$(basename "$WALLPAPER")
 if command -v dunstify >/dev/null 2>&1 && [ -n "$DISPLAY" ]; then

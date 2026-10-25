@@ -61,6 +61,12 @@ do_pull() {
     mkdir -p "$HOME/Pictures/Wallpapers"
     cp -r "$DOTFILES_DIR/wallpapers/"* "$HOME/Pictures/Wallpapers/"
 
+    # Xresources
+    if [ -f "$DOTFILES_DIR/Xresources" ]; then
+        cp "$DOTFILES_DIR/Xresources" "$HOME/.Xresources"
+        xrdb -merge "$HOME/.Xresources" 2>/dev/null || true
+    fi
+
     # Ensure executable permissions on all helper scripts
     chmod +x "$HOME/.config/polybar/launch.sh" 2>/dev/null || true
     chmod +x "$HOME/.config/polybar/scripts/"*.sh 2>/dev/null || true
@@ -98,7 +104,7 @@ do_push() {
     cd "$DOTFILES_DIR"
 
     # Sync changed configs into dotfiles repo
-    for dir in alacritty dunst i3 ly openrgb picom polybar rofi systemd theme; do
+    for dir in alacritty dunst gtk-3.0 gtk-4.0 i3 ly openrgb picom polybar rofi systemd theme; do
         if [ -d "$HOME/.config/$dir" ]; then
             mkdir -p "$DOTFILES_DIR/config/$dir"
             cp -a "$HOME/.config/$dir/"* "$DOTFILES_DIR/config/$dir/" 2>/dev/null || true
@@ -112,6 +118,11 @@ do_push() {
     if [ -d "$HOME/Pictures/Wallpapers" ]; then
         mkdir -p "$DOTFILES_DIR/wallpapers"
         cp -a "$HOME/Pictures/Wallpapers/"* "$DOTFILES_DIR/wallpapers/" 2>/dev/null || true
+    fi
+
+    # Sync Xresources
+    if [ -f "$HOME/.Xresources" ]; then
+        cp "$HOME/.Xresources" "$DOTFILES_DIR/Xresources"
     fi
 
     # Check git status
