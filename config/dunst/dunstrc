@@ -22,11 +22,11 @@
     progress_bar_min_width = 180
     progress_bar_max_width = 320
     progress_bar_corner_radius = 0
-    highlight = "#f3c0b4"
+    highlight = "#51c1d2"
 
     # Frame & Geometry (Squared Aesthetic)
     frame_width = 2
-    frame_color = "#f3c0b4"
+    frame_color = "#51c1d2"
     separator_height = 0
     separator_color = frame
     corner_radius = 0
@@ -79,22 +79,22 @@
 [urgency_low]
     background = "#181825"
     foreground = "#a6adc8"
-    frame_color = "#f3c0b4"
-    highlight = "#f3c0b4"
+    frame_color = "#51c1d2"
+    highlight = "#51c1d2"
     timeout = 4
 
 [urgency_normal]
-    background = "#171211"
+    background = "#111617"
     foreground = "#cdd6f4"
-    frame_color = "#f3c0b4"
-    highlight = "#f3c0b4"
+    frame_color = "#51c1d2"
+    highlight = "#51c1d2"
     timeout = 6
 
 [urgency_critical]
     background = "#1e1e2e"
     foreground = "#cdd6f4"
-    frame_color = "#f3c0b4"
-    highlight = "#f3c0b4"
+    frame_color = "#51c1d2"
+    highlight = "#51c1d2"
     timeout = 0
 
 # ==============================================================================
@@ -103,30 +103,30 @@
 
 [volume_osd]
     summary = "*Volume*"
-    highlight = "#f3c0b4"
-    frame_color = "#f3c0b4"
+    highlight = "#51c1d2"
+    frame_color = "#51c1d2"
     timeout = 2
 
 [brightness_osd]
     summary = "*Brightness*"
-    highlight = "#f3c0b4"
-    frame_color = "#f3c0b4"
+    highlight = "#51c1d2"
+    frame_color = "#51c1d2"
     timeout = 2
 
 [screenshot_rule]
     summary = "*Screenshot*"
-    frame_color = "#f3c0b4"
-    highlight = "#f3c0b4"
+    frame_color = "#51c1d2"
+    highlight = "#51c1d2"
     timeout = 3
 
 [network_rule]
     summary = "*Wi-Fi*"
-    frame_color = "#f3c0b4"
-    highlight = "#f3c0b4"
+    frame_color = "#51c1d2"
+    highlight = "#51c1d2"
     timeout = 4
 
 [calendar_rule]
     summary = "*Calendar*"
-    frame_color = "#f3c0b4"
-    highlight = "#f3c0b4"
+    frame_color = "#51c1d2"
+    highlight = "#51c1d2"
     timeout = 5

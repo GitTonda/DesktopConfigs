@@ -17,7 +17,8 @@ ROFI_THEME = os.path.expanduser("~/.config/rofi/shortcuts.rasi")
 CORE_DESCRIPTIONS = {
     "$mod+Return": "Terminale (Alacritty)",
     "$mod+Shift+Return": "File Manager (Ranger)",
-    "$mod+Shift+m": "Monitor di Sistema (Btop)",
+    "$mod+Shift+m": "Dashboard Risorse e Sistema (Rofi)",
+    "$mod+Ctrl+m": "Monitor Interattivo Terminale (Btop)",
     "$mod+Shift+g": "Dashboard & Control GPU (Rofi)",
     "$mod+Shift+w": "Menu Wi-Fi (Rofi)",
     "$mod+Shift+t": "Menu Bluetooth & Personalizzazione (Rofi)",

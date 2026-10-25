@@ -58,8 +58,9 @@ bindsym $mod+Return exec alacritty
 # Launch file manager (Ranger)
 bindsym $mod+Shift+Return exec alacritty -e ranger
 
-# Launch system monitor (Btop)
-bindsym $mod+Shift+m exec alacritty --class FloatingBtop -e btop
+# Launch system monitor (Rofi System Dashboard / Btop)
+bindsym $mod+Shift+m exec ~/.config/rofi/system.sh
+bindsym $mod+Ctrl+m exec alacritty --class FloatingBtop -e btop
 
 # Launch GPU monitor & dashboard (Rofi / nvitop)
 bindsym $mod+Shift+g exec ~/.config/rofi/gpu.sh
