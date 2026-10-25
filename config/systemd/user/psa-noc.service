@@ -1,0 +1,18 @@
+[Unit]
+Description=PSA / BandaBlu NOC Topological Web Application
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/tonda/psa-graph
+ExecStart=/usr/bin/python3 /home/tonda/psa-graph/web_server.py 8080
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+Environment=PORT=8080
+Environment=SYNC_INTERVAL_HOURS=6
+Environment=SYNC_INITIAL_DELAY_SECONDS=30
+LimitNOFILE=65536
+
+[Install]
+WantedBy=default.target

@@ -1,31 +1,32 @@
 #!/usr/bin/env bash
+# ==============================================================================
+# Polybar Launcher with Systemd Supervised Watchdog
+# Ensures the status bar starts cleanly and auto-revives if ever terminated.
+# ==============================================================================
 
-# Terminate already running bar instances cleanly via IPC
-polybar-msg cmd quit 2>/dev/null || killall -q polybar
-
-# Wait until the processes have been shut down
-while pgrep -u $UID -x polybar >/dev/null; do sleep 0.1; done
-
-# Detect battery and adapter dynamically
-BATTERY_NAME=$(ls -1 /sys/class/power_supply/ 2>/dev/null | grep -E '^BAT' | head -n 1)
-ADAPTER_NAME=$(ls -1 /sys/class/power_supply/ 2>/dev/null | grep -E '^(AC|ADP|A_C)' | head -n 1)
-
-if [ -n "$BATTERY_NAME" ]; then
-    export POLYBAR_BATTERY_MODULE="battery"
-    export POLYBAR_BATTERY="$BATTERY_NAME"
-    export POLYBAR_ADAPTER="${ADAPTER_NAME:-AC}"
-else
-    export POLYBAR_BATTERY_MODULE=""
-    export POLYBAR_BATTERY="BAT0"
-    export POLYBAR_ADAPTER="AC"
-fi
-
-# Secure user-scoped logging path (avoids symlink attacks in /tmp)
 LOG_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/polybar"
 mkdir -p "$LOG_DIR"
 
-# Brief pause to allow X11 to clear tray window claims
-sleep 0.2
+# If systemd user service is available, let systemd manage lifecycle & auto-restart
+if systemctl --user is-enabled polybar.service >/dev/null 2>&1 || [ -f "$HOME/.config/systemd/user/polybar.service" ]; then
+    systemctl --user daemon-reload >/dev/null 2>&1 || true
+    systemctl --user restart polybar.service
+    exit 0
+fi
 
-# Launch Polybar detached from the script shell in its own session
-setsid nohup polybar main >>"$LOG_DIR/polybar.log" 2>&1 &
+# Fallback: Manual Process Management
+polybar-msg cmd quit 2>/dev/null || true
+for i in {1..10}; do
+    if ! pgrep -u "$UID" -x polybar >/dev/null; then
+        break
+    fi
+    sleep 0.1
+done
+
+if pgrep -u "$UID" -x polybar >/dev/null; then
+    killall -9 polybar 2>/dev/null || true
+    sleep 0.2
+fi
+
+nohup polybar main >>"$LOG_DIR/polybar.log" 2>&1 &
+disown

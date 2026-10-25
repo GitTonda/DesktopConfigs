@@ -1,0 +1,15 @@
+[Unit]
+Description=Polybar Status Bar
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/polybar main
+Restart=always
+RestartSec=1s
+Environment=DISPLAY=:0
+StandardOutput=append:%h/.local/state/polybar/polybar.log
+StandardError=append:%h/.local/state/polybar/polybar.log
+
+[Install]
+WantedBy=default.target

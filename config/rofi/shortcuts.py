@@ -25,6 +25,7 @@ CORE_DESCRIPTIONS = {
     "$mod+Shift+a": "Dashboard Volume e Dispositivi Audio (Rofi)",
     "$mod+Ctrl+a": "Mixer Audio Terminale (Alsamixer)",
     "$mod+Shift+b": "Selettore Sfondo & Tema Dinamico (Rofi)",
+    "$mod+Shift+p": "Riavvia Barra Superiore (Polybar)",
     "$mod+d": "Launcher Applicazioni (Rofi drun)",
     "$mod+q": "Chiudi finestra attiva",
     "$mod+Shift+q": "Forza chiusura finestra",
