@@ -53,17 +53,34 @@ echo "$BG_DARK" > "$HOME/.config/theme/bg.color"
 # 3. Apply Wallpaper with feh & persist ~/.fehbg (guaranteeing desktop cursor persistence)
 if [ -n "$DISPLAY" ]; then
     feh --no-fehbg --bg-fill "$WALLPAPER" 2>/dev/null || true
-    xsetroot -cursor_name left_ptr 2>/dev/null || true
+    if [ -f "$HOME/.icons/Bibata-Modern-Classic/cursors/left_ptr" ]; then
+        xsetroot -xcf "$HOME/.icons/Bibata-Modern-Classic/cursors/left_ptr" 24 2>/dev/null || xsetroot -cursor_name left_ptr 2>/dev/null || true
+    else
+        xsetroot -cursor_name left_ptr 2>/dev/null || true
+    fi
 fi
 cat << 'FEH' > "$HOME/.fehbg"
 #!/bin/sh
 feh --no-fehbg --bg-fill 'WALLPAPER_PATH_PLACEHOLDER'
+THEME="Bibata-Modern-Classic"
 if [ -f "$HOME/.icons/default/index.theme" ]; then
-    THEME=$(grep -E '^Inherits=' "$HOME/.icons/default/index.theme" | cut -d= -f2 | tr -d ' \r\n')
-    [ -n "$THEME" ] && export XCURSOR_THEME="$THEME"
+    DETECTED=$(grep -E '^Inherits=' "$HOME/.icons/default/index.theme" | cut -d= -f2 | tr -d ' \r\n')
+    [ -n "$DETECTED" ] && THEME="$DETECTED"
 fi
+export XCURSOR_THEME="$THEME"
 export XCURSOR_SIZE="24"
-xsetroot -cursor_name left_ptr
+CURSOR_FILE=""
+for p in "$HOME/.icons/$THEME/cursors/left_ptr" "$HOME/.local/share/icons/$THEME/cursors/left_ptr" "/usr/share/icons/$THEME/cursors/left_ptr"; do
+    if [ -f "$p" ]; then
+        CURSOR_FILE="$p"
+        break
+    fi
+done
+if [ -n "$CURSOR_FILE" ]; then
+    xsetroot -xcf "$CURSOR_FILE" 24 2>/dev/null || xsetroot -cursor_name left_ptr
+else
+    xsetroot -cursor_name left_ptr
+fi
 FEH
 sed -i "s|WALLPAPER_PATH_PLACEHOLDER|$WALLPAPER|g" "$HOME/.fehbg"
 chmod +x "$HOME/.fehbg"
