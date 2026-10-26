@@ -50,14 +50,22 @@ mkdir -p "$HOME/.config/theme"
 echo "$ACCENT" > "$HOME/.config/theme/accent.color"
 echo "$BG_DARK" > "$HOME/.config/theme/bg.color"
 
-# 3. Apply Wallpaper with feh & persist ~/.fehbg
+# 3. Apply Wallpaper with feh & persist ~/.fehbg (guaranteeing desktop cursor persistence)
 if [ -n "$DISPLAY" ]; then
     feh --no-fehbg --bg-fill "$WALLPAPER" 2>/dev/null || true
+    xsetroot -cursor_name left_ptr 2>/dev/null || true
 fi
-cat << FEH > "$HOME/.fehbg"
+cat << 'FEH' > "$HOME/.fehbg"
 #!/bin/sh
-feh --no-fehbg --bg-fill '$WALLPAPER'
+feh --no-fehbg --bg-fill 'WALLPAPER_PATH_PLACEHOLDER'
+if [ -f "$HOME/.icons/default/index.theme" ]; then
+    THEME=$(grep -E '^Inherits=' "$HOME/.icons/default/index.theme" | cut -d= -f2 | tr -d ' \r\n')
+    [ -n "$THEME" ] && export XCURSOR_THEME="$THEME"
+fi
+export XCURSOR_SIZE="24"
+xsetroot -cursor_name left_ptr
 FEH
+sed -i "s|WALLPAPER_PATH_PLACEHOLDER|$WALLPAPER|g" "$HOME/.fehbg"
 chmod +x "$HOME/.fehbg"
 
 # 4. Update i3 Window Borders & Background

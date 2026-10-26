@@ -227,18 +227,14 @@ bindsym --release Shift+Print exec --no-startup-id ~/.config/i3/screenshot.sh fu
 # Launch Polybar
 exec_always --no-startup-id ~/.config/polybar/launch.sh
 
-# Set cursor theme and root pointer
-exec_always --no-startup-id xrdb -merge ~/.Xresources
-exec_always --no-startup-id xsetroot -cursor_name left_ptr
+# Synchronously merge Xresources, apply wallpaper, and lock desktop root cursor
+exec_always --no-startup-id bash -c 'xrdb -merge ~/.Xresources && ~/.fehbg && xsetroot -cursor_name left_ptr'
 
 # Map F13 keycodes in X11 (evdev 183 -> X11 keycode 191/183)
 exec_always --no-startup-id xmodmap -e "keycode 183 = F13" -e "keycode 191 = F13"
 
 # Compositor (Picom)
 exec --no-startup-id picom -b
-
-# Wallpaper (restores last selected wallpaper)
-exec --no-startup-id ~/.fehbg
 
 # Notification daemon (Dynamic DPI & Gap Detection)
 exec_always --no-startup-id ~/.config/dunst/launch.sh
