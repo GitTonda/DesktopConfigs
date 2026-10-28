@@ -306,6 +306,12 @@ chmod +x "$HOME/.config/rofi/gpu.sh" "$HOME/.config/rofi/gpu.py" 2>/dev/null || 
 chmod +x "$HOME/.config/rofi/wallpaper.sh" 2>/dev/null || true
 chmod +x "$HOME/.config/theme/apply-theme.sh" 2>/dev/null || true
 chmod +x "$HOME/.config/i3/screenshot.sh"
+chmod +x "$HOME/.config/zen/setup-zen.sh" 2>/dev/null || true
+
+# Setup Zen Browser configs & extensions if installed
+if [ -x "$HOME/.config/zen/setup-zen.sh" ]; then
+    "$HOME/.config/zen/setup-zen.sh" 2>/dev/null || true
+fi
 
 # Ensure nvitop is available for NVIDIA GPU monitoring
 if command -v uv >/dev/null 2>&1; then

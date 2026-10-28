@@ -75,6 +75,13 @@ do_pull() {
     chmod +x "$HOME/.config/rofi/"*.sh "$HOME/.config/rofi/"*.py 2>/dev/null || true
     chmod +x "$HOME/.config/theme/apply-theme.sh" 2>/dev/null || true
     chmod +x "$HOME/.config/i3/screenshot.sh" 2>/dev/null || true
+    chmod +x "$HOME/.config/zen/setup-zen.sh" 2>/dev/null || true
+
+    # Deploy Zen Browser configurations and extensions
+    if [ -x "$HOME/.config/zen/setup-zen.sh" ]; then
+        echo -e "${BLUE}==> Deploying Zen Browser customizations and extensions...${NC}"
+        "$HOME/.config/zen/setup-zen.sh" >/dev/null 2>&1 || true
+    fi
 
     # Hot-reload desktop environment if running inside X11
     if [ -n "$DISPLAY" ]; then
@@ -104,7 +111,7 @@ do_push() {
     cd "$DOTFILES_DIR"
 
     # Sync changed configs into dotfiles repo
-    for dir in alacritty dunst gtk-3.0 gtk-4.0 i3 ly openrgb picom polybar rofi systemd theme; do
+    for dir in alacritty dunst gtk-3.0 gtk-4.0 i3 ly openrgb picom polybar rofi systemd theme zen; do
         if [ -d "$HOME/.config/$dir" ]; then
             mkdir -p "$DOTFILES_DIR/config/$dir"
             cp -a "$HOME/.config/$dir/"* "$DOTFILES_DIR/config/$dir/" 2>/dev/null || true

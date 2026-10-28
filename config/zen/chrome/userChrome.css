@@ -1,0 +1,363 @@
+/* Catppuccin Mocha Blue userChrome.css*/
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --zen-colors-primary: #313244 !important;
+    --zen-primary-color: #2977af !important;
+    --zen-colors-secondary: #313244 !important;
+    --zen-colors-tertiary: #181825 !important;
+    --zen-colors-border: #2977af !important;
+    --toolbarbutton-icon-fill: #2977af !important;
+    --lwt-text-color: #cdd6f4 !important;
+    --toolbar-field-color: #cdd6f4 !important;
+    --tab-selected-textcolor: rgb(171, 197, 247) !important;
+    --toolbar-field-focus-color: #cdd6f4 !important;
+    --toolbar-color: #cdd6f4 !important;
+    --newtab-text-primary-color: #cdd6f4 !important;
+    --arrowpanel-color: #cdd6f4 !important;
+    --arrowpanel-background: #1e1e2e !important;
+    --sidebar-text-color: #cdd6f4 !important;
+    --lwt-sidebar-text-color: #cdd6f4 !important;
+    --lwt-sidebar-background-color: #11111b !important;
+    --toolbar-bgcolor: #313244 !important;
+    --newtab-background-color: #1e1e2e !important;
+    --zen-themed-toolbar-bg: #181825 !important;
+    --zen-main-browser-background: #181825 !important;
+    --toolbox-bgcolor-inactive: #181825 !important;
+  }
+
+  #permissions-granted-icon {
+    color: #181825 !important;
+  }
+
+  .sidebar-placesTree {
+    background-color: #1e1e2e !important;
+  }
+
+  #zen-workspaces-button {
+    background-color: #1e1e2e !important;
+  }
+
+  #TabsToolbar {
+    background-color: #181825 !important;
+  }
+
+  .urlbar-background {
+    background-color: #1e1e2e !important;
+  }
+
+  .content-shortcuts {
+    background-color: #1e1e2e !important;
+    border-color: #2977af !important;
+  }
+
+  .urlbarView-url {
+    color: #2977af !important;
+  }
+
+  #zenEditBookmarkPanelFaviconContainer {
+    background: #11111b !important;
+  }
+
+  #zen-media-controls-toolbar {
+    & #zen-media-progress-bar {
+      &::-moz-range-track {
+        background: #313244 !important;
+      }
+    }
+  }
+
+  toolbar .toolbarbutton-1 {
+    &:not([disabled]) {
+      &:is([open], [checked])
+        > :is(
+          .toolbarbutton-icon,
+          .toolbarbutton-text,
+          .toolbarbutton-badge-stack
+        ) {
+        fill: #11111b;
+      }
+    }
+  }
+
+  .identity-color-blue {
+    --identity-tab-color: #2977af !important;
+    --identity-icon-color: #2977af !important;
+  }
+
+  .identity-color-turquoise {
+    --identity-tab-color: #94e2d5 !important;
+    --identity-icon-color: #94e2d5 !important;
+  }
+
+  .identity-color-green {
+    --identity-tab-color: #a6e3a1 !important;
+    --identity-icon-color: #a6e3a1 !important;
+  }
+
+  .identity-color-yellow {
+    --identity-tab-color: #f9e2af !important;
+    --identity-icon-color: #f9e2af !important;
+  }
+
+  .identity-color-orange {
+    --identity-tab-color: #fab387 !important;
+    --identity-icon-color: #fab387 !important;
+  }
+
+  .identity-color-red {
+    --identity-tab-color: #f38ba8 !important;
+    --identity-icon-color: #f38ba8 !important;
+  }
+
+  .identity-color-pink {
+    --identity-tab-color: #f5c2e7 !important;
+    --identity-icon-color: #f5c2e7 !important;
+  }
+
+  .identity-color-purple {
+    --identity-tab-color: #cba6f7 !important;
+    --identity-icon-color: #cba6f7 !important;
+  }
+
+  hbox#titlebar {
+    background-color: #181825 !important;
+  }
+
+  #zen-appcontent-navbar-container {
+    background-color: #181825 !important;
+  }
+}
+
+/* i3wm Tiling & Clean Aesthetics */
+.titlebar-buttonbox-container,
+.titlebar-buttonbox {
+  display: none !important;
+}
+#zen-main-app-wrapper {
+  border: none !important;
+}
+
+
+/* ==============================================================================
+   Square / Geometric i3wm Aesthetic (Crisp Edges, No Bubbly Pill Radii)
+   ============================================================================== */
+:root {
+  --zen-border-radius: 0px !important;
+  --zen-webview-border-radius: 0px !important;
+  --button-border-radius: 2px !important;
+  --toolbarbutton-border-radius: 2px !important;
+  --zen-element-separation: 0px !important;
+  --zen-native-inner-radius: 0px !important;
+  --zen-squircle-value: 1 !important;
+}
+
+/* Flatten main webview viewport and container */
+#tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer,
+.browserSidebarContainer,
+browser[type="content"],
+#zen-main-app-wrapper,
+#browser,
+#appcontent,
+#tabbrowser-tabbox {
+  border-radius: 0px !important;
+  box-shadow: none !important;
+  corner-shape: unset !important;
+}
+
+/* Square vertical tabs and tab items */
+.tabbrowser-tab,
+.tab-background,
+#zen-workspaces-button,
+.zen-workspace-button,
+#zen-workspaces-panel,
+#sidebar-box,
+toolbarbutton,
+.subviewbutton,
+.toolbarbutton-1,
+.zen-tab-group {
+  border-radius: 2px !important;
+}
+
+/* Square URL bar, search inputs, and popups */
+#urlbar,
+#urlbar-background,
+.urlbar-background,
+.search-wrapper,
+panelview,
+.panel-arrowcontent,
+menupopup,
+.panel-subview-body {
+  border-radius: 3px !important;
+}
+
+/* Flat crisp borders without fuzzy dropshadows */
+#navigator-toolbox,
+#TabsToolbar {
+  border-radius: 0px !important;
+}
+
+
+/* ==============================================================================
+   Completely Eliminate "Weird Corners" & Rounded Insets in Tabs & Folders
+   ============================================================================== */
+:root,
+#navigator-toolbox,
+#tabbrowser-tabs,
+.zen-library-space-body,
+#zen-tabbox-wrapper {
+  --border-radius-medium: 0px !important;
+  --tab-border-radius: 0px !important;
+  --panel-border-radius: 0px !important;
+  --zen-border-radius: 0px !important;
+  --zen-webview-border-radius: 0px !important;
+  --zen-native-inner-radius: 0px !important;
+  --zen-essential-bg-margin: 0px !important;
+  --button-border-radius: 0px !important;
+  --toolbarbutton-border-radius: 0px !important;
+  --zen-squircle-value: 1 !important;
+}
+
+/* Force 100% square corners on all tab backgrounds, folder items, and essentials */
+.tabbrowser-tab,
+.tabbrowser-tab *,
+.tab-background,
+.tab-background::before,
+.tab-background::after,
+.tab-stack,
+.tab-content,
+.zen-tab-group,
+.zen-tab-group *,
+.folders-tabs-list-item,
+.folders-tabs-list-item *,
+.folder-tabs-list,
+.folder-header,
+#zen-workspaces-button,
+#zen-workspaces-button *,
+.zen-workspace-button,
+.zen-workspace-button *,
+#zen-sidebar-box,
+#sidebar-box,
+#zen-essentials,
+#zen-essentials *,
+.zen-essentials-container,
+.zen-essentials-container * {
+  border-radius: 0px !important;
+  corner-shape: unset !important;
+}
+
+/* Eliminate internal margin gaps that reveal dark background in tab corners */
+.tab-background::before,
+.tab-background::after {
+  margin: 0px !important;
+  inset: 0px !important;
+}
+
+/* Square any floating indicators and sidebar buttons */
+#zen-sidebar-foot-buttons > .toolbarbutton-1,
+#zen-sidebar-foot-buttons .toolbarbutton-badge-stack,
+#TabsToolbar-customization-target > :is(toolbaritem, toolbarbutton) {
+  border-radius: 0px !important;
+}
+
+/* Square up the webview and workspace strips */
+#tabbrowser-tabbox,
+#tabbrowser-tabpanels,
+.browserSidebarContainer,
+browser[type="content"],
+#zen-main-app-wrapper {
+  border-radius: 0px !important;
+  box-shadow: none !important;
+  corner-shape: unset !important;
+}
+
+/* ==============================================================================
+   Zen Library & Sidebar Panel (History, Downloads, Media, Spaces) Rice Theme
+   ============================================================================== */
+zen-library {
+  --zen-library-pill-bg: #181825 !important;
+  --zen-library-pill-hover-bg: #313244 !important;
+  --zen-library-radius: 2px !important;
+  background-color: #111417 !important;
+  color: #cdd6f4 !important;
+}
+
+#zen-library-side {
+  background: #111417 !important;
+  box-shadow: none !important;
+  border-right: 1px solid #1e1e2e !important;
+}
+
+#zen-library-content {
+  background: #181825 !important;
+}
+
+/* Active tab button on the left strip (History, Downloads, etc.) */
+.zen-library-tab {
+  border-radius: 2px !important;
+  color: #a6adc8 !important;
+}
+
+.zen-library-tab::before {
+  border-radius: 2px !important;
+}
+
+.zen-library-tab[active] {
+  color: #ffffff !important;
+}
+
+.zen-library-tab[active]::before {
+  background: #2977af !important;
+}
+
+.zen-library-tab:hover:not([active])::before {
+  background: #313244 !important;
+}
+
+/* Search bar, Filter button, and Filter chips */
+.zen-library-search-box,
+.zen-library-filter-button,
+.zen-library-filter-chip,
+.zen-library-filter-done {
+  background: #111417 !important;
+  border: 1px solid #313244 !important;
+  border-radius: 2px !important;
+  color: #cdd6f4 !important;
+}
+
+.zen-library-search-box input {
+  color: #cdd6f4 !important;
+}
+
+.zen-library-filter-button:hover,
+.zen-library-filter-chip:hover {
+  background: #313244 !important;
+  border-color: #2977af !important;
+}
+
+/* History & Download list rows */
+.zen-library-row {
+  border-radius: 2px !important;
+  color: #cdd6f4 !important;
+  transition: background 0.1s ease !important;
+}
+
+.zen-library-row:hover {
+  background: #313244 !important;
+}
+
+.zen-library-row-icon {
+  border-radius: 2px !important;
+}
+
+.zen-library-group h3 {
+  color: #2977af !important;
+  font-weight: 700 !important;
+}
+
+/* Media items & cards */
+.zen-library-media-item {
+  background: #181825 !important;
+  border-radius: 2px !important;
+  border: 1px solid #313244 !important;
+}
