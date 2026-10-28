@@ -3,5 +3,9 @@
 # Ori - Tiling Window Launcher for i3wm Rice
 # ==============================================================================
 
-# By default, open as a standard i3 tile
-exec alacritty --class "Ori,Ori" --title "Ori - Local AI Assistant" -e "$HOME/.local/bin/ori" "$@"
+set -e
+export PATH="$HOME/.local/bin:$PATH"
+export OLLAMA_HOST="${OLLAMA_HOST:-http://127.0.0.1:11434}"
+
+# Execute Ori GUI directly (i3 tiles windows with class Ori automatically)
+exec "$HOME/.local/bin/ori" "$@"
