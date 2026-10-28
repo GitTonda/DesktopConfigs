@@ -1,0 +1,9 @@
+{
+  "model": "qwen2.5-coder:14b-instruct-q4_K_M",
+  "ollama_url": "http://127.0.0.1:11434",
+  "temperature": 0.2,
+  "max_tool_iterations": 15,
+  "auto_confirm_safe_tools": true,
+  "ask_confirm_destructive_bash": false,
+  "stream": true
+}

@@ -12,6 +12,7 @@ Il tasto modificatore principale è **`Super`** (noto anche come tasto **Windows
 |---|---|---|
 | **`Super + Return`** | **Terminale** | Apre Alacritty (stile terminale trasparente Mocha) |
 | **`Super + F2`** o **`Super + Ctrl + B`** | **Browser Web** | Apre Zen Browser (tema Catppuccin Mocha + estensioni) |
+| **`Super + F3`** o **`Super + Ctrl + O`** | **Assistente IA Locale (Ori)** | Apre Ori in finestra flottante (monitoraggio sistema, modifiche, Plan Mode) |
 | **`Super + Shift + Return`** | **File Manager** | Apre Ranger (gestore file a 3 colonne) |
 | **`Super + D`** | **Launcher Applicazioni** | Menu di avvio Rofi (`rofi -show drun`) |
 | **`Super + Shift + M`** | **Monitor di Sistema** | Apre `btop` in finestra flottante centrata |

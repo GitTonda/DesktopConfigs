@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# Ori - Autonomous Local AI Assistant Launcher
+# ==============================================================================
+
+set -e
+export PATH="$HOME/.local/bin:$PATH"
+export OLLAMA_HOST="${OLLAMA_HOST:-http://127.0.0.1:11434}"
+
+exec uv run --project "$HOME/.local/share/ori" ori "$@"

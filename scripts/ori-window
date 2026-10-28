@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# Ori - Floating Window Launcher for i3wm Rice
+# ==============================================================================
+
+alacritty --class "FloatingOri,FloatingOri" --title "Ori - Local AI Assistant" -e "$HOME/.local/bin/ori" "$@"

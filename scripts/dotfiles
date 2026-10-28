@@ -76,6 +76,9 @@ do_pull() {
     chmod +x "$HOME/.config/theme/apply-theme.sh" 2>/dev/null || true
     chmod +x "$HOME/.config/i3/screenshot.sh" 2>/dev/null || true
     chmod +x "$HOME/.config/zen/setup-zen.sh" 2>/dev/null || true
+    chmod +x "$DOTFILES_DIR/scripts/ori" "$DOTFILES_DIR/scripts/ori-window" 2>/dev/null || true
+    ln -sf "$DOTFILES_DIR/scripts/ori" "$HOME/.local/bin/ori" 2>/dev/null || true
+    ln -sf "$DOTFILES_DIR/scripts/ori-window" "$HOME/.local/bin/ori-window" 2>/dev/null || true
 
     # Deploy Zen Browser configurations and extensions
     if [ -x "$HOME/.config/zen/setup-zen.sh" ]; then
@@ -111,7 +114,7 @@ do_push() {
     cd "$DOTFILES_DIR"
 
     # Sync changed configs into dotfiles repo
-    for dir in alacritty dunst gtk-3.0 gtk-4.0 i3 ly openrgb picom polybar rofi systemd theme zen; do
+    for dir in alacritty dunst gtk-3.0 gtk-4.0 i3 ly openrgb ori picom polybar rofi systemd theme zen; do
         if [ -d "$HOME/.config/$dir" ]; then
             mkdir -p "$DOTFILES_DIR/config/$dir"
             cp -a "$HOME/.config/$dir/"* "$DOTFILES_DIR/config/$dir/" 2>/dev/null || true
