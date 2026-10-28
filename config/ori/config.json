@@ -1,5 +1,10 @@
 {
-  "model": "qwen2.5-coder:14b-instruct-q4_K_M",
+  "model": "llama3.1:8b-instruct-q5_K_M",
+  "mode_models": {
+    "CHAT": "llama3.1:8b-instruct-q5_K_M",
+    "PLAN": "llama3.1:8b-instruct-q5_K_M",
+    "CODING": "qwen2.5-coder:14b-instruct-q4_K_M"
+  },
   "ollama_url": "http://127.0.0.1:11434",
   "temperature": 0.2,
   "max_tool_iterations": 15,

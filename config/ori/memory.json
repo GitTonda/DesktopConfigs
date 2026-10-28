@@ -5,5 +5,83 @@
     "Dotfiles managed at ~/.local/share/dotfiles with remote DesktopConfigs",
     "GPU is NVIDIA RTX 3060 (12GB VRAM)",
     "User's nickname is Sammy."
+  ],
+  "version": 2,
+  "entries": [
+    {
+      "id": "mem_01",
+      "category": "system_config",
+      "topic": "Desktop Environment & Rice",
+      "content": "Pop!_OS 24.04 LTS (x86_64, systemd), i3wm tiling window manager, Polybar, Dunst, Rofi, Alacritty, Picom. Catppuccin Mocha theme with dynamic accent color (#2977af) and background (#111417). Strict 0px border-radius across all windows and widgets.",
+      "tags": [
+        "i3",
+        "i3wm",
+        "popos",
+        "catppuccin",
+        "theme",
+        "square",
+        "borders"
+      ],
+      "updated_at": "2026-10-28T14:00:00"
+    },
+    {
+      "id": "mem_02",
+      "category": "system_config",
+      "topic": "Dotfiles Repository & Sync",
+      "content": "Dotfiles repository located at ~/.local/share/dotfiles (remote GitHub DesktopConfigs, branch main). Managed via custom wrapper `dotfiles` (push, pull, status, diff).",
+      "tags": [
+        "dotfiles",
+        "git",
+        "desktopconfigs",
+        "sync"
+      ],
+      "updated_at": "2026-10-28T14:00:00"
+    },
+    {
+      "id": "mem_03",
+      "category": "hardware",
+      "topic": "Hardware & Local AI Accelerators",
+      "content": "NVIDIA GeForce RTX 3060 (12GB VRAM), Intel Core i5-12400F, 16GB RAM. Ollama server running locally on http://127.0.0.1:11434 with models: qwen2.5-coder:14b-instruct-q4_K_M, llama3.1:8b-instruct-q5_K_M, and moondream vision.",
+      "tags": [
+        "nvidia",
+        "rtx3060",
+        "vram",
+        "gpu",
+        "ollama",
+        "qwen",
+        "llama",
+        "moondream"
+      ],
+      "updated_at": "2026-10-28T14:00:00"
+    },
+    {
+      "id": "mem_04",
+      "category": "user_preference",
+      "topic": "UI Aesthetics & Icons",
+      "content": "User nickname is Sammy. Strict preference for 0px square corners (no rounded borders) and Nerd Font monochrome glyphs instead of colorful emojis. No cute mascot strings or ASCII faces.",
+      "tags": [
+        "preferences",
+        "sammy",
+        "nerdfont",
+        "no-emojis",
+        "square",
+        "minimalist"
+      ],
+      "updated_at": "2026-10-28T15:00:00"
+    },
+    {
+      "id": "mem_05",
+      "category": "project",
+      "topic": "Zen Browser & Search Engines",
+      "content": "Zen Browser configured with customized duckduckgo search engine using bangs, customized extensions, and synchronized with dotfiles.",
+      "tags": [
+        "zen",
+        "browser",
+        "duckduckgo",
+        "bangs",
+        "dotfiles"
+      ],
+      "updated_at": "2026-10-28T14:30:00"
+    }
   ]
 }
