@@ -255,6 +255,8 @@ for entry in os.listdir(zen_base):
             content = re.sub(r'--zen-primary-color:\s*#[0-9a-fA-F]{6}', f'--zen-primary-color: {accent}', content)
             content = re.sub(r'--zen-colors-border:\s*#[0-9a-fA-F]{6}', f'--zen-colors-border: {accent}', content)
             content = re.sub(r'--toolbarbutton-icon-fill:\s*#[0-9a-fA-F]{6}', f'--toolbarbutton-icon-fill: {accent}', content)
+            content = re.sub(r'\.zen-library-tab\[active\]::before\s*\{\s*background:\s*#[0-9a-fA-F]{6}', f'.zen-library-tab[active]::before {{\\n  background: {accent}', content)
+            content = re.sub(r'\.zen-library-group h3\s*\{\s*color:\s*#[0-9a-fA-F]{6}', f'.zen-library-group h3 {{\\n  color: {accent}', content)
             with open(css_file, 'w') as f:
                 f.write(content)
 " 2>/dev/null || true
