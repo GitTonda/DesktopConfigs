@@ -267,6 +267,25 @@ fi
 
 # Deploy desktop entry for wallpaper selector
 mkdir -p "$HOME/.local/share/applications"
+mkdir -p "$HOME/.local/share/icons"
+[ -f "$DOTFILES_DIR/icons/ori.svg" ] && cp "$DOTFILES_DIR/icons/ori.svg" "$HOME/.local/share/icons/ori.svg"
+
+cat << EOF > "$HOME/.local/share/applications/ori.desktop"
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Ori
+GenericName=Local AI Assistant & System Co-Pilot
+Comment=Autonomous Local AI Assistant for Linux System Monitoring & Modifications
+Exec=$HOME/.local/bin/ori-window
+Icon=$HOME/.local/share/icons/ori.svg
+Terminal=false
+Categories=Utility;System;Development;ArtificialIntelligence;
+StartupNotify=true
+StartupWMClass=FloatingOri
+Keywords=ai;assistant;ollama;ori;system;monitor;plan;local;
+EOF
+
 cat << EOF > "$HOME/.local/share/applications/wallpaper-picker.desktop"
 [Desktop Entry]
 Type=Application
