@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Ori - Floating Window Launcher for i3wm Rice
+# Ori - Window Launcher (Floating or Fullscreen) for i3wm Rice
 # ==============================================================================
 
-alacritty --class "FloatingOri,FloatingOri" --title "Ori - Local AI Assistant" -e "$HOME/.local/bin/ori" "$@"
+if [ "$1" = "--fullscreen" ] || [ "$1" = "-f" ]; then
+    shift
+    exec alacritty --class "FullscreenOri,FullscreenOri" --title "Ori - Local AI Assistant (Fullscreen)" -e "$HOME/.local/bin/ori" "$@"
+else
+    exec alacritty --class "FloatingOri,FloatingOri" --title "Ori - Local AI Assistant" -e "$HOME/.local/bin/ori" "$@"
+fi

@@ -41,6 +41,7 @@ for_window [class="(?i)ibus.*"] floating enable
 for_window [title="(?i)ibus.*"] floating enable
 for_window [class="FloatingTerm|FloatingBtop|FloatingGPU|FloatingAudio|FloatingWifi|FloatingBluetooth"] floating enable, resize set 950 620, move position center
 for_window [class="FloatingOri"] floating enable, resize set 1120 720, move position center
+for_window [class="FullscreenOri"] floating disable, fullscreen enable
 for_window [instance="localhost"] floating disable
 for_window [title="(?i)Langflow"] floating disable
 for_window [class="(?i)min"] floating disable
@@ -60,9 +61,11 @@ bindsym $mod+Return exec --no-startup-id alacritty
 bindsym $mod+F2 exec --no-startup-id flatpak run app.zen_browser.zen
 bindsym $mod+Ctrl+b exec --no-startup-id flatpak run app.zen_browser.zen
 
-# Launch Ori Local AI Assistant
+# Launch Ori Local AI Assistant (Floating or Fullscreen)
 bindsym $mod+F3 exec --no-startup-id ~/.local/bin/ori-window
+bindsym $mod+Shift+F3 exec --no-startup-id ~/.local/bin/ori-window --fullscreen
 bindsym $mod+Ctrl+o exec --no-startup-id ~/.local/bin/ori-window
+bindsym $mod+Ctrl+Shift+o exec --no-startup-id ~/.local/bin/ori-window --fullscreen
 
 # Launch file manager (Ranger)
 bindsym $mod+Shift+Return exec --no-startup-id alacritty -e ranger
