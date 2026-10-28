@@ -235,7 +235,32 @@ subprocess.run(['gsettings', 'set', 'org.gnome.desktop.interface', 'cursor-size'
 subprocess.run(['xsetroot', '-cursor_name', 'left_ptr'], check=False)
 " 2>/dev/null || true
 
-# 9. Notify user of change
+# 9. Update Zen Browser Theme Colors (userChrome.css / userContent.css)
+ZEN_DIR="$HOME/.var/app/app.zen_browser.zen/.zen"
+if [ -d "$ZEN_DIR" ]; then
+    python3 -c "
+import os, re
+accent = '$ACCENT'
+bg = '$BG_DARK'
+zen_base = os.path.expanduser('~/.var/app/app.zen_browser.zen/.zen')
+for entry in os.listdir(zen_base):
+    prof_dir = os.path.join(zen_base, entry)
+    if os.path.isdir(prof_dir) and ('default' in entry.lower() or 'release' in entry.lower()):
+        chrome_dir = os.path.join(prof_dir, 'chrome')
+        os.makedirs(chrome_dir, exist_ok=True)
+        css_file = os.path.join(chrome_dir, 'userChrome.css')
+        if os.path.exists(css_file):
+            with open(css_file, 'r') as f:
+                content = f.read()
+            content = re.sub(r'--zen-primary-color:\s*#[0-9a-fA-F]{6}', f'--zen-primary-color: {accent}', content)
+            content = re.sub(r'--zen-colors-border:\s*#[0-9a-fA-F]{6}', f'--zen-colors-border: {accent}', content)
+            content = re.sub(r'--toolbarbutton-icon-fill:\s*#[0-9a-fA-F]{6}', f'--toolbarbutton-icon-fill: {accent}', content)
+            with open(css_file, 'w') as f:
+                f.write(content)
+" 2>/dev/null || true
+fi
+
+# 10. Notify user of change
 WALL_NAME=$(basename "$WALLPAPER")
 if command -v dunstify >/dev/null 2>&1 && [ -n "$DISPLAY" ]; then
     dunstify -r 4444 -u normal -h string:x-dunst-stack-tag:wallpaper \
