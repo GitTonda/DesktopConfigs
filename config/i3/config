@@ -75,7 +75,7 @@ bindsym $mod+Ctrl+Shift+o exec --no-startup-id ~/.local/bin/ori-window --fullscr
 
 # Launch file manager (Thunar)
 bindsym $mod+Shift+Return exec --no-startup-id thunar
-bindsym $mod+e exec --no-startup-id thunar
+bindsym $mod+Shift+f exec --no-startup-id thunar
 
 # Launch system monitor (Rofi System Dashboard / Btop)
 bindsym $mod+Shift+m exec --no-startup-id ~/.config/rofi/system.sh
@@ -245,6 +245,7 @@ bindsym --release Shift+Print exec --no-startup-id ~/.config/i3/screenshot.sh fu
 # ==============================================================================
 # Launch Polybar
 exec_always --no-startup-id ~/.config/polybar/launch.sh
+exec_always --no-startup-id xsettingsd
 
 # Synchronously merge Xresources, apply wallpaper, and lock desktop root cursor
 exec_always --no-startup-id bash -c 'xrdb -merge ~/.Xresources && ~/.fehbg'

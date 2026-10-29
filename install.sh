@@ -86,6 +86,9 @@ if command -v pacman >/dev/null 2>&1; then
         otf-font-awesome
         noto-fonts-emoji
         papirus-icon-theme
+        gnome-themes-extra
+        adw-gtk-theme
+        xsettingsd
         ly
     )
 

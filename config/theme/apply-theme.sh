@@ -198,6 +198,27 @@ if current_theme.startswith('catppuccin-mocha'):
             theme = 'catppuccin-mocha-lavender-cursors'
         else:
             theme = 'catppuccin-mocha-dark-cursors'
+
+        # Match Catppuccin Mocha folder icon color
+        if 0.04 <= h < 0.12:
+            fcolor = 'cat-mocha-peach'
+        elif 0.12 <= h < 0.18:
+            fcolor = 'cat-mocha-yellow'
+        elif 0.18 <= h < 0.42:
+            fcolor = 'cat-mocha-green'
+        elif 0.42 <= h < 0.52:
+            fcolor = 'cat-mocha-teal'
+        elif 0.52 <= h < 0.60:
+            fcolor = 'cat-mocha-sapphire'
+        elif 0.60 <= h < 0.68:
+            fcolor = 'cat-mocha-blue'
+        elif 0.68 <= h < 0.82:
+            fcolor = 'cat-mocha-mauve'
+        elif 0.82 <= h < 0.94:
+            fcolor = 'cat-mocha-pink'
+        else:
+            fcolor = 'cat-mocha-red'
+        subprocess.run(['sudo', '-n', 'papirus-folders', '-C', fcolor, '-t', 'Papirus-Dark'], check=False)
     except Exception:
         theme = current_theme
 else:
