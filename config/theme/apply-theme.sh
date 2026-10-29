@@ -221,6 +221,21 @@ for gtk_ver in ['gtk-3.0', 'gtk-4.0']:
     with open(gtk_path, 'w') as f:
         f.write(f'[Settings]\ngtk-theme-name=Adwaita-dark\ngtk-icon-theme-name=Papirus-Dark\ngtk-cursor-theme-name={theme}\ngtk-cursor-theme-size=24\ngtk-font-name=JetBrainsMono Nerd Font 10\ngtk-application-prefer-dark-theme=1\n')
 
+    # Update GTK CSS accent & background colors
+    for base_d in [f'{home}/.config/{gtk_ver}', f'{home}/DesktopConfigs/config/{gtk_ver}']:
+        css_path = f'{base_d}/gtk.css'
+        if os.path.exists(css_path):
+            try:
+                import re
+                with open(css_path, 'r', encoding='utf-8') as f:
+                    c = f.read()
+                c = re.sub(r'@define-color\s+accent_color\s+#[0-9a-fA-F]{6};', f'@define-color accent_color $ACCENT;', c)
+                c = re.sub(r'@define-color\s+mantle_bg\s+#[0-9a-fA-F]{6};', f'@define-color mantle_bg $BG_DARK;', c)
+                with open(css_path, 'w', encoding='utf-8') as f:
+                    f.write(c)
+            except Exception:
+                pass
+
 xprof_path = f'{home}/.xprofile'
 with open(xprof_path, 'w') as f:
     f.write(f'#!/bin/sh\nexport XCURSOR_THEME="{theme}"\nexport XCURSOR_SIZE="24"\nxrdb -merge "$HOME/.Xresources" 2>/dev/null || true\nxsetroot -cursor_name left_ptr 2>/dev/null || true\n')

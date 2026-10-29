@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE actions [
+<!ELEMENT actions (action)+>
+<!ELEMENT action (icon | patterns | name | unique-id | command | description | directories | audio-files | image-files | other-files | text-files | video-files)*>
+<!ELEMENT icon (#PCDATA)>
+<!ELEMENT command (#PCDATA)>
+<!ELEMENT patterns (#PCDATA)>
+<!ELEMENT name (#PCDATA)>
+<!ELEMENT unique-id (#PCDATA)>
+<!ELEMENT description (#PCDATA)>
+<!ELEMENT startup-notify EMPTY>
+<!ELEMENT directories EMPTY>
+<!ELEMENT audio-files EMPTY>
+<!ELEMENT image-files EMPTY>
+<!ELEMENT other-files EMPTY>
+<!ELEMENT text-files EMPTY>
+<!ELEMENT video-files EMPTY>
+]>
+<actions>
+  <action>
+    <icon>utilities-terminal</icon>
+    <name>Open Terminal Here</name>
+    <unique-id>terminal-here-1</unique-id>
+    <command>alacritty --working-directory %f</command>
+    <description>Open Alacritty terminal in this directory</description>
+    <patterns>*</patterns>
+    <startup-notify/>
+    <directories/>
+  </action>
+  <action>
+    <icon>preferences-desktop-wallpaper</icon>
+    <name>Set as Wallpaper</name>
+    <unique-id>set-wallpaper-2</unique-id>
+    <command>bash -c "set -o pipefail; ~/.config/theme/apply-theme.sh &apos;%f&apos; &amp;&amp; notify-send -i &apos;%f&apos; &apos;Wallpaper Updated&apos; &apos;$(basename &quot;%f&quot;) applied with dynamic theme&apos;"</command>
+    <description>Set selected image as wallpaper and update system colors</description>
+    <patterns>*.png;*.jpg;*.jpeg;*.webp;*.bmp</patterns>
+    <image-files/>
+  </action>
+  <action>
+    <icon>web-browser</icon>
+    <name>Open with Zen Browser</name>
+    <unique-id>open-zen-3</unique-id>
+    <command>zen-browser %F</command>
+    <description>Open file in Zen Browser</description>
+    <patterns>*.html;*.htm;*.svg;*.pdf;*.png;*.jpg;*.jpeg;*.webp</patterns>
+    <image-files/>
+    <other-files/>
+    <text-files/>
+  </action>
+  <action>
+    <icon>edit-copy</icon>
+    <name>Copy File Path</name>
+    <unique-id>copy-path-4</unique-id>
+    <command>bash -c &quot;printf &apos;%%s&apos; &apos;%f&apos; | xclip -selection clipboard &amp;&amp; notify-send -t 1500 &apos;Path Copied&apos; &apos;%f&apos;&quot;</command>
+    <description>Copy full file path to clipboard</description>
+    <patterns>*</patterns>
+    <directories/>
+    <audio-files/>
+    <image-files/>
+    <other-files/>
+    <text-files/>
+    <video-files/>
+  </action>
+  <action>
+    <icon>archive-extract</icon>
+    <name>Extract Archive Here</name>
+    <unique-id>extract-archive-5</unique-id>
+    <command>file-roller --extract-here %F</command>
+    <description>Extract archive contents to current folder</description>
+    <patterns>*.zip;*.tar;*.tar.gz;*.tgz;*.tar.bz2;*.tbz2;*.tar.xz;*.txz;*.tar.zst;*.rar;*.7z</patterns>
+    <other-files/>
+  </action>
+</actions>

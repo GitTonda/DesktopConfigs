@@ -1,0 +1,207 @@
+/* =============================================================================
+   Catppuccin Mocha GTK3 & Thunar Theme (0px Square Aesthetic)
+   ============================================================================= */
+
+@define-color accent_color #ffaa45;
+@define-color accent_text #11111b;
+@define-color base_bg #1e1e2e;
+@define-color mantle_bg #181825;
+@define-color crust_bg #11111b;
+@define-color surface_bg #313244;
+@define-color surface_hover #45475a;
+@define-color border_color #313244;
+@define-color text_color #cdd6f4;
+@define-color text_dim #a6adc8;
+
+/* Global Square Borders */
+* {
+    border-radius: 0px !important;
+    outline-radius: 0px !important;
+    box-shadow: none !important;
+}
+
+/* Thunar Window Styling */
+window.thunar {
+    background-color: @base_bg;
+    color: @text_color;
+}
+
+/* Headerbar / Toolbar */
+window.thunar headerbar,
+window.thunar toolbar {
+    background-color: @mantle_bg;
+    border-bottom: 1px solid @border_color;
+    padding: 4px;
+}
+
+/* Location / Pathbar */
+window.thunar .path-bar-box,
+window.thunar .path-bar {
+    background-color: @mantle_bg;
+}
+
+window.thunar .path-bar button {
+    background-color: @surface_bg;
+    color: @text_color;
+    border: 1px solid @border_color;
+    border-radius: 0px !important;
+    margin: 2px;
+    padding: 3px 8px;
+}
+
+window.thunar .path-bar button:hover {
+    background-color: @surface_hover;
+    border-color: @accent_color;
+}
+
+window.thunar .path-bar button:checked,
+window.thunar .path-bar button:active {
+    background-color: @accent_color;
+    color: @accent_text;
+    border-color: @accent_color;
+}
+
+/* Sidebar / Shortcuts Panel */
+window.thunar .sidebar {
+    background-color: @mantle_bg;
+    border-right: 1px solid @border_color;
+}
+
+window.thunar .sidebar treeview {
+    background-color: @mantle_bg;
+    color: @text_color;
+}
+
+window.thunar .sidebar treeview:hover {
+    background-color: @mantle_bg;
+}
+
+window.thunar .sidebar row:hover {
+    background-color: @surface_bg;
+}
+
+window.thunar .sidebar row:selected {
+    background-color: @accent_color;
+    color: @accent_text;
+}
+
+/* Main File View (Icon View & Detail View) */
+window.thunar view,
+window.thunar treeview,
+window.thunar iconview {
+    background-color: @base_bg;
+    color: @text_color;
+}
+
+window.thunar view:selected,
+window.thunar treeview:selected,
+window.thunar iconview:selected,
+window.thunar view item:selected {
+    background-color: @accent_color;
+    color: @accent_text;
+    border-radius: 0px !important;
+}
+
+window.thunar view item:hover {
+    background-color: @surface_bg;
+}
+
+/* Detailed List Column Headers */
+window.thunar treeview header button {
+    background-color: @mantle_bg;
+    color: @text_dim;
+    border: none;
+    border-right: 1px solid @border_color;
+    border-bottom: 1px solid @border_color;
+    padding: 4px;
+}
+
+window.thunar treeview header button:hover {
+    background-color: @surface_bg;
+    color: @text_color;
+}
+
+/* Statusbar */
+window.thunar statusbar {
+    background-color: @crust_bg;
+    color: @text_dim;
+    border-top: 1px solid @border_color;
+    padding: 2px 6px;
+    font-size: 9pt;
+}
+
+/* Notebook / Tabs */
+window.thunar notebook {
+    background-color: @base_bg;
+}
+
+window.thunar notebook header {
+    background-color: @mantle_bg;
+    border-bottom: 1px solid @border_color;
+}
+
+window.thunar notebook tab {
+    background-color: @mantle_bg;
+    color: @text_dim;
+    border: 1px solid transparent;
+    border-radius: 0px !important;
+    padding: 4px 12px;
+}
+
+window.thunar notebook tab:checked {
+    background-color: @base_bg;
+    color: @text_color;
+    border-top: 2px solid @accent_color;
+    border-left: 1px solid @border_color;
+    border-right: 1px solid @border_color;
+    border-bottom: 1px solid @base_bg;
+}
+
+/* Scrollbars */
+scrollbar,
+scrollbar.horizontal,
+scrollbar.vertical {
+    background-color: transparent;
+}
+
+scrollbar slider {
+    background-color: @surface_bg;
+    border-radius: 0px !important;
+    min-width: 6px;
+    min-height: 6px;
+}
+
+scrollbar slider:hover {
+    background-color: @accent_color;
+}
+
+/* Menus & Popups */
+menu,
+.menu {
+    background-color: @mantle_bg;
+    color: @text_color;
+    border: 1px solid @border_color;
+    border-radius: 0px !important;
+    padding: 4px;
+}
+
+menu menuitem,
+.menu menuitem {
+    border-radius: 0px !important;
+    padding: 4px 8px;
+}
+
+menu menuitem:hover,
+.menu menuitem:hover {
+    background-color: @accent_color;
+    color: @accent_text;
+}
+
+/* Buttons and Entry Fields */
+button {
+    border-radius: 0px !important;
+}
+
+entry {
+    border-radius: 0px !important;
+}

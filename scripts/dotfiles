@@ -114,7 +114,7 @@ do_push() {
     cd "$DOTFILES_DIR"
 
     # Sync changed configs into dotfiles repo
-    for dir in alacritty dunst gtk-3.0 gtk-4.0 i3 ly openrgb ori picom polybar rofi systemd theme zen; do
+    for dir in alacritty dunst gtk-3.0 gtk-4.0 i3 ly openrgb ori picom polybar rofi systemd theme zen Thunar xfce4; do
         if [ -d "$HOME/.config/$dir" ]; then
             mkdir -p "$DOTFILES_DIR/config/$dir"
             cp -a "$HOME/.config/$dir/"* "$DOTFILES_DIR/config/$dir/" 2>/dev/null || true

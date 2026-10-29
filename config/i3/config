@@ -39,6 +39,7 @@ for_window [class="(?i)blueman"] floating enable
 for_window [class="(?i)pavucontrol"] floating enable
 for_window [class="(?i)ibus.*"] floating enable
 for_window [title="(?i)ibus.*"] floating enable
+for_window [class="File-roller|org.gnome.FileRoller"] floating enable, move position center
 for_window [class="FloatingTerm|FloatingBtop|FloatingGPU|FloatingAudio|FloatingWifi|FloatingBluetooth"] floating enable, resize set 950 620, move position center
 # Ori: main application window tiles; all dialogs, popups, and confirmation alerts float in center
 for_window [class="(?i)ori" window_type="normal"] floating disable
@@ -72,8 +73,9 @@ bindsym $mod+Shift+F3 exec --no-startup-id ~/.local/bin/ori-window --fullscreen
 bindsym $mod+Ctrl+o exec --no-startup-id ~/.local/bin/ori-window
 bindsym $mod+Ctrl+Shift+o exec --no-startup-id ~/.local/bin/ori-window --fullscreen
 
-# Launch file manager (Ranger)
-bindsym $mod+Shift+Return exec --no-startup-id alacritty -e ranger
+# Launch file manager (Thunar)
+bindsym $mod+Shift+Return exec --no-startup-id thunar
+bindsym $mod+e exec --no-startup-id thunar
 
 # Launch system monitor (Rofi System Dashboard / Btop)
 bindsym $mod+Shift+m exec --no-startup-id ~/.config/rofi/system.sh

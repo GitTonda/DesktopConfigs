@@ -59,6 +59,17 @@ if command -v pacman >/dev/null 2>&1; then
         xdotool
         xdg-utils
         which
+        thunar
+        thunar-volman
+        thunar-archive-plugin
+        thunar-media-tags-plugin
+        file-roller
+        tumbler
+        ffmpegthumbnailer
+        poppler-glib
+        webp-pixbuf-loader
+        gvfs
+        gvfs-mtp
         ranger
         mpv
         ncdu
