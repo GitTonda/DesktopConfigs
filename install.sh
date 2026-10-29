@@ -353,6 +353,15 @@ if command -v uv >/dev/null 2>&1; then
     uv tool install nvitop 2>/dev/null || true
 fi
 
+# 7. Enable Visual Asterisk Feedback for sudo passwords
+if [ -f "$DOTFILES_DIR/etc/sudoers.d/01_pwfeedback" ]; then
+    echo "==> Configuring visual password feedback (asterisks) in console..."
+    sudo mkdir -p /etc/sudoers.d
+    sudo cp "$DOTFILES_DIR/etc/sudoers.d/01_pwfeedback" /etc/sudoers.d/01_pwfeedback
+    sudo chmod 0440 /etc/sudoers.d/01_pwfeedback
+    sudo visudo -c >/dev/null 2>&1 || sudo rm -f /etc/sudoers.d/01_pwfeedback
+fi
+
 # 7. Initialize wallpaper & dynamic accent theme
 if [ -x "$HOME/.config/theme/apply-theme.sh" ] && [ -f "$HOME/Pictures/Wallpapers/waves_dark.jpg" ]; then
     echo "==> Initializing wallpaper and system-wide accent theme..."

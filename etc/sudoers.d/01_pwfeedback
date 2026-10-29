@@ -1,0 +1,2 @@
+# Provide visual feedback (asterisks) at the password prompt in console
+Defaults pwfeedback

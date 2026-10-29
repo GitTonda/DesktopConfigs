@@ -86,6 +86,16 @@ do_pull() {
         "$HOME/.config/zen/setup-zen.sh" || true
     fi
 
+    # Ensure visual password feedback (asterisks) in console
+    if [ ! -f /etc/sudoers.d/01_pwfeedback ] && [ -f "$DOTFILES_DIR/etc/sudoers.d/01_pwfeedback" ]; then
+        if sudo -n true 2>/dev/null; then
+            sudo mkdir -p /etc/sudoers.d
+            sudo cp "$DOTFILES_DIR/etc/sudoers.d/01_pwfeedback" /etc/sudoers.d/01_pwfeedback
+            sudo chmod 0440 /etc/sudoers.d/01_pwfeedback
+            sudo visudo -c >/dev/null 2>&1 || sudo rm -f /etc/sudoers.d/01_pwfeedback
+        fi
+    fi
+
     # Hot-reload desktop environment if running inside X11
     if [ -n "$DISPLAY" ]; then
         echo -e "${BLUE}==> Reloading desktop environment components...${NC}"
