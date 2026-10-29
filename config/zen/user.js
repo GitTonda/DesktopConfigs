@@ -10,7 +10,7 @@ user_pref("layout.css.prefers-color-scheme.content-override", 0);
 // Square borders and compact layout
 user_pref("zen.theme.border-radius", 0);
 user_pref("zen.theme.content-element-separation", 0);
-user_pref("zen.theme.accent-color", "#64adee");
+user_pref("zen.theme.accent-color", "#ffaa45");
 user_pref("zen.welcome-screen.seen", true);
 user_pref("browser.tabs.firefox-view", false);
 user_pref("browser.toolbars.bookmarks.visibility", "always");

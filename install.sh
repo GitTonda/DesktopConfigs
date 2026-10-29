@@ -281,7 +281,7 @@ elif command -v pacman >/dev/null 2>&1; then
         ranger mpv ncdu btop nvtop uv nano python ffmpeg
         ttf-jetbrains-mono-nerd otf-font-awesome noto-fonts-emoji
         starship fastfetch eza bat fzf zoxide ripgrep fd
-        papirus-icon-theme gnome-themes-extra adw-gtk-theme xsettingsd xss-lock imagemagick ly
+        papirus-icon-theme gnome-themes-extra adw-gtk-theme xsettingsd xss-lock imagemagick pacman-contrib ly
     )
 
     # Hardware acceleration driver additions
@@ -331,11 +331,13 @@ elif command -v pacman >/dev/null 2>&1; then
         fi
     done
 
-    # Enable essential systemd services
+    # Enable essential systemd services & maintenance timers
     if command -v systemctl >/dev/null 2>&1; then
         sudo systemctl enable NetworkManager.service 2>/dev/null || true
         sudo systemctl enable bluetooth.service 2>/dev/null || true
-        step_success "NetworkManager & Bluetooth services enabled"
+        sudo systemctl enable fstrim.timer 2>/dev/null || true
+        sudo systemctl enable paccache.timer 2>/dev/null || true
+        step_success "NetworkManager, Bluetooth & SSD/Cache maintenance timers enabled"
     fi
 
 elif command -v apt >/dev/null 2>&1; then
@@ -538,8 +540,22 @@ elif [ -f "$DOTFILES_DIR/etc/sudoers.d/01_pwfeedback" ] && sudo -n true 2>/dev/n
             sudo rm -f /etc/sudoers.d/01_pwfeedback
             return 1
         fi
+
+        # Deploy kernel sysctl performance optimizations
+        if [ -f "$DOTFILES_DIR/etc/sysctl.d/99-performance.conf" ]; then
+            sudo mkdir -p /etc/sysctl.d
+            sudo cp "$DOTFILES_DIR/etc/sysctl.d/99-performance.conf" /etc/sysctl.d/99-performance.conf
+            sudo sysctl --system >/dev/null 2>&1 || true
+        fi
+
+        # Deploy systemd journal log capping
+        if [ -f "$DOTFILES_DIR/etc/systemd/journald.conf.d/00-journal-size.conf" ]; then
+            sudo mkdir -p /etc/systemd/journald.conf.d
+            sudo cp "$DOTFILES_DIR/etc/systemd/journald.conf.d/00-journal-size.conf" /etc/systemd/journald.conf.d/00-journal-size.conf
+            sudo systemctl restart systemd-journald 2>/dev/null || true
+        fi
     }
-    run_task "Enabling visual asterisk feedback ('*') in console password prompts" configure_pwfeedback
+    run_task "Enabling visual password feedback & kernel performance tuning" configure_pwfeedback
 fi
 
 # ==============================================================================
