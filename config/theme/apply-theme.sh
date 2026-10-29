@@ -85,11 +85,13 @@ FEH
 sed -i "s|WALLPAPER_PATH_PLACEHOLDER|$WALLPAPER|g" "$HOME/.fehbg"
 chmod +x "$HOME/.fehbg"
 
-# 3b. Cache blurred lockscreen background asynchronously
+# 3b. Cache blurred lockscreen background asynchronously (cached: only if wallpaper changed)
 if command -v magick >/dev/null 2>&1; then
     (
         mkdir -p "$HOME/.cache"
-        magick "$WALLPAPER" -filter Gaussian -resize 1920x1080^ -gravity center -extent 1920x1080 -blur 0x8 -fill "#11111b" -colorize 25% "$HOME/.cache/lockscreen.png" 2>/dev/null || true
+        if [ ! -f "$HOME/.cache/lockscreen.png" ] || [ "$WALLPAPER" -nt "$HOME/.cache/lockscreen.png" ]; then
+            magick "$WALLPAPER" -filter Gaussian -resize 1920x1080^ -gravity center -extent 1920x1080 -blur 0x8 -fill "#11111b" -colorize 25% "$HOME/.cache/lockscreen.png" 2>/dev/null || true
+        fi
     ) &
 fi
 

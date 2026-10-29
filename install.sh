@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Antigravity / Catppuccin Mocha Desktop Setup
-# Fast, Minimalist, and Complete Linux Desktop Installation Suite
+# Antigravity / Catppuccin Mocha Desktop Setup Suite
+# Fast, Minimalist, High-Performance Linux Desktop Experience
 # ==============================================================================
 
 set -e
 
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+START_TIME=$(date +%s)
 
 # ------------------------------------------------------------------------------
-# Catppuccin Mocha Color Palette & Styling
+# Catppuccin Mocha Palette (Truecolor ANSI 24-bit)
 # ------------------------------------------------------------------------------
 PEACH='\033[38;2;250;179;135m'
 BLUE='\033[38;2;137;180;250m'
@@ -22,11 +23,46 @@ LAVENDER='\033[38;2;180;190;254m'
 SUBTEXT='\033[38;2;166;173;200m'
 SURFACE='\033[38;2;49;50;68m'
 BOLD='\033[1m'
-NC='\033[0m' # No Color
+DIM='\033[2m'
+NC='\033[0m' # Reset
 
 # ------------------------------------------------------------------------------
-# Helper Formatting Functions
+# Fluid Terminal Spinner & Task Runner
 # ------------------------------------------------------------------------------
+run_task() {
+    local msg="$1"
+    shift
+    if [ -t 1 ] && [ "$NON_INTERACTIVE" = false ]; then
+        "$@" >/dev/null 2>&1 &
+        local pid=$!
+        local spin="⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
+        while kill -0 "$pid" 2>/dev/null; do
+            for (( i=0; i<${#spin}; i++ )); do
+                printf "\r  ${PEACH}%s${NC} ${SUBTEXT}%s...${NC}" "${spin:$i:1}" "$msg"
+                sleep 0.05
+                kill -0 "$pid" 2>/dev/null || break
+            done
+        done
+        wait "$pid"
+        local exit_code=$?
+        if [ $exit_code -eq 0 ]; then
+            printf "\r  ${GREEN}${BOLD}✔${NC} ${SUBTEXT}%s${NC}\033[K\n" "$msg"
+        else
+            printf "\r  ${RED}${BOLD}✖${NC} ${RED}%s (failed)${NC}\033[K\n" "$msg"
+        fi
+        return $exit_code
+    else
+        "$@" >/dev/null 2>&1
+        local exit_code=$?
+        if [ $exit_code -eq 0 ]; then
+            echo -e "  ${GREEN}✔${NC} ${SUBTEXT}${msg}${NC}"
+        else
+            echo -e "  ${RED}✖${NC} ${RED}${msg} (failed)${NC}"
+        fi
+        return $exit_code
+    fi
+}
+
 step_header() {
     local step="$1"
     local title="$2"
@@ -50,17 +86,20 @@ step_warn() {
     echo -e "        ${YELLOW}⚠${NC} ${YELLOW}${1}${NC}"
 }
 
-step_error() {
-    echo -e "        ${RED}✖${NC} ${RED}${1}${NC}"
-}
-
 print_banner() {
-    echo -e "${PEACH}${BOLD}"
-    echo "  ┌──────────────────────────────────────────────────────────────┐"
-    echo "  │        Antigravity / Catppuccin Mocha Desktop Setup          │"
-    echo "  │            Fast, Minimalist & Modern Arch Linux Rice         │"
-    echo "  └──────────────────────────────────────────────────────────────┘"
-    echo -e "${NC}"
+    echo ""
+    echo -e "${MAUVE}      ___         __  _                        _  __           ${NC}"
+    echo -e "${BLUE}     /   |  ____ / /_(_)___ __________ __   __(_)/ /___  __    ${NC}"
+    echo -e "${TEAL}    / /| | / __ \\/ __/ / __ \`/ ___/ __ \`/ | / / / __/ / / /    ${NC}"
+    echo -e "${GREEN}   / ___ |/ / / / /_/ / /_/ / /  / /_/ /| |/ / / /_/ /_/ /     ${NC}"
+    echo -e "${PEACH}  /_/  |_/_/ /_/\\__/_/\\__, /_/   \\__,_/ |___/_/\\__/\\__, /      ${NC}"
+    echo -e "${PEACH}                     /____/                       /____/       ${NC}"
+    echo ""
+    echo -e "  ${SURFACE}┌─────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "  ${SURFACE}│${NC}  ${BOLD}⚡ ANTIGRAVITY OS${NC} ${SUBTEXT}·${NC} ${PEACH}Catppuccin Mocha Arch Linux Rice${NC}       ${SURFACE}│${NC}"
+    echo -e "  ${SURFACE}│${NC}  ${TEAL}◆${NC} ${SUBTEXT}i3-wm${NC}   ${BLUE}◇${NC} ${SUBTEXT}Polybar${NC}   ${MAUVE}◆${NC} ${SUBTEXT}Fastfetch${NC}   ${PEACH}◇${NC} ${SUBTEXT}Zen${NC}   ${GREEN}◆${NC} ${SUBTEXT}0px Borders${NC}       ${SURFACE}│${NC}"
+    echo -e "  ${SURFACE}└─────────────────────────────────────────────────────────────┘${NC}"
+    echo ""
 }
 
 print_help() {
@@ -69,15 +108,15 @@ print_help() {
 Usage: ./install.sh [OPTIONS]
 
 Options:
-  -y, --yes, --unattended   Automatically accept all prompts without waiting
-  -c, --configs-only        Deploy dotfiles, themes, and configs only (skip packages)
-  --dry-run                 Simulate the installation without modifying system
-  -h, --help                Show this help message and exit
+  -y, --yes, --unattended   Non-interactive mode (auto-accept all prompts)
+  -c, --configs-only        Synchronize dotfiles, themes, & fonts only (skip packages)
+  --dry-run                 Run simulation mode without writing modifications to disk
+  -h, --help                Display this cheat-sheet and exit
 
 Description:
-  Automated setup and deployment suite for Arch Linux (and compatible distros).
-  Deploys i3-wm, Polybar, Alacritty, Thunar, Zen Browser, Fastfetch, Starship,
-  dynamic Catppuccin Mocha theming, lockscreen, and power management.
+  High-performance installer suite for Arch Linux and compatible distros.
+  Configures i3wm, Polybar, Alacritty, Thunar, Zen Browser, Fastfetch, Starship,
+  dynamic wallpaper-driven Catppuccin Mocha styling, and idle lock management.
 EOF
     exit 0
 }
@@ -118,47 +157,54 @@ done
 # Root Safety Check
 # ------------------------------------------------------------------------------
 if [ "$EUID" -eq 0 ]; then
-    echo -e "${RED}${BOLD}[✖] Error: Do not run this installer as root.${NC}"
-    echo "    Configurations must be installed for your regular user."
-    echo "    Sudo privileges will be requested automatically when required."
+    echo -e "${RED}${BOLD}[✖] Error: Do not execute this installer as root.${NC}"
+    echo "    Configurations must be deployed in your standard user environment."
+    echo "    Elevated sudo privileges are requested automatically when needed."
     exit 1
 fi
 
 print_banner
 
 # ------------------------------------------------------------------------------
-# Hardware & Environment Probing
+# System Telemetry & Hardware Probing
 # ------------------------------------------------------------------------------
-DETECTED_OS="Unknown"
-if [ -f /etc/os-release ]; then
-    DETECTED_OS=$(grep -E '^PRETTY_NAME=' /etc/os-release | cut -d= -f2 | tr -d '"')
-fi
+HOST_NAME="$(cat /etc/hostname 2>/dev/null || uname -n)"
+KERNEL="$(uname -r)"
+CPU_MODEL=$(grep -m1 "model name" /proc/cpuinfo 2>/dev/null | cut -d: -f2 | sed -E "s/^[ \t]+//; s/\(R\)|\(TM\)//g; s/CPU //g; s/@.*//g" || echo "Generic CPU")
+RAM_STATS=$(free -h 2>/dev/null | awk '/^Mem:/ {print $3 "/" $2}')
+DISK_STATS=$(df -h / 2>/dev/null | awk 'NR==2 {print $3 "/" $2 " (" $5 ")"}')
 
 DETECTED_GPU="Integrated / Generic"
 if command -v lspci >/dev/null 2>&1; then
     if lspci | grep -Ei "vga|3d|display" | grep -iq "nvidia"; then
-        DETECTED_GPU="NVIDIA"
+        DETECTED_GPU="NVIDIA Dedicated"
     elif lspci | grep -Ei "vga|3d|display" | grep -iq "amd|radeon"; then
         DETECTED_GPU="AMD Radeon"
     elif lspci | grep -Ei "vga|3d|display" | grep -iq "intel"; then
-        DETECTED_GPU="Intel Graphics"
+        DETECTED_GPU="Intel Iris / UHD"
     fi
 fi
 
 CHASSIS_TYPE="Desktop"
 if [ -d /sys/class/power_supply ]; then
     if ls -d /sys/class/power_supply/BAT* >/dev/null 2>&1; then
-        CHASSIS_TYPE="Laptop (Battery detected)"
+        BAT_CAP="$(cat /sys/class/power_supply/BAT*/capacity 2>/dev/null | head -n1 || true)"
+        CHASSIS_TYPE="Laptop (${BAT_CAP:-100}% Bat)"
     fi
 fi
 
-HOST_NAME="$(cat /etc/hostname 2>/dev/null || uname -n)"
-echo -e "  ${BOLD}System Diagnosis:${NC}"
-echo -e "    ${SUBTEXT}• User & Host : ${TEAL}${USER}@${HOST_NAME}${NC}"
-echo -e "    ${SUBTEXT}• Operating Sys: ${BLUE}${DETECTED_OS}${NC}"
-echo -e "    ${SUBTEXT}• Graphics GPU : ${PEACH}${DETECTED_GPU}${NC}"
-echo -e "    ${SUBTEXT}• Form Factor  : ${LAVENDER}${CHASSIS_TYPE}${NC}"
-echo -e "    ${SUBTEXT}• Dotfiles Dir : ${SUBTEXT}${DOTFILES_DIR}${NC}"
+DISPLAY_RES="Headless / TTY"
+if [ -n "$DISPLAY" ] && command -v xrandr >/dev/null 2>&1; then
+    CURRENT_RES="$(xrandr --current 2>/dev/null | grep '\*' | awk '{print $1}' | head -n1 || true)"
+    [ -n "$CURRENT_RES" ] && DISPLAY_RES="${CURRENT_RES} (X11)"
+fi
+
+echo -e "  ${SURFACE}┌── ${PEACH}${BOLD}SYSTEM TELEMETRY${NC} ${SURFACE}─────────────────────────────────────────┐${NC}"
+printf "  ${SURFACE}│${NC}  ${SUBTEXT}%-9s${NC} ${BOLD}%-23s${NC} ${SUBTEXT}%-8s${NC} ${TEAL}%-18s${NC} ${SURFACE}│${NC}\n" "Host" "${USER}@${HOST_NAME}" "Kernel" "$KERNEL"
+printf "  ${SURFACE}│${NC}  ${SUBTEXT}%-9s${NC} ${BOLD}%-23s${NC} ${SUBTEXT}%-8s${NC} ${GREEN}%-18s${NC} ${SURFACE}│${NC}\n" "CPU" "${CPU_MODEL:0:23}" "Memory" "$RAM_STATS"
+printf "  ${SURFACE}│${NC}  ${SUBTEXT}%-9s${NC} ${BLUE}%-23s${NC} ${SUBTEXT}%-8s${NC} ${MAUVE}%-18s${NC} ${SURFACE}│${NC}\n" "GPU" "$DETECTED_GPU" "Disk (/)" "$DISK_STATS"
+printf "  ${SURFACE}│${NC}  ${SUBTEXT}%-9s${NC} ${PEACH}%-23s${NC} ${SUBTEXT}%-8s${NC} ${BLUE}%-18s${NC} ${SURFACE}│${NC}\n" "Chassis" "$CHASSIS_TYPE" "Display" "$DISPLAY_RES"
+echo -e "  ${SURFACE}└─────────────────────────────────────────────────────────────┘${NC}"
 echo ""
 
 # ------------------------------------------------------------------------------
@@ -166,28 +212,30 @@ echo ""
 # ------------------------------------------------------------------------------
 if [ "$NON_INTERACTIVE" = false ] && [ "$DRY_RUN" = false ]; then
     if [ -t 0 ] || [ -c /dev/tty ]; then
-        echo -e -n "  ${BOLD}Ready to install Antigravity desktop suite? [Y/n]: ${NC}"
+        echo -e -n "  ${BOLD}Ready to execute Antigravity desktop setup? [Y/n]: ${NC}"
         read -r REPLY </dev/tty || REPLY="y"
         REPLY=${REPLY:-y}
         if [[ ! "$REPLY" =~ ^[Yy]$ ]]; then
-            echo -e "\n  ${YELLOW}Installation cancelled by user.${NC}\n"
+            echo -e "\n  ${YELLOW}Setup cancelled by user.${NC}\n"
             exit 0
         fi
     fi
 fi
 
 if [ "$DRY_RUN" = true ]; then
-    echo -e "  ${YELLOW}${BOLD}==> DRY RUN MODE: No changes will be written to disk.${NC}\n"
+    echo -e "  ${YELLOW}${BOLD}==> DRY RUN MODE: Execution simulated. Zero disk modifications.${NC}\n"
 fi
 
 # ------------------------------------------------------------------------------
-# Sudo Authentication & Keep-Alive Loop
+# Sudo Session Keep-Alive Loop (Zero Interruptions)
 # ------------------------------------------------------------------------------
 if [ "$CONFIGS_ONLY" = false ] && [ "$DRY_RUN" = false ]; then
-    echo -e "  ${BLUE}${BOLD}==> Validating administrative privileges (sudo)...${NC}"
-    sudo -v
+    if ! sudo -n true 2>/dev/null; then
+        echo -e "  ${BLUE}${BOLD}==> Requesting administrative authorization (sudo)...${NC}"
+        sudo -v
+    fi
 
-    # Keep sudo timestamp active in background for long downloads
+    # Keep authorization token alive in background until installer terminates
     while true; do
         sudo -n true
         sleep 50
@@ -203,122 +251,59 @@ fi
 step_header "1/8" "📦 Package Manager & Desktop Environment"
 
 if [ "$CONFIGS_ONLY" = true ]; then
-    step_info "Configs-only mode active: skipping package installation."
+    step_info "Configs-only mode enabled: bypassing system package synchronization."
 elif [ "$DRY_RUN" = true ]; then
-    step_info "Dry run: would install pacman packages and AUR dependencies."
+    step_info "Dry run: would audit conflicts, optimize pacman, and install packages."
 elif command -v pacman >/dev/null 2>&1; then
-    step_sub "Auditing legacy audio stacks (pulseaudio vs pipewire)..."
+    # Clean any legacy conflicting audio packages
     CONFLICTING_AUDIO=$(pacman -Qq 2>/dev/null | grep -E '^(pulseaudio|jack2|pipewire-media-session)' || true)
     if [ -n "$CONFLICTING_AUDIO" ]; then
-        step_warn "Removing conflicting legacy audio packages: $CONFLICTING_AUDIO"
+        step_warn "Purging conflicting legacy audio packages: $CONFLICTING_AUDIO"
         sudo pacman -Rdd --noconfirm $CONFLICTING_AUDIO 2>/dev/null || true
     fi
 
-    step_sub "Optimizing /etc/pacman.conf (ParallelDownloads, Color, ILoveCandy)..."
-    sudo sed -i 's/^#ParallelDownloads/ParallelDownloads/' /etc/pacman.conf 2>/dev/null || true
-    sudo sed -i 's/^#Color/Color/' /etc/pacman.conf 2>/dev/null || true
-    sudo sed -i 's/^#VerbosePkgLists/VerbosePkgLists/' /etc/pacman.conf 2>/dev/null || true
-    grep -q "ILoveCandy" /etc/pacman.conf || sudo sed -i '/^Color/a ILoveCandy' /etc/pacman.conf 2>/dev/null || true
+    # Optimize pacman.conf for multi-threaded speed & candy
+    if grep -q "^#ParallelDownloads" /etc/pacman.conf || ! grep -q "ILoveCandy" /etc/pacman.conf; then
+        step_sub "Optimizing /etc/pacman.conf (ParallelDownloads = 8, Color, ILoveCandy)..."
+        sudo sed -i 's/^#ParallelDownloads.*/ParallelDownloads = 8/' /etc/pacman.conf 2>/dev/null || true
+        sudo sed -i 's/^#Color/Color/' /etc/pacman.conf 2>/dev/null || true
+        sudo sed -i 's/^#VerbosePkgLists/VerbosePkgLists/' /etc/pacman.conf 2>/dev/null || true
+        grep -q "ILoveCandy" /etc/pacman.conf || sudo sed -i '/^Color/a ILoveCandy' /etc/pacman.conf 2>/dev/null || true
+    fi
 
     PACMAN_PKGS=(
-        base-devel
-        git
-        curl
-        unzip
-        which
-        xorg-server
-        xorg-xinit
-        xorg-xrandr
-        xorg-xmodmap
-        xorg-xauth
-        xorg-xrdb
-        xorg-xwininfo
-        xorg-xset
-        xf86-input-libinput
-        mesa
-        i3-wm
-        polybar
-        alacritty
-        picom
-        rofi
-        feh
-        dunst
-        libnotify
-        pipewire
-        pipewire-pulse
-        pipewire-alsa
-        wireplumber
-        alsa-utils
-        libpulse
-        networkmanager
-        bluez
-        bluez-utils
-        brightnessctl
-        playerctl
-        maim
-        xclip
-        xdotool
-        xdg-utils
-        thunar
-        thunar-volman
-        thunar-archive-plugin
-        thunar-media-tags-plugin
-        file-roller
-        tumbler
-        ffmpegthumbnailer
-        poppler-glib
-        webp-pixbuf-loader
-        gvfs
-        gvfs-mtp
-        ranger
-        mpv
-        ncdu
-        btop
-        nvtop
-        uv
-        nano
-        python
-        ffmpeg
-        ttf-jetbrains-mono-nerd
-        otf-font-awesome
-        noto-fonts-emoji
-        starship
-        fastfetch
-        eza
-        bat
-        fzf
-        zoxide
-        ripgrep
-        fd
-        papirus-icon-theme
-        gnome-themes-extra
-        adw-gtk-theme
-        xsettingsd
-        xss-lock
-        imagemagick
-        ly
+        base-devel git curl unzip which
+        xorg-server xorg-xinit xorg-xrandr xorg-xmodmap xorg-xauth xorg-xrdb xorg-xwininfo xorg-xset xf86-input-libinput
+        mesa i3-wm polybar alacritty picom rofi feh dunst libnotify
+        pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils libpulse
+        networkmanager bluez bluez-utils brightnessctl playerctl maim xclip xdotool xdg-utils
+        thunar thunar-volman thunar-archive-plugin thunar-media-tags-plugin file-roller tumbler ffmpegthumbnailer poppler-glib webp-pixbuf-loader gvfs gvfs-mtp
+        ranger mpv ncdu btop nvtop uv nano python ffmpeg
+        ttf-jetbrains-mono-nerd otf-font-awesome noto-fonts-emoji
+        starship fastfetch eza bat fzf zoxide ripgrep fd
+        papirus-icon-theme gnome-themes-extra adw-gtk-theme xsettingsd xss-lock imagemagick ly
     )
 
-    # Hardware-specific driver additions
-    if [ "$DETECTED_GPU" = "NVIDIA" ]; then
-        step_sub "Adding NVIDIA userspace utilities..."
+    # Hardware acceleration driver additions
+    if [ "$DETECTED_GPU" = "NVIDIA Dedicated" ]; then
+        step_sub "Hardware Acceleration: Adding NVIDIA user utilities..."
         PACMAN_PKGS+=(nvidia-utils)
     elif [ "$DETECTED_GPU" = "AMD Radeon" ]; then
-        step_sub "Adding AMD Vulkan and Xorg acceleration drivers..."
+        step_sub "Hardware Acceleration: Adding AMD Vulkan and Xorg drivers..."
         PACMAN_PKGS+=(vulkan-radeon xf86-video-amdgpu)
-    elif [ "$DETECTED_GPU" = "Intel Graphics" ]; then
-        step_sub "Adding Intel Vulkan hardware acceleration drivers..."
+    elif [ "$DETECTED_GPU" = "Intel Iris / UHD" ]; then
+        step_sub "Hardware Acceleration: Adding Intel Vulkan drivers..."
         PACMAN_PKGS+=(vulkan-intel)
     fi
 
-    step_sub "Installing packages via pacman..."
+    step_sub "Synchronizing packages via Pacman..."
     if ! sudo pacman -Syu --needed --noconfirm "${PACMAN_PKGS[@]}"; then
-        step_warn "Pacman requested manual confirmation. Retrying with controlling tty..."
+        step_warn "Pacman interactive prompt required. Connecting to tty..."
         sudo pacman -Syu --needed "${PACMAN_PKGS[@]}" </dev/tty
     fi
-    step_success "Arch Linux core desktop packages synchronized"
+    step_success "Arch Linux core desktop suite synchronized"
 
-    # AUR Helper & AUR Packages
+    # AUR Helper bootstrap (if missing)
     if ! command -v yay >/dev/null 2>&1; then
         step_sub "Bootstrapping yay (AUR helper)..."
         TMP_YAY=$(mktemp -d)
@@ -334,11 +319,11 @@ elif command -v pacman >/dev/null 2>&1; then
         step_success "AUR packages installed"
     fi
 
-    # Hardware permissions
+    # Hardware permissions and groups
     step_sub "Configuring hardware permissions for user '$USER'..."
     sudo usermod -a -G video,audio,input "$USER" 2>/dev/null || true
 
-    # Disable conflicting display managers
+    # Disable conflicting legacy display managers
     for dm in gdm sddm lightdm lxdm; do
         if systemctl is-enabled "$dm.service" >/dev/null 2>&1; then
             step_sub "Disabling conflicting display manager: $dm..."
@@ -346,11 +331,11 @@ elif command -v pacman >/dev/null 2>&1; then
         fi
     done
 
-    # Enable core system services
+    # Enable essential systemd services
     if command -v systemctl >/dev/null 2>&1; then
-        step_sub "Enabling NetworkManager & Bluetooth daemons..."
         sudo systemctl enable NetworkManager.service 2>/dev/null || true
         sudo systemctl enable bluetooth.service 2>/dev/null || true
+        step_success "NetworkManager & Bluetooth services enabled"
     fi
 
 elif command -v apt >/dev/null 2>&1; then
@@ -384,21 +369,22 @@ fi
 # ==============================================================================
 step_header "2/8" "🔤 JetBrainsMono Nerd Font & Icons"
 
-if fc-list : family | grep -qi "JetBrainsMono Nerd Font"; then
-    step_success "JetBrainsMono Nerd Font is already installed"
+if [ -d "$HOME/.local/share/fonts/JetBrainsMono" ] || fc-list : family | grep -qi "JetBrainsMono Nerd Font"; then
+    step_success "JetBrainsMono Nerd Font is verified and active"
 elif [ "$DRY_RUN" = true ]; then
-    step_info "Dry run: would download JetBrainsMono Nerd Font"
+    step_info "Dry run: would retrieve JetBrainsMono Nerd Font"
 else
-    step_sub "Downloading JetBrainsMono Nerd Font from GitHub..."
-    mkdir -p ~/.local/share/fonts/JetBrainsMono
-    FONT_URL="https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip"
-    TMP_FONT_DIR="$(mktemp -d)"
-    if curl -fsSL "$FONT_URL" -o "$TMP_FONT_DIR/JetBrainsMono.zip"; then
-        unzip -qo "$TMP_FONT_DIR/JetBrainsMono.zip" -d ~/.local/share/fonts/JetBrainsMono
-        fc-cache -f ~/.local/share/fonts
-        step_success "Font installed and cache updated"
-    fi
-    rm -rf "$TMP_FONT_DIR"
+    install_fonts() {
+        mkdir -p "$HOME/.local/share/fonts/JetBrainsMono"
+        local font_url="https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip"
+        local tmp_font="$(mktemp -d)"
+        if curl -fsSL "$font_url" -o "$tmp_font/JetBrainsMono.zip"; then
+            unzip -qo "$tmp_font/JetBrainsMono.zip" -d "$HOME/.local/share/fonts/JetBrainsMono"
+            fc-cache -f "$HOME/.local/share/fonts"
+        fi
+        rm -rf "$tmp_font"
+    }
+    run_task "Downloading and compiling JetBrainsMono Nerd Font cache" install_fonts
 fi
 
 # ==============================================================================
@@ -408,21 +394,21 @@ step_header "3/8" "💾 Safe Configuration Backup"
 
 BACKUP_DIR="$HOME/.config_backup_$(date +%Y%m%d_%H%M%S)"
 if [ "$DRY_RUN" = true ]; then
-    step_info "Dry run: would create backup at $BACKUP_DIR"
+    step_info "Dry run: would create backup archive at $BACKUP_DIR"
 else
-    mkdir -p "$BACKUP_DIR"
-    BACKED_UP_COUNT=0
-    for app in i3 polybar alacritty rofi picom dunst fastfetch zen Thunar; do
-        if [ -d "$HOME/.config/$app" ] || [ -f "$HOME/.config/$app" ]; then
-            cp -a "$HOME/.config/$app" "$BACKUP_DIR/" 2>/dev/null || true
-            BACKED_UP_COUNT=$((BACKED_UP_COUNT + 1))
-        fi
-    done
-    [ -f "$HOME/.nanorc" ] && cp "$HOME/.nanorc" "$BACKUP_DIR/" 2>/dev/null || true
-    [ -f "$HOME/.bashrc" ] && cp "$HOME/.bashrc" "$BACKUP_DIR/" 2>/dev/null || true
-    [ -f "$HOME/.xinitrc" ] && cp "$HOME/.xinitrc" "$BACKUP_DIR/" 2>/dev/null || true
-
-    step_success "Saved $BACKED_UP_COUNT active configuration directories to: $BACKUP_DIR"
+    backup_existing_configs() {
+        mkdir -p "$BACKUP_DIR"
+        for app in i3 polybar alacritty rofi picom dunst fastfetch zen Thunar xsettingsd; do
+            if [ -d "$HOME/.config/$app" ] || [ -f "$HOME/.config/$app" ]; then
+                cp -a "$HOME/.config/$app" "$BACKUP_DIR/" 2>/dev/null || true
+            fi
+        done
+        [ -f "$HOME/.nanorc" ] && cp "$HOME/.nanorc" "$BACKUP_DIR/" 2>/dev/null || true
+        [ -f "$HOME/.bashrc" ] && cp "$HOME/.bashrc" "$BACKUP_DIR/" 2>/dev/null || true
+        [ -f "$HOME/.xinitrc" ] && cp "$HOME/.xinitrc" "$BACKUP_DIR/" 2>/dev/null || true
+    }
+    run_task "Backing up active configuration profiles" backup_existing_configs
+    step_info "Backup safely stored in: ${SUBTEXT}${BACKUP_DIR}${NC}"
 fi
 
 # ==============================================================================
@@ -431,43 +417,44 @@ fi
 step_header "4/8" "🎨 Catppuccin Mocha Dotfiles & CLI Tools"
 
 if [ "$DRY_RUN" = true ]; then
-    step_info "Dry run: would copy dotfiles into ~/.config and configure ~/.local/bin"
+    step_info "Dry run: would deploy dotfiles into ~/.config and wire CLI tools"
 else
-    mkdir -p "$HOME/.config"
-    cp -r "$DOTFILES_DIR/config/"* "$HOME/.config/"
-    cp "$DOTFILES_DIR/home/.nanorc" "$HOME/.nanorc"
-    [ -f "$DOTFILES_DIR/home/.bashrc" ] && cp "$DOTFILES_DIR/home/.bashrc" "$HOME/.bashrc"
-    [ -f "$DOTFILES_DIR/home/.xinputrc" ] && cp "$DOTFILES_DIR/home/.xinputrc" "$HOME/.xinputrc"
-    [ -f "$DOTFILES_DIR/home/.xinitrc" ] && cp "$DOTFILES_DIR/home/.xinitrc" "$HOME/.xinitrc"
-    chmod +x "$HOME/.xinitrc" 2>/dev/null || true
+    deploy_dotfiles() {
+        mkdir -p "$HOME/.config"
+        cp -r "$DOTFILES_DIR/config/"* "$HOME/.config/"
+        cp "$DOTFILES_DIR/home/.nanorc" "$HOME/.nanorc"
+        [ -f "$DOTFILES_DIR/home/.bashrc" ] && cp "$DOTFILES_DIR/home/.bashrc" "$HOME/.bashrc"
+        [ -f "$DOTFILES_DIR/home/.xinputrc" ] && cp "$DOTFILES_DIR/home/.xinputrc" "$HOME/.xinputrc"
+        [ -f "$DOTFILES_DIR/home/.xinitrc" ] && cp "$DOTFILES_DIR/home/.xinitrc" "$HOME/.xinitrc"
+        chmod +x "$HOME/.xinitrc" 2>/dev/null || true
 
-    # Link CLI management utilities
-    mkdir -p "$HOME/.local/bin"
-    chmod +x "$DOTFILES_DIR/scripts/dotfiles"
-    ln -sf "$DOTFILES_DIR/scripts/dotfiles" "$HOME/.local/bin/dotfiles"
-    ln -sf "$DOTFILES_DIR/scripts/dotfiles" "$HOME/.local/bin/update-desktop"
-    ln -sf "$DOTFILES_DIR/scripts/dotfiles" "$HOME/.local/bin/desktop-update"
-    ln -sf "$DOTFILES_DIR/scripts/ori" "$HOME/.local/bin/ori" 2>/dev/null || true
-    ln -sf "$DOTFILES_DIR/scripts/ori-window" "$HOME/.local/bin/ori-window" 2>/dev/null || true
-    ln -sf "$HOME/.config/rofi/shortcuts.py" "$HOME/.local/bin/shortcuts-manager"
+        # Link CLI management tools
+        mkdir -p "$HOME/.local/bin"
+        chmod +x "$DOTFILES_DIR/scripts/dotfiles"
+        ln -sf "$DOTFILES_DIR/scripts/dotfiles" "$HOME/.local/bin/dotfiles"
+        ln -sf "$DOTFILES_DIR/scripts/dotfiles" "$HOME/.local/bin/update-desktop"
+        ln -sf "$DOTFILES_DIR/scripts/dotfiles" "$HOME/.local/bin/desktop-update"
+        ln -sf "$DOTFILES_DIR/scripts/ori" "$HOME/.local/bin/ori" 2>/dev/null || true
+        ln -sf "$DOTFILES_DIR/scripts/ori-window" "$HOME/.local/bin/ori-window" 2>/dev/null || true
+        ln -sf "$HOME/.config/rofi/shortcuts.py" "$HOME/.local/bin/shortcuts-manager"
 
-    # Ensure ~/.local/bin is in PATH for bash
-    if [ -f "$HOME/.bashrc" ] && ! grep -q '\.local/bin' "$HOME/.bashrc"; then
-        echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
-    fi
+        # Ensure ~/.local/bin is in PATH for bash
+        if [ -f "$HOME/.bashrc" ] && ! grep -q '\.local/bin' "$HOME/.bashrc"; then
+            echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
+        fi
 
-    # System-wide binary links if sudo permits
-    if command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
-        sudo ln -sf "$DOTFILES_DIR/scripts/dotfiles" "/usr/local/bin/update-desktop" 2>/dev/null || true
-        sudo ln -sf "$DOTFILES_DIR/scripts/dotfiles" "/usr/local/bin/desktop-update" 2>/dev/null || true
-        sudo ln -sf "$HOME/.config/rofi/shortcuts.py" "/usr/local/bin/shortcuts-manager" 2>/dev/null || true
-    fi
+        # System-wide binary links if sudo permits
+        if command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
+            sudo ln -sf "$DOTFILES_DIR/scripts/dotfiles" "/usr/local/bin/update-desktop" 2>/dev/null || true
+            sudo ln -sf "$DOTFILES_DIR/scripts/dotfiles" "/usr/local/bin/desktop-update" 2>/dev/null || true
+            sudo ln -sf "$HOME/.config/rofi/shortcuts.py" "/usr/local/bin/shortcuts-manager" 2>/dev/null || true
+        fi
 
-    # Desktop Launchers
-    mkdir -p "$HOME/.local/share/applications" "$HOME/.local/share/icons"
-    [ -f "$DOTFILES_DIR/icons/ori.svg" ] && cp "$DOTFILES_DIR/icons/ori.svg" "$HOME/.local/share/icons/ori.svg"
+        # Desktop Launchers
+        mkdir -p "$HOME/.local/share/applications" "$HOME/.local/share/icons"
+        [ -f "$DOTFILES_DIR/icons/ori.svg" ] && cp "$DOTFILES_DIR/icons/ori.svg" "$HOME/.local/share/icons/ori.svg"
 
-    cat << EOF > "$HOME/.local/share/applications/ori.desktop"
+        cat << 'EOF' > "$HOME/.local/share/applications/ori.desktop"
 [Desktop Entry]
 Version=1.0
 Type=Application
@@ -483,7 +470,7 @@ StartupWMClass=FloatingOri
 Keywords=ai;assistant;ollama;ori;system;monitor;plan;local;
 EOF
 
-    cat << EOF > "$HOME/.local/share/applications/wallpaper-picker.desktop"
+        cat << 'EOF' > "$HOME/.local/share/applications/wallpaper-picker.desktop"
 [Desktop Entry]
 Type=Application
 Name=Wallpaper Selector
@@ -495,29 +482,27 @@ Categories=Utility;Settings;DesktopSettings;
 Keywords=wallpaper;background;feh;catppuccin;
 EOF
 
-    # Wallpapers
-    mkdir -p "$HOME/Pictures/Wallpapers"
-    cp -r "$DOTFILES_DIR/wallpapers/"* "$HOME/Pictures/Wallpapers/"
+        # Wallpapers
+        mkdir -p "$HOME/Pictures/Wallpapers"
+        cp -r "$DOTFILES_DIR/wallpapers/"* "$HOME/Pictures/Wallpapers/"
 
-    # Custom Icons
-    if [ -d "$DOTFILES_DIR/icons" ]; then
-        mkdir -p "$HOME/.local/share/icons/hicolor/scalable/apps"
-        cp -r "$DOTFILES_DIR/icons/"* "$HOME/.local/share/icons/" 2>/dev/null || true
-        cp -r "$DOTFILES_DIR/icons/"*.svg "$HOME/.local/share/icons/hicolor/scalable/apps/" 2>/dev/null || true
-        command -v gtk-update-icon-cache >/dev/null 2>&1 && gtk-update-icon-cache "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
-    fi
+        # Custom Icons
+        if [ -d "$DOTFILES_DIR/icons" ]; then
+            mkdir -p "$HOME/.local/share/icons/hicolor/scalable/apps"
+            cp -r "$DOTFILES_DIR/icons/"* "$HOME/.local/share/icons/" 2>/dev/null || true
+            cp -r "$DOTFILES_DIR/icons/"*.svg "$HOME/.local/share/icons/hicolor/scalable/apps/" 2>/dev/null || true
+            command -v gtk-update-icon-cache >/dev/null 2>&1 && gtk-update-icon-cache "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
+        fi
 
-    # Make scripts executable
-    chmod +x "$HOME/.config/polybar/launch.sh" 2>/dev/null || true
-    chmod +x "$HOME/.config/polybar/scripts/"*.sh 2>/dev/null || true
-    chmod +x "$HOME/.config/dunst/launch.sh" 2>/dev/null || true
-    chmod +x "$HOME/.config/dunst/scripts/"*.sh 2>/dev/null || true
-    chmod +x "$HOME/.config/rofi/"*.sh "$HOME/.config/rofi/"*.py 2>/dev/null || true
-    chmod +x "$HOME/.config/theme/apply-theme.sh" 2>/dev/null || true
-    chmod +x "$HOME/.config/i3/screenshot.sh" "$HOME/.config/i3/lock.sh" 2>/dev/null || true
-    chmod +x "$HOME/.config/zen/setup-zen.sh" 2>/dev/null || true
-
-    step_success "Configurations and helper scripts deployed with executable permissions"
+        # Optimized batch permission configuration
+        chmod +x \
+            "$HOME/.config/polybar/launch.sh" "$HOME/.config/polybar/scripts/"*.sh \
+            "$HOME/.config/dunst/launch.sh" "$HOME/.config/dunst/scripts/"*.sh \
+            "$HOME/.config/rofi/"*.sh "$HOME/.config/rofi/"*.py \
+            "$HOME/.config/theme/"*.sh "$HOME/.config/i3/"*.sh \
+            "$HOME/.config/zen/setup-zen.sh" "$DOTFILES_DIR/scripts/"* 2>/dev/null || true
+    }
+    run_task "Deploying Catppuccin Mocha configurations & CLI tools" deploy_dotfiles
 fi
 
 # ==============================================================================
@@ -526,11 +511,9 @@ fi
 step_header "5/8" "🌐 Zen Browser Custom Integration"
 
 if [ "$DRY_RUN" = true ]; then
-    step_info "Dry run: would run setup-zen.sh"
+    step_info "Dry run: would synchronize Zen Browser profile and userChrome.css"
 elif [ -x "$HOME/.config/zen/setup-zen.sh" ]; then
-    step_sub "Configuring Zen Browser profile and Catppuccin Mocha userChrome.css..."
-    "$HOME/.config/zen/setup-zen.sh" 2>/dev/null || true
-    step_success "Zen Browser enterprise policies and theme configured"
+    run_task "Configuring Zen Browser profile and square userChrome.css" "$HOME/.config/zen/setup-zen.sh"
 fi
 
 if command -v uv >/dev/null 2>&1 && [ "$DRY_RUN" = false ]; then
@@ -543,20 +526,20 @@ fi
 step_header "6/8" "🔐 Sudo Password Feedback & Security"
 
 if [ "$CONFIGS_ONLY" = true ]; then
-    step_info "Configs-only mode active: skipping /etc/sudoers.d modification."
+    step_info "Configs-only mode enabled: bypassing /etc/sudoers.d modification."
 elif [ "$DRY_RUN" = true ]; then
     step_info "Dry run: would deploy /etc/sudoers.d/01_pwfeedback"
 elif [ -f "$DOTFILES_DIR/etc/sudoers.d/01_pwfeedback" ] && sudo -n true 2>/dev/null; then
-    step_sub "Deploying visual asterisk feedback ('*') in terminal sudo prompts..."
-    sudo mkdir -p /etc/sudoers.d
-    sudo cp "$DOTFILES_DIR/etc/sudoers.d/01_pwfeedback" /etc/sudoers.d/01_pwfeedback
-    sudo chmod 0440 /etc/sudoers.d/01_pwfeedback
-    if sudo visudo -c >/dev/null 2>&1; then
-        step_success "Visual feedback enabled for sudo password input"
-    else
-        sudo rm -f /etc/sudoers.d/01_pwfeedback
-        step_warn "Sudoers validation failed, reverted safely."
-    fi
+    configure_pwfeedback() {
+        sudo mkdir -p /etc/sudoers.d
+        sudo cp "$DOTFILES_DIR/etc/sudoers.d/01_pwfeedback" /etc/sudoers.d/01_pwfeedback
+        sudo chmod 0440 /etc/sudoers.d/01_pwfeedback
+        if ! sudo visudo -c >/dev/null 2>&1; then
+            sudo rm -f /etc/sudoers.d/01_pwfeedback
+            return 1
+        fi
+    }
+    run_task "Enabling visual asterisk feedback ('*') in console password prompts" configure_pwfeedback
 fi
 
 # ==============================================================================
@@ -565,29 +548,29 @@ fi
 step_header "7/8" "🖼️  Wallpaper & Dynamic Accent Theme"
 
 if [ "$DRY_RUN" = true ]; then
-    step_info "Dry run: would apply wallpaper and generate lockscreen cache"
+    step_info "Dry run: would apply wallpaper and generate blurred lockscreen"
 else
-    # Set Papirus Catppuccin folders if available and root access is cached
-    if command -v papirus-folders >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
-        papirus-folders -C cat-mocha-peach --theme Papirus-Dark 2>/dev/null || true
-    fi
+    init_theming() {
+        # Configure Papirus Catppuccin folders if root permit cached
+        if command -v papirus-folders >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
+            papirus-folders -C cat-mocha-peach --theme Papirus-Dark 2>/dev/null || true
+        fi
 
-    # Initialize wallpaper & dynamic theme
-    DEFAULT_WALLPAPER="$HOME/Pictures/Wallpapers/waves_dark.jpg"
-    [ ! -f "$DEFAULT_WALLPAPER" ] && DEFAULT_WALLPAPER="$HOME/Pictures/Wallpapers/wavy_lines.png"
+        local default_wallpaper="$HOME/Pictures/Wallpapers/waves_dark.jpg"
+        [ ! -f "$default_wallpaper" ] && default_wallpaper="$HOME/Pictures/Wallpapers/wavy_lines.png"
 
-    if [ -x "$HOME/.config/theme/apply-theme.sh" ] && [ -f "$DEFAULT_WALLPAPER" ]; then
-        step_sub "Applying wallpaper and generating dynamic theme..."
-        "$HOME/.config/theme/apply-theme.sh" "$DEFAULT_WALLPAPER" 2>/dev/null || true
-        step_success "Wallpaper applied and lockscreen cache initialized"
-    elif [ -f "$DEFAULT_WALLPAPER" ]; then
-        cat << EOF > "$HOME/.fehbg"
+        if [ -x "$HOME/.config/theme/apply-theme.sh" ] && [ -f "$default_wallpaper" ]; then
+            "$HOME/.config/theme/apply-theme.sh" "$default_wallpaper" 2>/dev/null || true
+        elif [ -f "$default_wallpaper" ]; then
+            cat << EOF > "$HOME/.fehbg"
 #!/bin/sh
-feh --no-fehbg --bg-fill "$DEFAULT_WALLPAPER"
+feh --no-fehbg --bg-fill "$default_wallpaper"
 EOF
-        chmod +x "$HOME/.fehbg"
-        [ -n "$DISPLAY" ] && "$HOME/.fehbg" 2>/dev/null || true
-    fi
+            chmod +x "$HOME/.fehbg"
+            [ -n "$DISPLAY" ] && "$HOME/.fehbg" 2>/dev/null || true
+        fi
+    }
+    run_task "Initializing wallpaper palette & lockscreen blur cache" init_theming
 fi
 
 # ==============================================================================
@@ -596,40 +579,45 @@ fi
 step_header "8/8" "🚀 Ly Display Manager & Boot Targets"
 
 if [ "$CONFIGS_ONLY" = true ]; then
-    step_info "Configs-only mode active: skipping display manager system configuration."
+    step_info "Configs-only mode enabled: bypassing display manager system service."
 elif [ "$DRY_RUN" = true ]; then
     step_info "Dry run: would configure Ly display manager service"
 elif command -v ly >/dev/null 2>&1 || command -v ly-dm >/dev/null 2>&1; then
-    step_sub "Configuring Ly Display Manager..."
-    sudo mkdir -p /etc/ly
-    [ -f "$DOTFILES_DIR/config/ly/config.ini" ] && sudo cp "$DOTFILES_DIR/config/ly/config.ini" /etc/ly/config.ini 2>/dev/null || true
-    [ -f "$DOTFILES_DIR/config/ly/config.lua" ] && sudo cp "$DOTFILES_DIR/config/ly/config.lua" /etc/ly/config.lua 2>/dev/null || true
+    setup_display_manager() {
+        sudo mkdir -p /etc/ly
+        [ -f "$DOTFILES_DIR/config/ly/config.ini" ] && sudo cp "$DOTFILES_DIR/config/ly/config.ini" /etc/ly/config.ini 2>/dev/null || true
+        [ -f "$DOTFILES_DIR/config/ly/config.lua" ] && sudo cp "$DOTFILES_DIR/config/ly/config.lua" /etc/ly/config.lua 2>/dev/null || true
 
-    if command -v systemctl >/dev/null 2>&1; then
-        sudo systemctl set-default graphical.target 2>/dev/null || true
-        if systemctl list-unit-files 'ly@*.service' 2>/dev/null | grep -q "ly@"; then
-            sudo systemctl disable getty@tty2.service 2>/dev/null || true
-            sudo systemctl enable ly@tty2.service 2>/dev/null || true
-        elif systemctl list-unit-files ly.service 2>/dev/null | grep -q "ly.service"; then
-            sudo systemctl enable ly.service 2>/dev/null || true
-        else
-            sudo systemctl disable getty@tty2.service 2>/dev/null || true
-            sudo systemctl enable ly@tty2.service 2>/dev/null || sudo systemctl enable ly.service 2>/dev/null || true
+        if command -v systemctl >/dev/null 2>&1; then
+            sudo systemctl set-default graphical.target 2>/dev/null || true
+            if systemctl list-unit-files 'ly@*.service' 2>/dev/null | grep -q "ly@"; then
+                sudo systemctl disable getty@tty2.service 2>/dev/null || true
+                sudo systemctl enable ly@tty2.service 2>/dev/null || true
+            elif systemctl list-unit-files ly.service 2>/dev/null | grep -q "ly.service"; then
+                sudo systemctl enable ly.service 2>/dev/null || true
+            else
+                sudo systemctl disable getty@tty2.service 2>/dev/null || true
+                sudo systemctl enable ly@tty2.service 2>/dev/null || sudo systemctl enable ly.service 2>/dev/null || true
+            fi
         fi
-        step_success "Ly display manager enabled on boot (graphical.target)"
-    fi
+    }
+    run_task "Configuring Ly display manager on tty2 (graphical.target)" setup_display_manager
 fi
 
 # ==============================================================================
-# Installation Complete Summary
+# Installation Complete Summary & Telemetry
 # ==============================================================================
+END_TIME=$(date +%s)
+TOTAL_ELAPSED=$(( END_TIME - START_TIME ))
+
 echo ""
-echo -e "${GREEN}${BOLD}  ┌──────────────────────────────────────────────────────────────┐${NC}"
-echo -e "${GREEN}${BOLD}  │                   ✔ Installation Completed!                  │${NC}"
-echo -e "${GREEN}${BOLD}  │      All components have been configured and synchronized    │${NC}"
-echo -e "${GREEN}${BOLD}  └──────────────────────────────────────────────────────────────┘${NC}"
+echo -e "  ${GREEN}${BOLD}┌─────────────────────────────────────────────────────────────┐${NC}"
+printf "  ${GREEN}${BOLD}│${NC}  ${GREEN}✔${NC} ${BOLD}%-40s${NC} ${SUBTEXT}%14s${NC}  ${GREEN}${BOLD}│${NC}\n" "Installation Completed Successfully!" "${TOTAL_ELAPSED}s elapsed"
+echo -e "  ${GREEN}${BOLD}│${NC}  ${SUBTEXT}All desktop configurations & components are synchronized   ${NC}  ${GREEN}${BOLD}│${NC}"
+echo -e "  ${GREEN}${BOLD}└─────────────────────────────────────────────────────────────┘${NC}"
 echo ""
-echo -e "  ${BOLD}Installed Suite Components:${NC}"
+
+echo -e "  ${BOLD}Installed Environment Matrix:${NC}"
 echo -e "    ${SUBTEXT}• Window Manager : ${BLUE}i3-wm${NC} ${SUBTEXT}(0px square borders, Catppuccin Mocha)${NC}"
 echo -e "    ${SUBTEXT}• Status Bar     : ${PEACH}Polybar${NC} ${SUBTEXT}(Dynamic accent, interactive applets)${NC}"
 echo -e "    ${SUBTEXT}• Terminal Suite : ${MAUVE}Alacritty${NC} ${SUBTEXT}+ Fastfetch + Starship + eza/bat/fzf/zoxide${NC}"
@@ -638,6 +626,7 @@ echo -e "    ${SUBTEXT}• Web Browser    : ${LAVENDER}Zen Browser${NC} ${SUBTEX
 echo -e "    ${SUBTEXT}• Idle & Locking : ${YELLOW}i3lock-color${NC} ${SUBTEXT}(xss-lock, DPMS sleep 10m/15m/20m)${NC}"
 echo -e "    ${SUBTEXT}• Display Manager: ${GREEN}Ly${NC} ${SUBTEXT}(Minimalist TUI login on tty2)${NC}"
 echo ""
+
 echo -e "  ${BOLD}Essential Keyboard Shortcuts:${NC}"
 echo -e "    ${BOLD}Super + Return${NC}         ${SUBTEXT}→ Terminal (Alacritty)${NC}"
 echo -e "    ${BOLD}Super + F2 / Ctrl+b${NC}    ${SUBTEXT}→ Web Browser (Zen Browser)${NC}"
@@ -647,13 +636,19 @@ echo -e "    ${BOLD}Super + /${NC}              ${SUBTEXT}→ Keybindings Cheats
 echo -e "    ${BOLD}Super + Ctrl + l${NC}       ${SUBTEXT}→ Lock Desktop Session${NC}"
 echo -e "    ${BOLD}Super + Shift + e${NC}      ${SUBTEXT}→ Power Menu (Sleep/Reboot/Shutdown)${NC}"
 echo ""
-echo -e "  ${BOLD}Multi-Device Maintenance:${NC}"
+
+echo -e "  ${BOLD}Multi-Device Maintenance Workflow:${NC}"
 echo -e "    ${SUBTEXT}• Update local PC from GitHub : ${TEAL}update-desktop${NC} or ${TEAL}dotfiles pull${NC}"
 echo -e "    ${SUBTEXT}• Push local tweaks to GitHub : ${TEAL}dotfiles push \"message\"${NC}"
 echo -e "    ${SUBTEXT}• Check sync status           : ${TEAL}dotfiles status${NC}"
 echo ""
 
-# Interactive next step
+# Desktop Notification on Completion
+if [ -n "$DISPLAY" ] && command -v dunstify >/dev/null 2>&1; then
+    dunstify -u normal -r 9922 -h string:x-dunst-stack-tag:antigravity "⚡ Antigravity OS Ready" "Desktop suite synchronized in ${TOTAL_ELAPSED}s!" 2>/dev/null || true
+fi
+
+# Interactive Next Step
 if [ -n "$DISPLAY" ]; then
     if [ "$NON_INTERACTIVE" = false ] && [ "$DRY_RUN" = false ] && ([ -t 0 ] || [ -c /dev/tty ]); then
         echo -e -n "  ${BOLD}Reload desktop environment now? [Y/n]: ${NC}"
@@ -667,6 +662,6 @@ if [ -n "$DISPLAY" ]; then
         fi
     fi
 else
-    echo -e "  ${PEACH}To start your session now, run: ${BOLD}startx${NC} or reboot to let Ly handle it."
+    echo -e "  ${PEACH}To start your session now, run: ${BOLD}startx${NC} or reboot into Ly."
     echo ""
 fi
