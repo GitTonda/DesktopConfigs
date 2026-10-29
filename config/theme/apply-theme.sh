@@ -235,32 +235,102 @@ subprocess.run(['gsettings', 'set', 'org.gnome.desktop.interface', 'cursor-size'
 subprocess.run(['xsetroot', '-cursor_name', 'left_ptr'], check=False)
 " 2>/dev/null || true
 
-# 9. Update Zen Browser Theme Colors (userChrome.css / userContent.css)
-ZEN_DIR="$HOME/.var/app/app.zen_browser.zen/.zen"
-if [ -d "$ZEN_DIR" ]; then
-    python3 -c "
-import os, re
-accent = '$ACCENT'
-bg = '$BG_DARK'
-zen_base = os.path.expanduser('~/.var/app/app.zen_browser.zen/.zen')
-for entry in os.listdir(zen_base):
-    prof_dir = os.path.join(zen_base, entry)
-    if os.path.isdir(prof_dir) and ('default' in entry.lower() or 'release' in entry.lower()):
-        chrome_dir = os.path.join(prof_dir, 'chrome')
-        os.makedirs(chrome_dir, exist_ok=True)
-        css_file = os.path.join(chrome_dir, 'userChrome.css')
-        if os.path.exists(css_file):
-            with open(css_file, 'r') as f:
+# 9. Update Zen Browser Theme Colors (userChrome.css / userContent.css / user.js)
+ACCENT="$ACCENT" BG_DARK="$BG_DARK" python3 - << 'PYEOF'
+import os, sys, re
+
+accent = os.environ.get('ACCENT', '#89b4fa')
+bg = os.environ.get('BG_DARK', '#181825')
+
+# Base locations for Zen configurations
+zen_bases = [
+    os.path.expanduser('~/.zen'),
+    os.path.expanduser('~/.var/app/app.zen_browser.zen/.zen'),
+]
+
+# Source template folders
+template_dirs = [
+    os.path.expanduser('~/.config/zen'),
+    os.path.expanduser('~/DesktopConfigs/config/zen')
+]
+
+target_dirs = []
+for t in template_dirs:
+    if os.path.isdir(t):
+        target_dirs.append(t)
+
+for base in zen_bases:
+    if os.path.isdir(base):
+        for entry in os.listdir(base):
+            p = os.path.join(base, entry)
+            if os.path.isdir(p) and any(kw in entry.lower() for kw in ['default', 'release', 'profile']):
+                target_dirs.append(p)
+
+for d in target_dirs:
+    # 1. Update userChrome.css
+    chrome_file = os.path.join(d, 'chrome', 'userChrome.css')
+    if os.path.exists(chrome_file):
+        try:
+            with open(chrome_file, 'r', encoding='utf-8') as f:
                 content = f.read()
             content = re.sub(r'--zen-primary-color:\s*#[0-9a-fA-F]{6}', f'--zen-primary-color: {accent}', content)
             content = re.sub(r'--zen-colors-border:\s*#[0-9a-fA-F]{6}', f'--zen-colors-border: {accent}', content)
             content = re.sub(r'--toolbarbutton-icon-fill:\s*#[0-9a-fA-F]{6}', f'--toolbarbutton-icon-fill: {accent}', content)
-            content = re.sub(r'\.zen-library-tab\[active\]::before\s*\{\s*background:\s*#[0-9a-fA-F]{6}', f'.zen-library-tab[active]::before {{\\n  background: {accent}', content)
-            content = re.sub(r'\.zen-library-group h3\s*\{\s*color:\s*#[0-9a-fA-F]{6}', f'.zen-library-group h3 {{\\n  color: {accent}', content)
-            with open(css_file, 'w') as f:
+            content = re.sub(r'--identity-tab-color:\s*#[0-9a-fA-F]{6}', f'--identity-tab-color: {accent}', content)
+            content = re.sub(r'--identity-icon-color:\s*#[0-9a-fA-F]{6}', f'--identity-icon-color: {accent}', content)
+            content = re.sub(r'(\.zen-library-tab\[active\]::before\s*\{\s*background:\s*)#[0-9a-fA-F]{6}', r'\g<1>' + accent, content)
+            content = re.sub(r'(\.zen-library-group h3\s*\{\s*color:\s*)#[0-9a-fA-F]{6}', r'\g<1>' + accent, content)
+            with open(chrome_file, 'w', encoding='utf-8') as f:
                 f.write(content)
-" 2>/dev/null || true
-fi
+        except Exception:
+            pass
+
+    # 2. Update userContent.css
+    content_file = os.path.join(d, 'chrome', 'userContent.css')
+    if os.path.exists(content_file):
+        try:
+            with open(content_file, 'r', encoding='utf-8') as f:
+                c = f.read()
+            c = re.sub(r'--color-accent-primary:\s*#[0-9a-fA-F]{6}', f'--color-accent-primary: {accent}', c)
+            c = re.sub(r'--newtab-primary-action-background:\s*#[0-9a-fA-F]{6}', f'--newtab-primary-action-background: {accent}', c)
+            c = re.sub(r'--link-color:\s*#[0-9a-fA-F]{6}', f'--link-color: {accent}', c)
+            c = re.sub(r'--zen-primary-color:\s*#[0-9a-fA-F]{6}', f'--zen-primary-color: {accent}', c)
+            c = re.sub(r'(\.icon\s*\{\s*color:\s*)#[0-9a-fA-F]{6}', r'\g<1>' + accent, c)
+            with open(content_file, 'w', encoding='utf-8') as f:
+                f.write(c)
+        except Exception:
+            pass
+
+    # 3. Update user.js
+    ujs_file = os.path.join(d, 'user.js')
+    if os.path.exists(ujs_file):
+        try:
+            with open(ujs_file, 'r', encoding='utf-8') as f:
+                ujs = f.read()
+            if 'zen.theme.accent-color' in ujs:
+                ujs = re.sub(r'user_pref\("zen\.theme\.accent-color",\s*"[^"]*"\);', f'user_pref("zen.theme.accent-color", "{accent}");', ujs)
+            else:
+                ujs += f'\nuser_pref("zen.theme.accent-color", "{accent}");\n'
+            with open(ujs_file, 'w', encoding='utf-8') as f:
+                f.write(ujs)
+        except Exception:
+            pass
+
+    # 4. Update prefs.js if present
+    prefs_file = os.path.join(d, 'prefs.js')
+    if os.path.exists(prefs_file):
+        try:
+            with open(prefs_file, 'r', encoding='utf-8') as f:
+                pjs = f.read()
+            if 'zen.theme.accent-color' in pjs:
+                pjs = re.sub(r'user_pref\("zen\.theme\.accent-color",\s*"[^"]*"\);', f'user_pref("zen.theme.accent-color", "{accent}");', pjs)
+            else:
+                pjs += f'\nuser_pref("zen.theme.accent-color", "{accent}");\n'
+            with open(prefs_file, 'w', encoding='utf-8') as f:
+                f.write(pjs)
+        except Exception:
+            pass
+PYEOF
 
 # 10. Notify user of change
 WALL_NAME=$(basename "$WALLPAPER")
