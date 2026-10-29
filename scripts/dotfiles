@@ -10,10 +10,14 @@ SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
 DOTFILES_DIR="$(cd "$(dirname "$SCRIPT_PATH")/.." && pwd)"
 export PATH="$HOME/.local/bin:$PATH"
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-BLUE='\033[0;34m'
-YELLOW='\033[1;33m'
+RED='\033[38;2;243;139;168m'
+GREEN='\033[38;2;166;227;161m'
+BLUE='\033[38;2;137;180;250m'
+YELLOW='\033[38;2;249;226;175m'
+PEACH='\033[38;2;250;179;135m'
+MAUVE='\033[38;2;203;166;247m'
+TEAL='\033[38;2;148;226;213m'
+SUBTEXT='\033[38;2;166;173;200m'
 BOLD='\033[1m'
 NC='\033[0m' # No Color
 
@@ -117,6 +121,18 @@ do_pull() {
         if [ -f "$HOME/.fehbg" ]; then
             "$HOME/.fehbg" >/dev/null 2>&1 || true
         fi
+    fi
+
+    # Check for missing recommended packages
+    MISSING_PKGS=()
+    for pkg in fastfetch starship eza bat fzf zoxide xss-lock i3lock; do
+        if ! command -v "$pkg" >/dev/null 2>&1; then
+            MISSING_PKGS+=("$pkg")
+        fi
+    done
+    if [ ${#MISSING_PKGS[@]} -gt 0 ]; then
+        echo -e "\n  ${YELLOW}ℹ Detected missing recommended packages: ${MISSING_PKGS[*]}${NC}"
+        echo -e "    Run '${TEAL}update-desktop --install${NC}' or '${TEAL}dotfiles install${NC}' to install them automatically."
     fi
 
     echo -e "${GREEN}${BOLD}✔ Successfully updated and hot-reloaded desktop configurations!${NC}"
@@ -227,15 +243,20 @@ ${BOLD}COMMANDS:${NC}
   ${GREEN}push${NC} [message]      Sync local ~/.config changes, commit, and push to GitHub
   ${GREEN}status${NC}              Show synchronization status between local machine and Git
   ${GREEN}diff${NC}                Show uncommitted changes in the dotfiles repository
-  ${GREEN}install${NC}             Re-run the full system installer (packages & setup)
+  ${GREEN}install [options]${NC}   Run the full system installer (packages & setup)
   ${GREEN}help${NC}                Display this help cheat-sheet
+
+${BOLD}SHORTCUTS:${NC}
+  ${TEAL}update-desktop${NC}            Pull latest changes & reload desktop components
+  ${TEAL}update-desktop --force${NC}    Force re-deploy all configurations and wallpapers
+  ${TEAL}update-desktop --install${NC}  Launch the interactive system installer suite
 
 ${BOLD}MULTI-DEVICE WORKFLOW:${NC}
   • On any PC after making tweaks:
       ${BLUE}dotfiles push \"tuned polybar widgets\"${NC}
 
   • On your other PCs / laptop:
-      ${BLUE}dotfiles pull${NC}
+      ${BLUE}update-desktop${NC} or ${BLUE}dotfiles pull${NC}
 
   • On a brand-new PC (one-liner bootstrap):
       ${YELLOW}curl -fsSL https://raw.githubusercontent.com/GitTonda/DesktopConfigs/main/bootstrap.sh | bash${NC}
@@ -244,6 +265,14 @@ ${BOLD}MULTI-DEVICE WORKFLOW:${NC}
 
 CMD_NAME=$(basename "$0")
 if [ "$CMD_NAME" = "update-desktop" ] || [ "$CMD_NAME" = "desktop-update" ]; then
+    if [ "$1" = "--install" ] || [ "$1" = "-i" ] || [ "$1" = "--full" ]; then
+        shift
+        cd "$DOTFILES_DIR" && ./install.sh "$@"
+        exit 0
+    elif [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ "$1" = "help" ]; then
+        do_help
+        exit 0
+    fi
     do_pull "$@"
     exit 0
 fi
@@ -264,7 +293,8 @@ case "$1" in
         cd "$DOTFILES_DIR" && git diff
         ;;
     install)
-        cd "$DOTFILES_DIR" && ./install.sh
+        shift
+        cd "$DOTFILES_DIR" && ./install.sh "$@"
         ;;
     help|--help|-h|"")
         do_help
