@@ -10,6 +10,9 @@ Il tasto modificatore principale è **`Super`** (noto anche come tasto **Windows
 
 | Scorciatoia | Azione | Note / Finestra |
 |---|---|---|
+| **`Super + Shift + S`** | **Pannello di Controllo Unificato** | Flyout GTK3 moderno: Wi-Fi, Bluetooth, Audio, DND, Telemetria, Sessione |
+| **`Super + Tab`** o **`Alt + Tab`** | **Selettore Finestre (Window Switcher)** | Passa tra tutte le finestre aperte con anteprima workspace e icone |
+| **`Super + Shift + V`** | **Gestore Appunti (Clipboard)** | Cronologia appunti con ricerca fuzzy e anteprima |
 | **`Super + Return`** | **Terminale** | Apre Alacritty (stile terminale trasparente Mocha) |
 | **`Super + F2`** o **`Super + Ctrl + B`** | **Browser Web** | Apre Zen Browser (tema Catppuccin Mocha + estensioni) |
 | **`Super + F3`** o **`Super + Ctrl + O`** | **Assistente IA (Ori Flottante)** | Apre Ori in finestra flottante (monitoraggio, modifiche, Plan & Coding Mode) |

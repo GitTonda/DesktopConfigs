@@ -1,0 +1,255 @@
+/* Catppuccin Mocha Control Center Stylesheet */
+* {
+    border-radius: 0px;
+    font-family: 'JetBrainsMono Nerd Font', 'JetBrains Mono', monospace;
+    font-size: 10pt;
+    text-shadow: none;
+    box-shadow: none;
+    outline: none;
+}
+
+window#ControlCenterBackdrop {
+    background-color: rgba(0, 0, 0, 0.001);
+}
+
+window.control-center {
+    background-color: transparent;
+    color: #cdd6f4;
+}
+
+.main-box {
+    background-color: rgba(17, 17, 27, 0.92);
+    border: 2px solid @accent@;
+    padding: 16px;
+}
+
+/* Header */
+.header-box {
+    margin-bottom: 12px;
+}
+
+.header-user {
+    font-size: 11pt;
+    font-weight: bold;
+    color: #cdd6f4;
+}
+
+.header-host {
+    font-size: 9pt;
+    color: #a6adc8;
+}
+
+.close-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: #6c7086;
+    padding: 2px 6px;
+}
+
+.close-btn:hover {
+    color: #f38ba8;
+    background: rgba(243, 139, 168, 0.15);
+    border: 1px solid #f38ba8;
+}
+
+/* Section Separator */
+separator {
+    background-color: #313244;
+    min-height: 1px;
+    margin: 8px 0px;
+}
+
+/* Section Title */
+.section-title {
+    font-size: 8.5pt;
+    font-weight: bold;
+    color: #a6adc8;
+    margin-bottom: 6px;
+}
+
+/* Toggle Pills */
+.toggle-pill {
+    background-color: rgba(30, 30, 46, 0.7);
+    border: 1px solid #313244;
+    padding: 8px 10px;
+    margin: 3px;
+    transition: all 120ms ease-in-out;
+}
+
+.toggle-pill:hover {
+    background-color: #313244;
+    border-color: #45475a;
+}
+
+.toggle-pill .pill-icon {
+    font-size: 15pt;
+    margin-right: 8px;
+    color: #6c7086;
+}
+
+.toggle-pill .pill-title {
+    font-size: 9.5pt;
+    font-weight: bold;
+    color: #cdd6f4;
+}
+
+.toggle-pill .pill-status {
+    font-size: 8pt;
+    color: #6c7086;
+}
+
+/* Active Pill State */
+.toggle-pill.active {
+    background-color: rgba(49, 50, 68, 0.85);
+    border: 1px solid @accent@;
+}
+
+.toggle-pill.active:hover {
+    background-color: rgba(69, 71, 90, 0.95);
+    border-color: @accent@;
+}
+
+.toggle-pill.active .pill-icon {
+    color: @accent@;
+}
+
+.toggle-pill.active .pill-title {
+    color: #ffffff;
+    font-weight: bold;
+}
+
+.toggle-pill.active .pill-status {
+    color: @accent@;
+    font-weight: 500;
+}
+
+/* Slider Card */
+.slider-card {
+    background-color: rgba(30, 30, 46, 0.6);
+    border: 1px solid #313244;
+    padding: 10px 12px;
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
+
+.slider-card:hover {
+    border-color: #45475a;
+}
+
+.slider-label {
+    font-size: 9.5pt;
+    color: #cdd6f4;
+}
+
+.slider-value {
+    font-size: 9.5pt;
+    font-weight: bold;
+    color: @accent@;
+}
+
+scale trough {
+    background-color: #313244;
+    min-height: 6px;
+    border-radius: 0px;
+    border: none;
+}
+
+scale highlight {
+    background-color: @accent@;
+    border-radius: 0px;
+    border: none;
+}
+
+scale slider {
+    background-color: #cdd6f4;
+    min-height: 14px;
+    min-width: 14px;
+    margin: -4px;
+    border-radius: 0px;
+    border: 1px solid #11111b;
+}
+
+scale slider:hover {
+    background-color: #ffffff;
+}
+
+/* Device Switcher Button */
+.device-btn {
+    background-color: rgba(24, 24, 37, 0.7);
+    border: 1px solid #313244;
+    padding: 6px 8px;
+    margin-top: 6px;
+}
+
+.device-btn:hover {
+    background-color: #313244;
+    border-color: @accent@;
+}
+
+.device-btn label {
+    font-size: 8.5pt;
+    color: #a6adc8;
+}
+
+/* Hardware Telemetry Card */
+.hardware-card {
+    background-color: rgba(30, 30, 46, 0.6);
+    border: 1px solid #313244;
+    padding: 10px 12px;
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
+
+.hardware-card:hover {
+    border-color: @accent@;
+    background-color: rgba(49, 50, 68, 0.5);
+}
+
+.hw-label {
+    font-size: 8.5pt;
+    color: #cdd6f4;
+}
+
+.hw-value {
+    font-size: 8.5pt;
+    color: #a6adc8;
+}
+
+progressbar trough {
+    background-color: #313244;
+    min-height: 6px;
+    border-radius: 0px;
+    border: none;
+}
+
+progressbar progress {
+    background-color: @accent@;
+    border-radius: 0px;
+    border: none;
+}
+
+/* Power Bar */
+.power-bar {
+    margin-top: 8px;
+}
+
+.power-btn {
+    background-color: rgba(30, 30, 46, 0.7);
+    border: 1px solid #313244;
+    padding: 8px 12px;
+    font-size: 13pt;
+    color: #cdd6f4;
+    transition: all 120ms ease;
+}
+
+.power-btn:hover {
+    background-color: #313244;
+    border-color: @accent@;
+    color: @accent@;
+}
+
+.power-btn.danger:hover {
+    background-color: rgba(243, 139, 168, 0.2);
+    border-color: #f38ba8;
+    color: #f38ba8;
+}

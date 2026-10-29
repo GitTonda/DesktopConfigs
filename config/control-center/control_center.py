@@ -1,0 +1,718 @@
+#!/usr/bin/env python3
+"""
+Catppuccin Mocha Unified Control Center
+Flyout quick settings panel anchored under Polybar in top-right corner.
+"""
+
+import os
+import sys
+import subprocess
+import shutil
+import time
+import re
+
+import gi
+gi.require_version('Gtk', '3.0')
+gi.require_version('Gdk', '3.0')
+from gi.repository import Gtk, Gdk, GLib
+
+
+PID_FILE = os.path.expanduser("~/.cache/control_center.pid")
+
+
+# ------------------------------------------------------------------------------
+# Helpers & System State Queries
+# ------------------------------------------------------------------------------
+
+def get_accent_color():
+    colors_file = os.path.expanduser("~/.config/polybar/colors.ini")
+    if os.path.exists(colors_file):
+        try:
+            with open(colors_file, "r") as f:
+                for line in f:
+                    if line.strip().startswith("accent"):
+                        parts = line.split("=")
+                        if len(parts) == 2:
+                            col = parts[1].strip()
+                            if col:
+                                return col
+        except Exception:
+            pass
+    return "#89b4fa"
+
+
+def get_audio_state():
+    vol = 50
+    muted = False
+    try:
+        out = subprocess.check_output(["pactl", "get-sink-volume", "@DEFAULT_SINK@"], text=True, stderr=subprocess.DEVNULL)
+        m = re.search(r"(\d+)%", out)
+        if m:
+            vol = int(m.group(1))
+    except Exception:
+        pass
+
+    try:
+        out = subprocess.check_output(["pactl", "get-sink-mute", "@DEFAULT_SINK@"], text=True, stderr=subprocess.DEVNULL)
+        muted = "yes" in out.lower()
+    except Exception:
+        pass
+
+    # Source / Mic mute
+    mic_muted = False
+    try:
+        out = subprocess.check_output(["pactl", "get-source-mute", "@DEFAULT_SOURCE@"], text=True, stderr=subprocess.DEVNULL)
+        mic_muted = "yes" in out.lower()
+    except Exception:
+        pass
+
+    # Active sink description
+    sink_desc = "Default Audio Output"
+    try:
+        out = subprocess.check_output(["pactl", "list", "sinks"], text=True, stderr=subprocess.DEVNULL)
+        desc_matches = re.findall(r"Description:\s+(.*)", out)
+        if desc_matches:
+            sink_desc = desc_matches[0].strip()
+    except Exception:
+        pass
+
+    return {
+        "volume": min(100, max(0, vol)),
+        "muted": muted,
+        "mic_muted": mic_muted,
+        "sink_desc": sink_desc
+    }
+
+
+def get_wifi_state():
+    enabled = False
+    ssid = "Disconnesso"
+    try:
+        radio = subprocess.check_output(["nmcli", "-t", "-f", "WIFI", "g"], text=True, stderr=subprocess.DEVNULL).strip()
+        enabled = (radio == "enabled")
+        if enabled:
+            out = subprocess.check_output(["nmcli", "-t", "-f", "ACTIVE,SSID", "dev", "wifi"], text=True, stderr=subprocess.DEVNULL)
+            for line in out.splitlines():
+                if line.startswith("yes:"):
+                    cur = line.split(":", 1)[1].strip()
+                    if cur:
+                        ssid = cur
+                        break
+    except Exception:
+        pass
+    return {"enabled": enabled, "ssid": ssid}
+
+
+def get_bluetooth_state():
+    powered = False
+    device_name = "Disconnesso"
+    try:
+        out = subprocess.check_output(["bluetoothctl", "show"], text=True, stderr=subprocess.DEVNULL)
+        powered = "Powered: yes" in out
+        if powered:
+            con = subprocess.check_output(["bluetoothctl", "devices", "Connected"], text=True, stderr=subprocess.DEVNULL).strip()
+            if con:
+                lines = con.splitlines()
+                # Line format: "Device XX:XX:XX:XX:XX:XX DeviceName"
+                parts = lines[0].split(" ", 2)
+                device_name = parts[2] if len(parts) >= 3 else "Connesso"
+            else:
+                device_name = "Attivo"
+        else:
+            device_name = "Spento"
+    except Exception:
+        pass
+    return {"powered": powered, "device": device_name}
+
+
+def get_dnd_state():
+    is_paused = False
+    try:
+        out = subprocess.check_output(["dunstctl", "is-paused"], text=True, stderr=subprocess.DEVNULL).strip()
+        is_paused = (out == "true")
+    except Exception:
+        pass
+    return is_paused
+
+
+def get_memory_info():
+    total_gb = 0.0
+    used_gb = 0.0
+    pct = 0
+    try:
+        with open("/proc/meminfo", "r") as f:
+            lines = f.readlines()
+        data = {}
+        for line in lines:
+            parts = line.split(":")
+            if len(parts) == 2:
+                data[parts[0].strip()] = int(parts[1].split()[0])
+        total = data.get("MemTotal", 1)
+        avail = data.get("MemAvailable", total)
+        used = total - avail
+        pct = int(round((used / total) * 100))
+        total_gb = total / (1024.0 * 1024.0)
+        used_gb = used / (1024.0 * 1024.0)
+    except Exception:
+        pass
+    return {"pct": pct, "used_gb": used_gb, "total_gb": total_gb}
+
+
+def get_cpu_info():
+    pct = 0
+    try:
+        def read_cpu():
+            with open("/proc/stat", "r") as f:
+                fields = [float(x) for x in f.readline().strip().split()[1:5]]
+            return sum(fields), fields[3] # total, idle
+
+        t1, i1 = read_cpu()
+        time.sleep(0.06)
+        t2, i2 = read_cpu()
+        dt = t2 - t1
+        di = i2 - i1
+        if dt > 0:
+            pct = int(round(100.0 * (1.0 - (di / dt))))
+    except Exception:
+        pass
+    return min(100, max(0, pct))
+
+
+# ------------------------------------------------------------------------------
+# Main Window Class
+# ------------------------------------------------------------------------------
+
+class ControlCenterWindow(Gtk.Window):
+    def __init__(self):
+        super().__init__(type=Gtk.WindowType.TOPLEVEL)
+
+        GLib.set_prgname("ControlCenter")
+        self.set_wmclass("ControlCenter", "ControlCenter")
+        self.set_name("ControlCenter")
+        self.set_title("ControlCenter")
+        self.set_role("pop-up")
+        self.set_decorated(False)
+        self.set_resizable(False)
+        self.set_default_size(380, -1)
+        self.set_app_paintable(True)
+        self.set_skip_taskbar_hint(True)
+        self.set_skip_pager_hint(True)
+        self.set_keep_above(True)
+
+        # Translucency visual
+        screen = self.get_screen()
+        visual = screen.get_rgba_visual()
+        if visual and screen.is_composited():
+            self.set_visual(visual)
+
+        self.get_style_context().add_class("control-center")
+
+        # Load states
+        self.audio_state = get_audio_state()
+        self.wifi_state = get_wifi_state()
+        self.bt_state = get_bluetooth_state()
+        self.dnd_state = get_dnd_state()
+
+        self._build_ui()
+        self._apply_css()
+
+        # Connect events for closing
+        self.connect("key-press-event", self._on_key_press)
+        self.connect("destroy", self._on_destroy)
+
+    def _on_destroy(self, widget):
+        if os.path.exists(PID_FILE):
+            try:
+                os.remove(PID_FILE)
+            except Exception:
+                pass
+        Gtk.main_quit()
+
+    def _apply_css(self):
+        accent = get_accent_color()
+        css_path = os.path.expanduser("~/.config/control-center/style.css")
+        if os.path.exists(css_path):
+            with open(css_path, "r") as f:
+                raw_css = f.read()
+            css_data = raw_css.replace("@accent@", accent)
+            provider = Gtk.CssProvider()
+            provider.load_from_data(css_data.encode("utf-8"))
+            Gtk.StyleContext.add_provider_for_screen(
+                Gdk.Screen.get_default(),
+                provider,
+                Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+            )
+
+    def _build_ui(self):
+        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        main_box.get_style_context().add_class("main-box")
+        self.add(main_box)
+
+        # 1. Header (User & Hostname & Close)
+        header_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        header_box.get_style_context().add_class("header-box")
+
+        os_icon = Gtk.Label(label="")
+        os_icon.get_style_context().add_class("pill-icon")
+        header_box.pack_start(os_icon, False, False, 0)
+
+        user_host_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1)
+        user = os.environ.get("USER", "user")
+        hostname = "borch"
+        try:
+            with open("/etc/hostname", "r") as f:
+                hostname = f.read().strip()
+        except Exception:
+            pass
+
+        user_lbl = Gtk.Label(label=f"{user}@{hostname}", xalign=0)
+        user_lbl.get_style_context().add_class("header-user")
+        
+        # Simple uptime
+        up_str = "Session Active"
+        try:
+            with open("/proc/uptime", "r") as f:
+                up_sec = float(f.readline().split()[0])
+                h = int(up_sec // 3600)
+                m = int((up_sec % 3600) // 60)
+                up_str = f"Uptime: {h}h {m}m"
+        except Exception:
+            pass
+
+        host_lbl = Gtk.Label(label=up_str, xalign=0)
+        host_lbl.get_style_context().add_class("header-host")
+
+        user_host_box.pack_start(user_lbl, False, False, 0)
+        user_host_box.pack_start(host_lbl, False, False, 0)
+        header_box.pack_start(user_host_box, True, True, 0)
+
+        close_btn = Gtk.Button(label="󰅖")
+        close_btn.get_style_context().add_class("close-btn")
+        close_btn.connect("clicked", lambda b: Gtk.main_quit())
+        header_box.pack_end(close_btn, False, False, 0)
+
+        main_box.pack_start(header_box, False, False, 0)
+        main_box.pack_start(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL), False, False, 0)
+
+        # 2. Quick Toggles Grid (Wi-Fi, Bluetooth, Mute, Mic, DND, Wallpaper)
+        toggles_title = Gtk.Label(label="QUICK TOGGLES", xalign=0)
+        toggles_title.get_style_context().add_class("section-title")
+        main_box.pack_start(toggles_title, False, False, 0)
+
+        grid = Gtk.Grid()
+        grid.set_column_spacing(6)
+        grid.set_row_spacing(6)
+        grid.set_column_homogeneous(True)
+
+        # Wi-Fi Pill
+        self.wifi_btn, self.wifi_icon, self.wifi_sub = self._create_toggle_pill(
+            icon="󰤨" if self.wifi_state["enabled"] else "󰤮",
+            title="Wi-Fi",
+            status=self.wifi_state["ssid"],
+            is_active=self.wifi_state["enabled"]
+        )
+        self.wifi_btn.connect("clicked", self._on_toggle_wifi)
+        self.wifi_btn.connect("button-press-event", self._on_wifi_right_click)
+        grid.attach(self.wifi_btn, 0, 0, 1, 1)
+
+        # Bluetooth Pill
+        self.bt_btn, self.bt_icon, self.bt_sub = self._create_toggle_pill(
+            icon="󰂯" if self.bt_state["powered"] else "󰂲",
+            title="Bluetooth",
+            status=self.bt_state["device"],
+            is_active=self.bt_state["powered"]
+        )
+        self.bt_btn.connect("clicked", self._on_toggle_bt)
+        self.bt_btn.connect("button-press-event", self._on_bt_right_click)
+        grid.attach(self.bt_btn, 1, 0, 1, 1)
+
+        # Audio Mute Pill
+        self.mute_btn, self.mute_icon, self.mute_sub = self._create_toggle_pill(
+            icon="󰝟" if self.audio_state["muted"] else "󰕾",
+            title="Audio Out",
+            status="Muto" if self.audio_state["muted"] else f"{self.audio_state['volume']}%",
+            is_active=not self.audio_state["muted"]
+        )
+        self.mute_btn.connect("clicked", self._on_toggle_mute)
+        grid.attach(self.mute_btn, 0, 1, 1, 1)
+
+        # Mic Mute Pill
+        self.mic_btn, self.mic_icon, self.mic_sub = self._create_toggle_pill(
+            icon="󰍭" if self.audio_state["mic_muted"] else "󰍬",
+            title="Microfono",
+            status="Muto" if self.audio_state["mic_muted"] else "Attivo",
+            is_active=not self.audio_state["mic_muted"]
+        )
+        self.mic_btn.connect("clicked", self._on_toggle_mic)
+        grid.attach(self.mic_btn, 1, 1, 1, 1)
+
+        # DND Pill
+        self.dnd_btn, self.dnd_icon, self.dnd_sub = self._create_toggle_pill(
+            icon="󱤓",
+            title="Do Not Disturb",
+            status="Attivo" if self.dnd_state else "Spento",
+            is_active=self.dnd_state
+        )
+        self.dnd_btn.connect("clicked", self._on_toggle_dnd)
+        grid.attach(self.dnd_btn, 0, 2, 1, 1)
+
+        # Wallpaper Gallery Pill
+        self.wall_btn, _, _ = self._create_toggle_pill(
+            icon="󰸉",
+            title="Wallpapers",
+            status="Apri Galleria",
+            is_active=False
+        )
+        self.wall_btn.connect("clicked", self._on_open_wallpaper_gallery)
+        grid.attach(self.wall_btn, 1, 2, 1, 1)
+
+        main_box.pack_start(grid, False, False, 0)
+        main_box.pack_start(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL), False, False, 0)
+
+        # 3. Interactive Volume Slider Card
+        slider_card = Gtk.EventBox()
+        slider_card_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        slider_card_box.get_style_context().add_class("slider-card")
+        slider_card.add(slider_card_box)
+
+        vol_hdr = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        vol_title = Gtk.Label(label="󰕾 Master Volume", xalign=0)
+        vol_title.get_style_context().add_class("slider-label")
+        vol_hdr.pack_start(vol_title, True, True, 0)
+
+        self.vol_val_lbl = Gtk.Label(label=f"{self.audio_state['volume']}%", xalign=1)
+        self.vol_val_lbl.get_style_context().add_class("slider-value")
+        vol_hdr.pack_end(self.vol_val_lbl, False, False, 0)
+        slider_card_box.pack_start(vol_hdr, False, False, 0)
+
+        self.vol_scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 100, 1)
+        self.vol_scale.set_value(self.audio_state["volume"])
+        self.vol_scale.set_draw_value(False)
+        self.vol_scale.connect("value-changed", self._on_scale_volume_changed)
+        slider_card_box.pack_start(self.vol_scale, False, False, 0)
+
+        # Sink device switcher button
+        sink_short = self.audio_state["sink_desc"]
+        if len(sink_short) > 34:
+            sink_short = sink_short[:31] + "..."
+        self.sink_btn = Gtk.Button(label=f"󰓃 Dispositivo: {sink_short}")
+        self.sink_btn.get_style_context().add_class("device-btn")
+        self.sink_btn.connect("clicked", self._on_switch_output_device)
+        slider_card_box.pack_start(self.sink_btn, False, False, 0)
+
+        slider_card.connect("scroll-event", self._on_scroll_volume)
+        main_box.pack_start(slider_card, False, False, 0)
+
+        # 4. Hardware Telemetry Card (Clickable to launch btop)
+        hw_card = Gtk.EventBox()
+        hw_card_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        hw_card_box.get_style_context().add_class("hardware-card")
+        hw_card.add(hw_card_box)
+
+        hw_hdr = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        hw_title = Gtk.Label(label="󰍛 HARDWARE TELEMETRY", xalign=0)
+        hw_title.get_style_context().add_class("section-title")
+        hw_hdr.pack_start(hw_title, True, True, 0)
+
+        hw_hint = Gtk.Label(label="Click: btop 󰓅", xalign=1)
+        hw_hint.get_style_context().add_class("hw-value")
+        hw_hdr.pack_end(hw_hint, False, False, 0)
+        hw_card_box.pack_start(hw_hdr, False, False, 0)
+
+        # CPU bar
+        cpu_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        cpu_pct = get_cpu_info()
+        cpu_lbl = Gtk.Label(label="CPU Load", xalign=0)
+        cpu_lbl.get_style_context().add_class("hw-label")
+        cpu_val = Gtk.Label(label=f"{cpu_pct}%", xalign=1)
+        cpu_val.get_style_context().add_class("hw-value")
+        cpu_box.pack_start(cpu_lbl, True, True, 0)
+        cpu_box.pack_end(cpu_val, False, False, 0)
+        hw_card_box.pack_start(cpu_box, False, False, 0)
+
+        cpu_bar = Gtk.ProgressBar()
+        cpu_bar.set_fraction(cpu_pct / 100.0)
+        hw_card_box.pack_start(cpu_bar, False, False, 0)
+
+        # RAM bar
+        mem = get_memory_info()
+        ram_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        ram_lbl = Gtk.Label(label="Memory (RAM)", xalign=0)
+        ram_lbl.get_style_context().add_class("hw-label")
+        ram_val = Gtk.Label(label=f"{mem['used_gb']:.1f} / {mem['total_gb']:.1f} GB ({mem['pct']}%)", xalign=1)
+        ram_val.get_style_context().add_class("hw-value")
+        ram_box.pack_start(ram_lbl, True, True, 0)
+        ram_box.pack_end(ram_val, False, False, 0)
+        hw_card_box.pack_start(ram_box, False, False, 0)
+
+        ram_bar = Gtk.ProgressBar()
+        ram_bar.set_fraction(mem['pct'] / 100.0)
+        hw_card_box.pack_start(ram_bar, False, False, 0)
+
+        hw_card.connect("button-press-event", self._on_launch_btop)
+        main_box.pack_start(hw_card, False, False, 0)
+
+        # 5. Session Actions (Bottom Row: Lock, Suspend, Reboot, Shutdown)
+        power_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        power_box.get_style_context().add_class("power-bar")
+        power_box.set_homogeneous(True)
+
+        lock_btn = Gtk.Button(label="󰌾")
+        lock_btn.set_tooltip_text("Lock session (Super+Ctrl+L)")
+        lock_btn.get_style_context().add_class("power-btn")
+        lock_btn.connect("clicked", lambda b: self._run_action(["~/.config/i3/lock.sh"]))
+        power_box.pack_start(lock_btn, True, True, 0)
+
+        sleep_btn = Gtk.Button(label="󰤄")
+        sleep_btn.set_tooltip_text("Suspend system")
+        sleep_btn.get_style_context().add_class("power-btn")
+        sleep_btn.connect("clicked", lambda b: self._run_action(["systemctl", "suspend"]))
+        power_box.pack_start(sleep_btn, True, True, 0)
+
+        reboot_btn = Gtk.Button(label="󰑓")
+        reboot_btn.set_tooltip_text("Reboot computer")
+        reboot_btn.get_style_context().add_class("power-btn")
+        reboot_btn.connect("clicked", lambda b: self._run_action(["systemctl", "reboot"]))
+        power_box.pack_start(reboot_btn, True, True, 0)
+
+        poweroff_btn = Gtk.Button(label="󰐥")
+        poweroff_btn.set_tooltip_text("Shutdown computer")
+        poweroff_btn.get_style_context().add_class("power-btn")
+        poweroff_btn.get_style_context().add_class("danger")
+        poweroff_btn.connect("clicked", lambda b: self._run_action(["systemctl", "poweroff"]))
+        power_box.pack_start(poweroff_btn, True, True, 0)
+
+        main_box.pack_start(power_box, False, False, 0)
+
+    def _create_toggle_pill(self, icon, title, status, is_active):
+        btn = Gtk.Button()
+        btn.get_style_context().add_class("toggle-pill")
+        if is_active:
+            btn.get_style_context().add_class("active")
+
+        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        btn.add(box)
+
+        icon_lbl = Gtk.Label(label=icon)
+        icon_lbl.get_style_context().add_class("pill-icon")
+        box.pack_start(icon_lbl, False, False, 0)
+
+        txt_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1)
+        title_lbl = Gtk.Label(label=title, xalign=0)
+        title_lbl.get_style_context().add_class("pill-title")
+
+        # Trim long status
+        display_status = status
+        if len(display_status) > 16:
+            display_status = display_status[:14] + "..."
+        status_lbl = Gtk.Label(label=display_status, xalign=0)
+        status_lbl.get_style_context().add_class("pill-status")
+
+        txt_box.pack_start(title_lbl, False, False, 0)
+        txt_box.pack_start(status_lbl, False, False, 0)
+        box.pack_start(txt_box, True, True, 0)
+
+        return btn, icon_lbl, status_lbl
+
+    # --------------------------------------------------------------------------
+    # Callbacks & Actions
+    # --------------------------------------------------------------------------
+
+    def _on_wifi_right_click(self, btn, event):
+        if event.button == 3: # Right click
+            Gtk.main_quit()
+            subprocess.Popen(["alacritty", "--class", "FloatingWifi", "-e", "nmtui"])
+            return True
+        return False
+
+    def _on_bt_right_click(self, btn, event):
+        if event.button == 3: # Right click
+            Gtk.main_quit()
+            subprocess.Popen(["alacritty", "--class", "FloatingBluetooth", "-e", "bluetoothctl"])
+            return True
+        return False
+
+    def _on_toggle_wifi(self, btn):
+        curr = self.wifi_state["enabled"]
+        cmd = ["nmcli", "radio", "wifi", "off" if curr else "on"]
+        subprocess.run(cmd, check=False)
+        time.sleep(0.1)
+        self.wifi_state = get_wifi_state()
+        if self.wifi_state["enabled"]:
+            self.wifi_btn.get_style_context().add_class("active")
+            self.wifi_icon.set_text("󰤨")
+        else:
+            self.wifi_btn.get_style_context().remove_class("active")
+            self.wifi_icon.set_text("󰤮")
+        self.wifi_sub.set_text(self.wifi_state["ssid"])
+
+    def _on_toggle_bt(self, btn):
+        curr = self.bt_state["powered"]
+        cmd = ["bluetoothctl", "power", "off" if curr else "on"]
+        subprocess.run(cmd, check=False)
+        time.sleep(0.1)
+        self.bt_state = get_bluetooth_state()
+        if self.bt_state["powered"]:
+            self.bt_btn.get_style_context().add_class("active")
+            self.bt_icon.set_text("󰂯")
+        else:
+            self.bt_btn.get_style_context().remove_class("active")
+            self.bt_icon.set_text("󰂲")
+        self.bt_sub.set_text(self.bt_state["device"])
+
+    def _on_toggle_mute(self, btn):
+        subprocess.run(["pactl", "set-sink-mute", "@DEFAULT_SINK@", "toggle"], check=False)
+        self.audio_state = get_audio_state()
+        muted = self.audio_state["muted"]
+        if muted:
+            self.mute_btn.get_style_context().remove_class("active")
+            self.mute_icon.set_text("󰝟")
+            self.mute_sub.set_text("Muto")
+        else:
+            self.mute_btn.get_style_context().add_class("active")
+            self.mute_icon.set_text("󰕾")
+            self.mute_sub.set_text(f"{self.audio_state['volume']}%")
+
+    def _on_toggle_mic(self, btn):
+        subprocess.run(["pactl", "set-source-mute", "@DEFAULT_SOURCE@", "toggle"], check=False)
+        self.audio_state = get_audio_state()
+        mic_muted = self.audio_state["mic_muted"]
+        if mic_muted:
+            self.mic_btn.get_style_context().remove_class("active")
+            self.mic_icon.set_text("󰍭")
+            self.mic_sub.set_text("Muto")
+        else:
+            self.mic_btn.get_style_context().add_class("active")
+            self.mic_icon.set_text("󰍬")
+            self.mic_sub.set_text("Attivo")
+
+    def _on_toggle_dnd(self, btn):
+        subprocess.run(["dunstctl", "set-paused", "toggle"], check=False)
+        self.dnd_state = get_dnd_state()
+        if self.dnd_state:
+            self.dnd_btn.get_style_context().add_class("active")
+            self.dnd_sub.set_text("Attivo")
+        else:
+            self.dnd_btn.get_style_context().remove_class("active")
+            self.dnd_sub.set_text("Spento")
+
+    def _on_open_wallpaper_gallery(self, btn):
+        Gtk.main_quit()
+        subprocess.Popen([
+            "feh", "-t", "-E", "180", "-y", "140", "-W", "1080", "-H", "720",
+            "--title", "Wallpaper Gallery - Click to Apply",
+            "--action", os.path.expanduser("~/.config/theme/apply-theme.sh '%f'"),
+            os.path.expanduser("~/Pictures/Wallpapers")
+        ])
+
+    def _on_scroll_volume(self, widget, event):
+        curr = int(round(self.vol_scale.get_value()))
+        if event.direction == Gdk.ScrollDirection.UP:
+            new_val = min(100, curr + 5)
+        elif event.direction == Gdk.ScrollDirection.DOWN:
+            new_val = max(0, curr - 5)
+        elif event.direction == Gdk.ScrollDirection.SMOOTH:
+            _, _, dy = event.get_scroll_deltas()
+            new_val = min(100, curr + 5) if dy < 0 else max(0, curr - 5)
+        else:
+            return False
+        self.vol_scale.set_value(new_val)
+        return True
+
+    def _on_scale_volume_changed(self, scale):
+        val = int(round(scale.get_value()))
+        self.vol_val_lbl.set_text(f"{val}%")
+        subprocess.run(["pactl", "set-sink-volume", "@DEFAULT_SINK@", f"{val}%"], check=False)
+        # If unmuted now, update pill
+        if self.audio_state["muted"]:
+            subprocess.run(["pactl", "set-sink-mute", "@DEFAULT_SINK@", "0"], check=False)
+            self.mute_btn.get_style_context().add_class("active")
+            self.mute_icon.set_text("󰕾")
+        self.mute_sub.set_text(f"{val}%")
+
+    def _on_switch_output_device(self, btn):
+        # Cycle through sinks
+        try:
+            out = subprocess.check_output(["pactl", "list", "short", "sinks"], text=True, stderr=subprocess.DEVNULL)
+            sinks = [line.split()[1] for line in out.strip().splitlines() if line]
+            if len(sinks) > 1:
+                cur_out = subprocess.check_output(["pactl", "get-default-sink"], text=True, stderr=subprocess.DEVNULL).strip()
+                try:
+                    idx = sinks.index(cur_out)
+                    nxt = sinks[(idx + 1) % len(sinks)]
+                except ValueError:
+                    nxt = sinks[0]
+                subprocess.run(["pactl", "set-default-sink", nxt], check=False)
+                # Move active inputs
+                inputs_out = subprocess.check_output(["pactl", "list", "short", "sink-inputs"], text=True, stderr=subprocess.DEVNULL)
+                for line in inputs_out.strip().splitlines():
+                    if line:
+                        inp_id = line.split()[0]
+                        subprocess.run(["pactl", "move-sink-input", inp_id, nxt], check=False)
+                time.sleep(0.1)
+                self.audio_state = get_audio_state()
+                desc = self.audio_state["sink_desc"]
+                if len(desc) > 34:
+                    desc = desc[:31] + "..."
+                self.sink_btn.set_label(f"󰓃 Dispositivo: {desc}")
+        except Exception:
+            pass
+
+    def _on_launch_btop(self, box, event):
+        Gtk.main_quit()
+        subprocess.Popen(["alacritty", "--class", "FloatingBtop", "-e", "btop"])
+
+    def _run_action(self, cmd):
+        Gtk.main_quit()
+        # Expand user in cmd
+        expanded = [os.path.expanduser(c) for c in cmd]
+        subprocess.Popen(expanded)
+
+    def _on_key_press(self, widget, event):
+        if event.keyval == Gdk.KEY_Escape:
+            self.destroy()
+            return True
+        return False
+
+    def _on_focus_out(self, widget, event):
+        self.destroy()
+        return False
+
+
+# ------------------------------------------------------------------------------
+# Entry Point & Placement
+# ------------------------------------------------------------------------------
+
+def main():
+    try:
+        os.makedirs(os.path.dirname(PID_FILE), exist_ok=True)
+        with open(PID_FILE, "w") as f:
+            f.write(str(os.getpid()))
+    except Exception:
+        pass
+
+    win = ControlCenterWindow()
+    win.show_all()
+    win.set_keep_above(True)
+    win.present()
+
+    # Calculate monitor coordinates for top-right anchoring
+    display = Gdk.Display.get_default()
+    monitor = display.get_primary_monitor() or display.get_monitor(0)
+    geometry = monitor.get_geometry()
+
+    width = 380
+    gap = 12
+    # Perfectly symmetrical 12px inset from both window borders (Top Y=43, Right X=1913)
+    x = 1913 - width - gap  # 1521
+    y = 43 + gap           # 55
+
+    # Explicitly position in i3 floating mode, enforce zero border, and set focus
+    win.move(x, y)
+    subprocess.run(["i3-msg", f"[class=\"(?i)control_center.*|ControlCenter\"] border none, move position {x} {y}, focus"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+
+    Gtk.main()
+
+
+if __name__ == "__main__":
+    main()

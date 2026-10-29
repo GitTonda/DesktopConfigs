@@ -1,0 +1,139 @@
+/**
+ * Rofi Window Switcher - Catppuccin Mocha Minimal
+ */
+
+configuration {
+    modi:                       "window";
+    show-icons:                 true;
+    icon-theme:                 "Papirus-Dark";
+    display-window:             "🪟 win :~$";
+    window-format:              "[{w}] {c}  ·  {t}";
+    font:                       "JetBrainsMono Nerd Font 10";
+    hover-select:               true;
+    me-select-entry:            "";
+    me-accept-entry:            "MousePrimary";
+}
+
+@import "colors.rasi"
+
+* {
+    surface0:                   #313244;
+    surface1:                   #45475a;
+    fg:                         #cdd6f4;
+    fg-dim:                     #6c7086;
+    urgent:                     #f38ba8;
+
+    background-color:           transparent;
+    text-color:                 @fg;
+    margin:                     0px;
+    padding:                    0px;
+}
+
+window {
+    transparency:               "real";
+    location:                   center;
+    anchor:                     center;
+    fullscreen:                 false;
+    width:                      760px;
+    border:                     2px solid;
+    border-color:               @accent;
+    border-radius:              0px;
+    background-color:           @bg-frosted;
+    cursor:                     "default";
+}
+
+mainbox {
+    enabled:                    true;
+    spacing:                    0px;
+    padding:                    0px;
+    background-color:           transparent;
+    children:                   [ "inputbar", "listview" ];
+}
+
+inputbar {
+    enabled:                    true;
+    spacing:                    12px;
+    padding:                    14px 18px;
+    background-color:           @bg-header;
+    border:                     0px 0px 1px 0px solid;
+    border-color:               @surface0;
+    children:                   [ "prompt", "entry" ];
+}
+
+prompt {
+    enabled:                    true;
+    padding:                    4px 10px;
+    border-radius:              0px;
+    background-color:           @accent;
+    text-color:                 #1e1e2e;
+    font:                       "JetBrainsMono Nerd Font Bold 10.5";
+}
+
+entry {
+    enabled:                    true;
+    padding:                    4px 8px;
+    border-radius:              0px;
+    background-color:           transparent;
+    text-color:                 @fg;
+    cursor:                     text;
+    placeholder:                "Switch open window or workspace...";
+    placeholder-color:          @fg-dim;
+    font:                       "JetBrainsMono Nerd Font 10";
+}
+
+listview {
+    enabled:                    true;
+    columns:                    1;
+    lines:                      8;
+    cycle:                      true;
+    dynamic:                    true;
+    scrollbar:                  false;
+    layout:                     vertical;
+    reverse:                    false;
+    fixed-height:               false;
+    fixed-columns:              true;
+    spacing:                    3px;
+    padding:                    10px 12px;
+    background-color:           transparent;
+    cursor:                     "default";
+}
+
+element {
+    enabled:                    true;
+    orientation:                horizontal;
+    spacing:                    12px;
+    padding:                    8px 12px;
+    border:                     1px solid;
+    border-color:               transparent;
+    border-radius:              0px;
+    background-color:           transparent;
+    text-color:                 @fg;
+    cursor:                     pointer;
+}
+
+element selected.normal {
+    background-color:           @accent;
+    border-color:               @accent;
+    text-color:                 #1e1e2e;
+}
+
+element selected.urgent {
+    background-color:           @urgent;
+    text-color:                 #1e1e2e;
+}
+
+element-icon {
+    size:                       22px;
+    cursor:                     inherit;
+    background-color:           transparent;
+    vertical-align:             0.5;
+}
+
+element-text {
+    vertical-align:             0.5;
+    horizontal-align:           0.0;
+    cursor:                     inherit;
+    background-color:           transparent;
+    text-color:                 inherit;
+    highlight:                  inherit;
+}

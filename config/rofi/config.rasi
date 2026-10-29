@@ -4,11 +4,13 @@
  */
 
 configuration {
-    modi:                       "drun,run";
+    modi:                       "drun,run,window";
     show-icons:                 true;
     icon-theme:                 "Papirus-Dark";
     display-drun:               "󰀻 apps :~$";
     display-run:                " run :~$";
+    display-window:             "🪟 win :~$";
+    window-format:              "[{w}] {c}  ·  {t}";
     drun-display-format:        "{name}";
     font:                       "JetBrainsMono Nerd Font 10";
 
