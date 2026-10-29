@@ -62,7 +62,7 @@ entry {
     border-radius:              0px;
     background-color:           transparent;
     text-color:                 @fg;
-    placeholder:                "key [1-4] or search...";
+    placeholder:                "key [0-4] or search...";
     placeholder-color:          @fg-dim;
     font:                       "JetBrainsMono Nerd Font 10.5";
 }
@@ -70,7 +70,7 @@ entry {
 listview {
     enabled:                    true;
     columns:                    1;
-    lines:                      4;
+    lines:                      5;
     cycle:                      true;
     dynamic:                    true;
     scrollbar:                  false;

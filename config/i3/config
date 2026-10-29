@@ -77,6 +77,10 @@ bindsym $mod+Ctrl+Shift+o exec --no-startup-id ~/.local/bin/ori-window --fullscr
 bindsym $mod+Shift+Return exec --no-startup-id thunar
 bindsym $mod+Shift+f exec --no-startup-id thunar
 
+# Lock screen manually ($mod+Ctrl+l or XF86ScreenSaver)
+bindsym $mod+Ctrl+l exec --no-startup-id ~/.config/i3/lock.sh
+bindsym XF86ScreenSaver exec --no-startup-id ~/.config/i3/lock.sh
+
 # Launch system monitor (Rofi System Dashboard / Btop)
 bindsym $mod+Shift+m exec --no-startup-id ~/.config/rofi/system.sh
 bindsym $mod+Ctrl+m exec --no-startup-id alacritty --class FloatingBtop -e btop
@@ -258,6 +262,11 @@ exec --no-startup-id picom -b
 
 # Notification daemon (Dynamic DPI & Gap Detection)
 exec_always --no-startup-id ~/.config/dunst/launch.sh
+
+# Idle screen saver & automatic lock management
+# Timeout: 10m screensaver (600s), DPMS standby 15m (900s), suspend 20m (1200s), off 30m (1800s)
+exec_always --no-startup-id xset s 600 600 +dpms dpms 900 1200 1800
+exec_always --no-startup-id bash -c 'pgrep -x xss-lock >/dev/null || xss-lock --transfer-sleep-lock -- ~/.config/i3/lock.sh'
 
 # ==============================================================================
 # Custom User Shortcuts

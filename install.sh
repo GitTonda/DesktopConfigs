@@ -103,12 +103,22 @@ if command -v pacman >/dev/null 2>&1; then
         gnome-themes-extra
         adw-gtk-theme
         xsettingsd
+        xorg-xset
+        xss-lock
+        imagemagick
+        xorg-xrandr
         ly
     )
 
     if ! sudo pacman -Syu --needed --noconfirm "${PACMAN_PKGS[@]}"; then
         echo "==> Pacman encountered an interactive prompt. Retrying with interactive confirmation..."
         sudo pacman -Syu --needed "${PACMAN_PKGS[@]}" </dev/tty
+    fi
+
+    # Install AUR packages (i3lock-color, papirus-folders-catppuccin) if yay is installed
+    if command -v yay >/dev/null 2>&1; then
+        echo "==> Checking and installing AUR packages..."
+        yay -S --needed --noconfirm i3lock-color papirus-folders-catppuccin-git 2>/dev/null || true
     fi
 
     # Ensure user is in necessary hardware groups (video, audio, input) for backlight and sound
@@ -355,7 +365,7 @@ chmod +x "$HOME/.config/rofi/shortcuts.sh" "$HOME/.config/rofi/shortcuts.py" 2>/
 chmod +x "$HOME/.config/rofi/gpu.sh" "$HOME/.config/rofi/gpu.py" 2>/dev/null || true
 chmod +x "$HOME/.config/rofi/wallpaper.sh" 2>/dev/null || true
 chmod +x "$HOME/.config/theme/apply-theme.sh" 2>/dev/null || true
-chmod +x "$HOME/.config/i3/screenshot.sh"
+chmod +x "$HOME/.config/i3/screenshot.sh" "$HOME/.config/i3/lock.sh" 2>/dev/null || true
 chmod +x "$HOME/.config/zen/setup-zen.sh" 2>/dev/null || true
 
 # Setup Zen Browser configs & extensions if installed

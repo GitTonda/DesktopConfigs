@@ -79,7 +79,7 @@ do_pull() {
     chmod +x "$HOME/.config/dunst/scripts/"*.sh 2>/dev/null || true
     chmod +x "$HOME/.config/rofi/"*.sh "$HOME/.config/rofi/"*.py 2>/dev/null || true
     chmod +x "$HOME/.config/theme/apply-theme.sh" 2>/dev/null || true
-    chmod +x "$HOME/.config/i3/screenshot.sh" 2>/dev/null || true
+    chmod +x "$HOME/.config/i3/screenshot.sh" "$HOME/.config/i3/lock.sh" 2>/dev/null || true
     chmod +x "$HOME/.config/zen/setup-zen.sh" 2>/dev/null || true
     chmod +x "$DOTFILES_DIR/scripts/ori" "$DOTFILES_DIR/scripts/ori-window" 2>/dev/null || true
     ln -sf "$DOTFILES_DIR/scripts/ori" "$HOME/.local/bin/ori" 2>/dev/null || true
