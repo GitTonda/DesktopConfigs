@@ -25,6 +25,13 @@ if command -v pacman >/dev/null 2>&1; then
         sudo pacman -Rdd --noconfirm $CONFLICTING_AUDIO 2>/dev/null || true
     fi
 
+    # Optimize pacman configuration (ParallelDownloads, Color, ILoveCandy, VerbosePkgLists)
+    echo "==> Optimizing pacman configuration..."
+    sudo sed -i 's/^#ParallelDownloads/ParallelDownloads/' /etc/pacman.conf 2>/dev/null || true
+    sudo sed -i 's/^#Color/Color/' /etc/pacman.conf 2>/dev/null || true
+    sudo sed -i 's/^#VerbosePkgLists/VerbosePkgLists/' /etc/pacman.conf 2>/dev/null || true
+    grep -q "ILoveCandy" /etc/pacman.conf || sudo sed -i '/^Color/a ILoveCandy' /etc/pacman.conf 2>/dev/null || true
+
     PACMAN_PKGS=(
         xorg-server
         xorg-xinit
@@ -85,6 +92,13 @@ if command -v pacman >/dev/null 2>&1; then
         ttf-jetbrains-mono-nerd
         otf-font-awesome
         noto-fonts-emoji
+        starship
+        eza
+        bat
+        fzf
+        zoxide
+        ripgrep
+        fd
         papirus-icon-theme
         gnome-themes-extra
         adw-gtk-theme
@@ -253,6 +267,7 @@ echo "==> Deploying configurations..."
 mkdir -p "$HOME/.config"
 cp -r "$DOTFILES_DIR/config/"* "$HOME/.config/"
 cp "$DOTFILES_DIR/home/.nanorc" "$HOME/.nanorc"
+[ -f "$DOTFILES_DIR/home/.bashrc" ] && cp "$DOTFILES_DIR/home/.bashrc" "$HOME/.bashrc"
 [ -f "$DOTFILES_DIR/home/.xinputrc" ] && cp "$DOTFILES_DIR/home/.xinputrc" "$HOME/.xinputrc"
 [ -f "$DOTFILES_DIR/home/.xinitrc" ] && cp "$DOTFILES_DIR/home/.xinitrc" "$HOME/.xinitrc"
 chmod +x "$HOME/.xinitrc" 2>/dev/null || true

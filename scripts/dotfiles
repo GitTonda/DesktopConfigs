@@ -67,6 +67,11 @@ do_pull() {
         xrdb -merge "$HOME/.Xresources" 2>/dev/null || true
     fi
 
+    # Shell environment (~/.bashrc)
+    if [ -f "$DOTFILES_DIR/home/.bashrc" ]; then
+        cp "$DOTFILES_DIR/home/.bashrc" "$HOME/.bashrc"
+    fi
+
     # Ensure executable permissions on all helper scripts
     chmod +x "$HOME/.config/polybar/launch.sh" 2>/dev/null || true
     chmod +x "$HOME/.config/polybar/scripts/"*.sh 2>/dev/null || true
@@ -146,6 +151,12 @@ do_push() {
     # Sync Xresources
     if [ -f "$HOME/.Xresources" ]; then
         cp "$HOME/.Xresources" "$DOTFILES_DIR/Xresources"
+    fi
+
+    # Sync shell environment (~/.bashrc)
+    if [ -f "$HOME/.bashrc" ]; then
+        mkdir -p "$DOTFILES_DIR/home"
+        cp "$HOME/.bashrc" "$DOTFILES_DIR/home/.bashrc"
     fi
 
     # Check git status
