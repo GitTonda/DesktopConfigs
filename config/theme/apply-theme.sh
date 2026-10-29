@@ -93,6 +93,15 @@ if command -v magick >/dev/null 2>&1; then
     ) &
 fi
 
+# 3c. Update Fastfetch dynamic accent color
+if [ -f "$HOME/.config/fastfetch/config.jsonc" ]; then
+    HEX_CLEAN="${ACCENT#'#'}"
+    R=$((16#${HEX_CLEAN:0:2}))
+    G=$((16#${HEX_CLEAN:2:2}))
+    B=$((16#${HEX_CLEAN:4:2}))
+    sed -i -E "s/38;2;[0-9]+;[0-9]+;[0-9]+/38;2;${R};${G};${B}/g" "$HOME/.config/fastfetch/config.jsonc" 2>/dev/null || true
+fi
+
 # 4. Update i3 Window Borders & Background
 mkdir -p "$HOME/.config/i3"
 cat << I3CONF > "$HOME/.config/i3/colors.conf"

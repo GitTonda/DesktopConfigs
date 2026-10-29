@@ -93,6 +93,7 @@ if command -v pacman >/dev/null 2>&1; then
         otf-font-awesome
         noto-fonts-emoji
         starship
+        fastfetch
         eza
         bat
         fzf
