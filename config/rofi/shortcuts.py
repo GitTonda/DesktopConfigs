@@ -2,6 +2,7 @@
 """
 Antigravity Shortcuts Manager
 Inspect, create, edit, and delete i3 keyboard shortcuts with Rofi & CLI interfaces.
+Includes hierarchical back-navigation across all menus and bulletproof process handling.
 """
 
 import sys
@@ -249,30 +250,48 @@ def save_custom_shortcuts(shortcuts):
 
 def action_add(key=None, cmd=None, desc=None, is_gui=True):
     if is_gui:
+        # Step 1: Shortcut key combination
         if not key:
-            key_in = run_rofi("󰌌 Tasti scorciatoia :~$", message="Es. Mod+t, Mod+Shift+c, Control+Alt+t ($mod = Windows)")
+            key_in = run_rofi(
+                "󰌌 Tasti scorciatoia :~$",
+                message="Digita combinazione (es. Mod+t, Mod+Shift+c, Control+Alt+t) oppure Esc per tornare indietro:"
+            )
             if not key_in:
-                return
+                return False
             key = normalize_key(key_in)
 
-        # Check existing
+        # Check existing shortcuts for conflicts
         all_s = parse_all_shortcuts()
         existing = next((s for s in all_s if s["key"].lower() == key.lower()), None)
         if existing:
             warn = f"La combinazione '{key}' è già in uso per:\n'{existing['desc']}'\n\nVuoi sovrascriverla?"
-            ans = run_rofi("󰅚 Conflitto :~$", ["󰄬 Sì, sovrascrivi", "󰅖 No, annulla"], message=warn)
+            ans = run_rofi(
+                "󰅚 Conflitto :~$",
+                ["󰌍  Indietro / Annulla", "󰄬  Sì, sovrascrivi combinazione esistente"],
+                message=warn
+            )
             if not ans or "Sì" not in ans:
-                return
+                return False
 
+        # Step 2: Command to execute
         if not cmd:
-            cmd = run_rofi("󰅂 Comando da eseguire :~$", message="Es. firefox, alacritty -e htop, code, pavucontrol")
+            cmd = run_rofi(
+                "󰅂 Comando da eseguire :~$",
+                message="Digita comando (es. firefox, alacritty -e htop, code) oppure Esc per tornare indietro:"
+            )
             if not cmd:
-                return
+                return False
 
+        # Step 3: Description / Name
         if not desc:
-            desc = run_rofi("󰅃 Descrizione / Nome :~$", message=f"Descrizione per '{cmd}' (invio per default)")
-            if not desc:
-                desc = cmd
+            desc = run_rofi(
+                "󰅃 Descrizione / Nome :~$",
+                message=f"Descrizione per '{cmd}' (invio per usare il comando stesso, Esc per annullare):"
+            )
+            if desc is None:
+                return False
+            if not desc.strip():
+                desc = cmd.strip()
     else:
         if not key or not cmd:
             print("Errore: devi specificare combinazione tasti e comando.")
@@ -296,109 +315,199 @@ def action_add(key=None, cmd=None, desc=None, is_gui=True):
         return False
 
 def action_delete(target_key=None, is_gui=True):
-    shortcuts = parse_custom_shortcuts()
-    if not shortcuts:
+    while True:
+        shortcuts = parse_custom_shortcuts()
+        if not shortcuts:
+            if is_gui:
+                run_rofi(
+                    "󰅖 Nessuna shortcut :~$",
+                    ["󰌍  Torna al menu principale"],
+                    message="Nessuna scorciatoia personalizzata trovata."
+                )
+            else:
+                print("Nessuna scorciatoia personalizzata trovata.")
+            return False
+
         if is_gui:
-            run_rofi("󰅖 Nessuna shortcut :~$", ["Nessuna scorciatoia personalizzata trovata."], message="Aggiungine una con l'opzione 'Aggiungi nuova scorciatoia'.")
+            back_main = "󰌍  Torna al menu principale"
+            items = [back_main]
+            for s in shortcuts:
+                items.append(f"{s['key']:<22} 󰅂  {s['desc']}")
+            choice = run_rofi("󰅖 Elimina shortcut :~$", items, message="Seleziona la scorciatoia da rimuovere:")
+            if not choice or choice == back_main or "Torna al menu principale" in choice:
+                return False
+
+            selected_key = choice.split("󰅂")[0].strip()
+            item = next((s for s in shortcuts if s["key"].lower() == selected_key.lower()), None)
+            desc_str = item["desc"] if item else selected_key
+
+            confirm = run_rofi(
+                "󰅖 Conferma eliminazione :~$",
+                ["󰌍  Indietro / Annulla", f"󰄬  Sì, elimina definitivamente '{selected_key}'"],
+                message=f"Sei sicuro di voler eliminare la scorciatoia '{selected_key}' ({desc_str})?"
+            )
+            if not confirm or "Sì" not in confirm:
+                continue
         else:
-            print("Nessuna scorciatoia personalizzata trovata.")
-        return
+            selected_key = normalize_key(target_key) if target_key else None
 
-    if is_gui:
-        items = []
-        for s in shortcuts:
-            items.append(f"{s['key']:<22} 󰅂  {s['desc']}")
-        choice = run_rofi("󰅖 Elimina shortcut :~$", items, message="Seleziona la scorciatoia da rimuovere:")
-        if not choice:
-            return
-        selected_key = choice.split("󰅂")[0].strip()
-    else:
-        selected_key = normalize_key(target_key) if target_key else None
+        if not selected_key:
+            print("Errore: specificare la scorciatoia da rimuovere.")
+            return False
 
-    if not selected_key:
-        print("Errore: specificare la scorciatoia da rimuovere.")
-        return
+        filtered = [s for s in shortcuts if s["key"].lower() != selected_key.lower()]
+        if len(filtered) == len(shortcuts):
+            msg = f"Scorciatoia '{selected_key}' non trovata tra quelle personalizzate."
+            if is_gui:
+                notify("Attenzione", msg, urgency="normal")
+            else:
+                print(msg)
+            if is_gui:
+                continue
+            return False
 
-    filtered = [s for s in shortcuts if s["key"].lower() != selected_key.lower()]
-    if len(filtered) == len(shortcuts):
-        msg = f"Scorciatoia '{selected_key}' non trovata tra quelle personalizzate."
-        if is_gui:
-            notify("Attenzione", msg, urgency="normal")
+        success, msg = save_custom_shortcuts(filtered)
+        if success:
+            notify("󰄬 Shortcut Eliminata", f"Rimossa la scorciatoia: {selected_key}")
         else:
-            print(msg)
-        return
+            if not is_gui:
+                print(f"Errore: {msg}")
 
-    success, msg = save_custom_shortcuts(filtered)
-    if success:
-        notify("󰄬 Shortcut Eliminata", f"Rimossa la scorciatoia: {selected_key}")
-    else:
         if not is_gui:
-            print(f"Errore: {msg}")
+            return success
 
 def action_edit(is_gui=True):
-    shortcuts = parse_custom_shortcuts()
-    if not shortcuts:
-        if is_gui:
-            run_rofi("󰏫 Nessuna shortcut :~$", ["Nessuna scorciatoia personalizzata configurata."], message="Usa 'Aggiungi' per crearne una.")
-        else:
-            print("Nessuna scorciatoia personalizzata trovata.")
-        return
+    while True:
+        shortcuts = parse_custom_shortcuts()
+        if not shortcuts:
+            if is_gui:
+                run_rofi(
+                    "󰏫 Nessuna shortcut :~$",
+                    ["󰌍  Torna al menu principale"],
+                    message="Nessuna scorciatoia personalizzata configurata. Usa 'Aggiungi nuova scorciatoia' per crearne una."
+                )
+            else:
+                print("Nessuna scorciatoia personalizzata trovata.")
+            return False
 
-    items = [f"{s['key']:<22} 󰅂  {s['desc']} ({s['cmd']})" for s in shortcuts]
-    choice = run_rofi("󰏫 Modifica shortcut :~$", items, message="Seleziona la scorciatoia da modificare:")
-    if not choice:
-        return
+        if not is_gui:
+            return False
 
-    key = choice.split("󰅂")[0].strip()
-    item = next((s for s in shortcuts if s["key"].lower() == key.lower()), None)
-    if not item:
-        return
+        back_main = "󰌍  Torna al menu principale"
+        items = [back_main]
+        for s in shortcuts:
+            items.append(f"{s['key']:<22} 󰅂  {s['desc']} ({s['cmd']})")
 
-    ops = [
-        f"󰌌 Modifica combinazione tasti [{item['key']}]",
-        f"󰅂 Modifica comando [{item['cmd']}]",
-        f"󰅃 Modifica descrizione [{item['desc']}]",
-        f"󰅖 Elimina questa scorciatoia"
-    ]
-    sub_choice = run_rofi(f"󰏫 {item['key']} :~$", ops)
-    if not sub_choice:
-        return
+        choice = run_rofi("󰏫 Modifica shortcut :~$", items, message="Seleziona la scorciatoia da modificare:")
+        if not choice or choice == back_main or "Torna al menu principale" in choice:
+            return False
 
-    if "Modifica combinazione tasti" in sub_choice:
-        new_key = run_rofi("󰌌 Nuovi tasti :~$", filter_text=item["key"])
-        if new_key:
-            item["key"] = normalize_key(new_key)
-    elif "Modifica comando" in sub_choice:
-        new_cmd = run_rofi("󰅂 Nuovo comando :~$", filter_text=item["cmd"])
-        if new_cmd:
-            item["cmd"] = new_cmd
-    elif "Modifica descrizione" in sub_choice:
-        new_desc = run_rofi("󰅃 Nuova descrizione :~$", filter_text=item["desc"])
-        if new_desc:
-            item["desc"] = new_desc
-    elif "Elimina" in sub_choice:
-        shortcuts = [s for s in shortcuts if s["key"].lower() != item["key"].lower()]
-        save_custom_shortcuts(shortcuts)
-        notify("󰄬 Shortcut Rimossa", f"Eliminata: {item['key']}")
-        return
+        key = choice.split("󰅂")[0].strip()
+        item = next((s for s in shortcuts if s["key"].lower() == key.lower()), None)
+        if not item:
+            continue
 
-    save_custom_shortcuts(shortcuts)
-    notify("󰄬 Shortcut Aggiornata", f"{item['key']} 󰅂 {item['desc']}")
+        # Property editing loop for the selected shortcut
+        while True:
+            back_to_list = "󰌍  Indietro (Scegli un'altra scorciatoia)"
+            ops = [
+                back_to_list,
+                f"󰌌  Modifica combinazione tasti [{item['key']}]",
+                f"󰅂  Modifica comando [{item['cmd']}]",
+                f"󰅃  Modifica descrizione [{item['desc']}]",
+                "󰅖  Elimina questa scorciatoia"
+            ]
+            sub_choice = run_rofi(
+                f"󰏫 {item['key']} :~$",
+                ops,
+                message=f"Modifica proprietà di '{item['desc']}':"
+            )
+            if not sub_choice or sub_choice == back_to_list or "Indietro" in sub_choice:
+                break  # Return to shortcut picker list
+
+            if "Modifica combinazione tasti" in sub_choice:
+                new_key = run_rofi(
+                    "󰌌 Nuovi tasti :~$",
+                    filter_text=item["key"],
+                    message="Digita nuova combinazione tasti (Esc per annullare):"
+                )
+                if new_key and new_key.strip():
+                    norm = normalize_key(new_key)
+                    if norm.lower() != item["key"].lower():
+                        all_s = parse_all_shortcuts()
+                        conflict = next((s for s in all_s if s["key"].lower() == norm.lower() and s["key"].lower() != item["key"].lower()), None)
+                        if conflict:
+                            conf_ans = run_rofi(
+                                "󰅚 Conflitto :~$",
+                                ["󰌍  Indietro / Annulla", "󰄬  Sì, sovrascrivi combinazione esistente"],
+                                message=f"La combinazione '{norm}' è già usata da:\n'{conflict['desc']}'\n\nVuoi sovrascriverla?"
+                            )
+                            if not conf_ans or "Sì" not in conf_ans:
+                                continue
+                        item["key"] = norm
+                        save_custom_shortcuts(shortcuts)
+                        notify("󰄬 Tasti Aggiornati", f"Nuovi tasti: {item['key']}")
+            elif "Modifica comando" in sub_choice:
+                new_cmd = run_rofi(
+                    "󰅂 Nuovo comando :~$",
+                    filter_text=item["cmd"],
+                    message="Modifica comando eseguito (Esc per annullare):"
+                )
+                if new_cmd and new_cmd.strip():
+                    item["cmd"] = new_cmd.strip()
+                    save_custom_shortcuts(shortcuts)
+                    notify("󰄬 Comando Aggiornato", f"Nuovo comando: {item['cmd']}")
+            elif "Modifica descrizione" in sub_choice:
+                new_desc = run_rofi(
+                    "󰅃 Nuova descrizione :~$",
+                    filter_text=item["desc"],
+                    message="Modifica descrizione (Esc per annullare):"
+                )
+                if new_desc and new_desc.strip():
+                    item["desc"] = new_desc.strip()
+                    save_custom_shortcuts(shortcuts)
+                    notify("󰄬 Descrizione Aggiornata", f"Nuova descrizione: {item['desc']}")
+            elif "Elimina" in sub_choice:
+                del_confirm = run_rofi(
+                    "󰅖 Conferma eliminazione :~$",
+                    ["󰌍  Indietro / Annulla", f"󰄬  Sì, elimina definitivamente '{item['key']}'"],
+                    message=f"Sei sicuro di voler eliminare la scorciatoia '{item['key']}' ({item['desc']})?"
+                )
+                if del_confirm and "Sì" in del_confirm:
+                    shortcuts = [s for s in shortcuts if s["key"].lower() != item["key"].lower()]
+                    save_custom_shortcuts(shortcuts)
+                    notify("󰄬 Shortcut Rimossa", f"Eliminata: {item['key']}")
+                    break
 
 def action_list(is_gui=True):
     shortcuts = parse_all_shortcuts()
     if is_gui:
-        items = []
-        for s in shortcuts:
-            tag = " 󰐕" if s.get("is_custom") else ""
-            items.append(f"{s['key']:<24}{tag} 󰅂  {s['desc']}")
-        choice = run_rofi("󰌌 Lista scorciatoie :~$", items, message="Cerca qualsiasi comando o tasto. Invio su un'app per avviarla:")
-        if choice:
+        while True:
+            back_item = "󰌍  Torna al menu principale"
+            items = [back_item]
+            for s in shortcuts:
+                tag = " 󰐕" if s.get("is_custom") else ""
+                items.append(f"{s['key']:<24}{tag} 󰅂  {s['desc']}")
+            choice = run_rofi(
+                "󰌌 Lista scorciatoie :~$",
+                items,
+                message="Cerca o avvia scorciatoie. Seleziona 'Torna al menu' per tornare indietro:"
+            )
+            if not choice or choice == back_item or "Torna al menu principale" in choice:
+                return False  # Return to main menu
+
             key = choice.split("󰅂")[0].replace("󰐕", "").strip()
             item = next((s for s in shortcuts if s["key"] == key), None)
-            if item and item.get("cmd", "").startswith("exec "):
-                run_cmd = item["cmd"].replace("exec ", "").replace("--no-startup-id ", "").strip()
-                subprocess.Popen(run_cmd, shell=True)
+            if item:
+                cmd = item.get("cmd", "")
+                if cmd.startswith("exec "):
+                    run_cmd = cmd.replace("exec ", "").replace("--no-startup-id ", "").strip()
+                    subprocess.Popen(run_cmd, shell=True)
+                    notify("󰐕 Avvio applicazione", f"{item['desc']}\n{run_cmd}")
+                    return True  # Terminate manager since user launched an application
+                else:
+                    subprocess.Popen(["i3-msg", cmd])
+                    return True
     else:
         print("=" * 80)
         print(f"{'TASTI SCORCIATOIA':<28} {'TIPO':<10} {'AZIONE / DESCRIZIONE'}")
@@ -407,32 +516,36 @@ def action_list(is_gui=True):
             tipo = "Custom" if s.get("is_custom") else "Core"
             print(f"{s['key']:<28} {tipo:<10} {s['desc']}")
         print("=" * 80)
+        return False
 
 def main_gui():
     ensure_custom_conf()
-    menu_items = [
-        "󰌌  Visualizza tutte le scorciatoie (Cerca...)",
-        "󰐕  Aggiungi nuova scorciatoia",
-        "󰏫  Modifica scorciatoia personalizzata",
-        "󰅖  Elimina scorciatoia personalizzata",
-        "󰑐  Ricarica configurazione i3",
-        "󰈆  Esci"
-    ]
-    choice = run_rofi("󰌌 Shortcuts Manager :~$", menu_items, message="Gestore Scorciatoie da Tastiera i3wm")
-    if not choice or "Esci" in choice:
-        return
+    while True:
+        menu_items = [
+            "󰌌  Visualizza tutte le scorciatoie (Cerca...)",
+            "󰐕  Aggiungi nuova scorciatoia",
+            "󰏫  Modifica scorciatoia personalizzata",
+            "󰅖  Elimina scorciatoia personalizzata",
+            "󰑐  Ricarica configurazione i3",
+            "󰈆  Esci"
+        ]
+        choice = run_rofi("󰌌 Shortcuts Manager :~$", menu_items, message="Gestore Scorciatoie da Tastiera i3wm")
+        if not choice or "Esci" in choice:
+            break
 
-    if "Visualizza tutte" in choice:
-        action_list(is_gui=True)
-    elif "Aggiungi nuova" in choice:
-        action_add(is_gui=True)
-    elif "Modifica scorciatoia" in choice:
-        action_edit(is_gui=True)
-    elif "Elimina scorciatoia" in choice:
-        action_delete(is_gui=True)
-    elif "Ricarica configurazione" in choice:
-        subprocess.run(["i3-msg", "reload"], check=False)
-        notify("󰑐 i3 Ricaricato", "Tutte le scorciatoie sono state ricaricate in memoria")
+        if "Visualizza tutte" in choice:
+            launched = action_list(is_gui=True)
+            if launched:
+                break
+        elif "Aggiungi nuova" in choice:
+            action_add(is_gui=True)
+        elif "Modifica scorciatoia" in choice:
+            action_edit(is_gui=True)
+        elif "Elimina scorciatoia" in choice:
+            action_delete(is_gui=True)
+        elif "Ricarica configurazione" in choice:
+            subprocess.run(["i3-msg", "reload"], check=False)
+            notify("󰑐 i3 Ricaricato", "Tutte le scorciatoie sono state ricaricate in memoria")
 
 def main():
     if len(sys.argv) > 1:
@@ -463,7 +576,7 @@ def main():
         else:
             print(f"Comando non riconosciuto: {cmd}. Usa 'shortcuts-manager help'.")
     else:
-        # Default: if stdin is a tty and DISPLAY is set, open GUI, else show CLI help
+        # Default: if DISPLAY is set, open GUI, else show CLI list
         if os.environ.get("DISPLAY"):
             main_gui()
         else:
