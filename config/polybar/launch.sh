@@ -1,14 +1,21 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Polybar Launcher with Systemd Supervised Watchdog
-# Ensures the status bar starts cleanly and auto-revives if ever terminated.
+# Polybar Launcher with Dynamic Hardware Detection & Systemd Watchdog
 # ==============================================================================
 
 LOG_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/polybar"
 mkdir -p "$LOG_DIR"
 
+# Detect battery and adapter dynamically
+BATTERY_NAME=$(ls -1 /sys/class/power_supply/ 2>/dev/null | grep -E '^BAT' | head -n 1)
+ADAPTER_NAME=$(ls -1 /sys/class/power_supply/ 2>/dev/null | grep -vE '^BAT' | head -n 1)
+
+export POLYBAR_BATTERY="${BATTERY_NAME:-BAT0}"
+export POLYBAR_ADAPTER="${ADAPTER_NAME:-AC}"
+
 # If systemd user service is available, let systemd manage lifecycle & auto-restart
 if systemctl --user is-enabled polybar.service >/dev/null 2>&1 || [ -f "$HOME/.config/systemd/user/polybar.service" ]; then
+    systemctl --user set-environment POLYBAR_BATTERY="$POLYBAR_BATTERY" POLYBAR_ADAPTER="$POLYBAR_ADAPTER" >/dev/null 2>&1 || true
     systemctl --user daemon-reload >/dev/null 2>&1 || true
     systemctl --user restart polybar.service
     exit 0
