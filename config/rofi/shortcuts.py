@@ -2,7 +2,8 @@
 """
 Antigravity Shortcuts Manager
 Inspect, create, edit, and delete i3 keyboard shortcuts with Rofi & CLI interfaces.
-Includes hierarchical back-navigation across all menus and bulletproof process handling.
+Includes hierarchical back-navigation across all menus, robust keysym normalization,
+and bulletproof multi-machine config validation.
 """
 
 import sys
@@ -10,13 +11,30 @@ import os
 import re
 import subprocess
 import shutil
+import tempfile
 
-I3_CONFIG = os.path.expanduser("~/.config/i3/config")
+def get_i3_config_path():
+    candidates = [
+        os.path.expanduser("~/.config/i3/config"),
+        os.path.expanduser("~/.i3/config"),
+    ]
+    for c in candidates:
+        if os.path.exists(c):
+            return c
+    return candidates[0]
+
+I3_CONFIG = get_i3_config_path()
 CUSTOM_CONF = os.path.expanduser("~/.config/i3/custom_shortcuts.conf")
 ROFI_THEME = os.path.expanduser("~/.config/rofi/shortcuts.rasi")
 
 CORE_DESCRIPTIONS = {
     "$mod+Return": "Terminale (Alacritty)",
+    "$mod+F2": "Browser Web (Zen Browser)",
+    "$mod+Ctrl+b": "Browser Web (Zen Browser)",
+    "$mod+F3": "Assistente AI (Ori Window)",
+    "$mod+Shift+F3": "Assistente AI Fullscreen (Ori Window)",
+    "$mod+Ctrl+o": "Assistente AI (Ori Window)",
+    "$mod+Ctrl+Shift+o": "Assistente AI Fullscreen (Ori Window)",
     "$mod+Shift+Return": "File Manager (Ranger)",
     "$mod+Shift+m": "Dashboard Risorse e Sistema (Rofi)",
     "$mod+Ctrl+m": "Monitor Interattivo Terminale (Btop)",
@@ -115,12 +133,13 @@ def ensure_custom_conf():
             f.write("# Syntax: bindsym <KeyCombo> exec [--no-startup-id] <Command>\n")
             f.write("# ==============================================================================\n\n")
 
-    # Ensure include exists in ~/.config/i3/config
-    if os.path.exists(I3_CONFIG):
-        with open(I3_CONFIG, "r") as f:
+    # Ensure include exists in active i3 config
+    config_file = get_i3_config_path()
+    if os.path.exists(config_file):
+        with open(config_file, "r") as f:
             content = f.read()
         if "custom_shortcuts.conf" not in content:
-            with open(I3_CONFIG, "a") as f:
+            with open(config_file, "a") as f:
                 f.write("\n# ==============================================================================\n")
                 f.write("# Custom User Shortcuts\n")
                 f.write("# ==============================================================================\n")
@@ -141,17 +160,31 @@ def run_rofi(prompt, items=None, filter_text=None, message=None):
 
 def normalize_key(key_str):
     k = key_str.strip()
-    # Normalize Super, Win, Mod, mod -> $mod
+    # 1. Strip all whitespace around '+'
+    k = re.sub(r'\s*\+\s*', '+', k)
+    # 2. Normalize Super, Win, Mod, mod -> $mod
     k = re.sub(r'^(super|win|mod)\b', '$mod', k, flags=re.IGNORECASE)
     k = re.sub(r'\+(super|win|mod)\b', '+$mod', k, flags=re.IGNORECASE)
-    # Capitalize modifiers
+    # 3. Standardize modifier names casing
     k = re.sub(r'\bshift\b', 'Shift', k, flags=re.IGNORECASE)
     k = re.sub(r'\bctrl\b|\bcontrol\b', 'Control', k, flags=re.IGNORECASE)
     k = re.sub(r'\balt\b|\bmod1\b', 'Mod1', k, flags=re.IGNORECASE)
     k = re.sub(r'\breturn\b|\benter\b', 'Return', k, flags=re.IGNORECASE)
     k = re.sub(r'\bspace\b', 'space', k, flags=re.IGNORECASE)
     k = re.sub(r'\besc\b|\bescape\b', 'Escape', k, flags=re.IGNORECASE)
-    return k
+    k = re.sub(r'\btab\b', 'Tab', k, flags=re.IGNORECASE)
+    k = re.sub(r'\bbackspace\b', 'BackSpace', k, flags=re.IGNORECASE)
+
+    # 4. In i3wm, letter keysyms MUST be lowercase (e.g. Mod+t, not Mod+T)
+    # X11 produces lowercase keysyms unless Shift/CapsLock is active.
+    parts = k.split('+')
+    normalized_parts = []
+    for part in parts:
+        if len(part) == 1 and part.isalpha():
+            normalized_parts.append(part.lower())
+        else:
+            normalized_parts.append(part)
+    return '+'.join(normalized_parts)
 
 def parse_custom_shortcuts():
     ensure_custom_conf()
@@ -170,7 +203,7 @@ def parse_custom_shortcuts():
                         current_desc = m_desc.group(1).strip()
                     continue
 
-                m_bind = re.match(r'^bindsym\s+(?:--release\s+)?([^\s]+)\s+exec\s+(?:--no-startup-id\s+)?(.+)$', line_str)
+                m_bind = re.match(r'^bindsym\s+(?:--release\s+)?(.+?)\s+exec\s+(?:--no-startup-id\s+)?(.+)$', line_str)
                 if m_bind:
                     key = m_bind.group(1).strip()
                     cmd = m_bind.group(2).strip()
@@ -194,10 +227,11 @@ def parse_all_shortcuts():
             "is_custom": True
         })
 
-    # 2. Core shortcuts from i3 config
+    # 2. Core shortcuts from active i3 config
     custom_keys = {c["key"] for c in all_list}
-    if os.path.exists(I3_CONFIG):
-        with open(I3_CONFIG, "r") as f:
+    config_file = get_i3_config_path()
+    if os.path.exists(config_file):
+        with open(config_file, "r") as f:
             for line in f:
                 line_str = line.strip()
                 if line_str.startswith("#") or not line_str.startswith("bindsym"):
@@ -232,13 +266,29 @@ def save_custom_shortcuts(shortcuts):
             f.write(f"# Description: {s['desc']}\n")
             f.write(f"bindsym {s['key']} exec --no-startup-id {s['cmd']}\n\n")
 
-    # Verify i3 configuration syntax
-    res = subprocess.run(["i3", "-C"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    if res.returncode != 0:
-        # Revert
+    # Keep DesktopConfigs clone in sync if present to prevent clobbering on git pull
+    dotfiles_custom = os.path.expanduser("~/DesktopConfigs/config/i3/custom_shortcuts.conf")
+    if os.path.exists(os.path.dirname(dotfiles_custom)):
+        try:
+            shutil.copy(CUSTOM_CONF, dotfiles_custom)
+        except Exception:
+            pass
+
+    # Verify i3 configuration syntax specifically for the custom shortcuts
+    with tempfile.NamedTemporaryFile("w", delete=False) as tmp_chk:
+        tmp_chk.write("set $mod Mod4\n")
+        tmp_chk.write(f"include {CUSTOM_CONF}\n")
+        tmp_chk_path = tmp_chk.name
+
+    chk_res = subprocess.run(["i3", "-C", "-c", tmp_chk_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if os.path.exists(tmp_chk_path):
+        os.remove(tmp_chk_path)
+
+    if chk_res.returncode != 0:
+        # The syntax error is directly in custom_shortcuts.conf! Revert cleanly.
         if os.path.exists(backup_path):
             shutil.copy(backup_path, CUSTOM_CONF)
-        err_msg = res.stderr.strip() or "Sintassi configurazione i3 non valida"
+        err_msg = chk_res.stderr.strip() or "Sintassi scorciatoia non valida per i3"
         notify("Errore Salvataggio Shortcut", err_msg, urgency="critical")
         return False, err_msg
 
@@ -277,7 +327,7 @@ def action_add(key=None, cmd=None, desc=None, is_gui=True):
         if not cmd:
             cmd = run_rofi(
                 "󰅂 Comando da eseguire :~$",
-                message="Digita comando (es. firefox, alacritty -e htop, code) oppure Esc per tornare indietro:"
+                message="Digita comando (es. zen-browser, alacritty -e htop, code) oppure Esc per tornare indietro:"
             )
             if not cmd:
                 return False
@@ -299,6 +349,13 @@ def action_add(key=None, cmd=None, desc=None, is_gui=True):
         key = normalize_key(key)
         if not desc:
             desc = cmd
+
+    # Command sanitization: strip redundant 'exec', wrap commands with ';' in bash -c
+    cmd = cmd.strip()
+    if cmd.startswith("exec "):
+        cmd = re.sub(r'^exec\s+(?:--no-startup-id\s+)?', '', cmd).strip()
+    if ';' in cmd and not (cmd.startswith('"') or cmd.startswith("'")):
+        cmd = f'bash -c "{cmd}"'
 
     shortcuts = parse_custom_shortcuts()
     # Remove existing if duplicate
@@ -454,7 +511,12 @@ def action_edit(is_gui=True):
                     message="Modifica comando eseguito (Esc per annullare):"
                 )
                 if new_cmd and new_cmd.strip():
-                    item["cmd"] = new_cmd.strip()
+                    c = new_cmd.strip()
+                    if c.startswith("exec "):
+                        c = re.sub(r'^exec\s+(?:--no-startup-id\s+)?', '', c).strip()
+                    if ';' in c and not (c.startswith('"') or c.startswith("'")):
+                        c = f'bash -c "{c}"'
+                    item["cmd"] = c
                     save_custom_shortcuts(shortcuts)
                     notify("󰄬 Comando Aggiornato", f"Nuovo comando: {item['cmd']}")
             elif "Modifica descrizione" in sub_choice:

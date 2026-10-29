@@ -63,8 +63,8 @@ include ~/.config/i3/colors.conf
 bindsym $mod+Return exec --no-startup-id alacritty
 
 # Launch web browser (Zen)
-bindsym $mod+F2 exec --no-startup-id flatpak run app.zen_browser.zen
-bindsym $mod+Ctrl+b exec --no-startup-id flatpak run app.zen_browser.zen
+bindsym $mod+F2 exec --no-startup-id zen-browser
+bindsym $mod+Ctrl+b exec --no-startup-id zen-browser
 
 # Launch Ori Local AI Assistant (Floating or Fullscreen)
 bindsym $mod+F3 exec --no-startup-id ~/.local/bin/ori-window
