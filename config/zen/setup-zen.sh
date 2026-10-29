@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # Zen Browser Rice & Extensions Setup Script
-# Automates profiles deployment, policies, userChrome, and extensions
+# Automates installation, profiles deployment, policies, userChrome, and extensions
 # ==============================================================================
 
 set -e
@@ -20,6 +20,55 @@ NC='\033[0m'
 
 echo -e "${BLUE}${BOLD}==> Setting up Zen Browser configurations and extensions...${NC}"
 
+# 0. Automatically Install Zen Browser if missing
+ensure_zen_installed() {
+    if command -v zen-browser >/dev/null 2>&1 || command -v zen >/dev/null 2>&1 || \
+       (command -v flatpak >/dev/null 2>&1 && flatpak list --app 2>/dev/null | grep -q "app.zen_browser.zen"); then
+        return 0
+    fi
+
+    echo -e "${YELLOW}${BOLD}==> Zen Browser is not installed. Installing automatically...${NC}"
+
+    if command -v yay >/dev/null 2>&1; then
+        echo -e "${BLUE}==> Installing zen-browser-bin via yay...${NC}"
+        yay -S --needed --noconfirm zen-browser-bin dbus-glib || true
+    elif command -v paru >/dev/null 2>&1; then
+        echo -e "${BLUE}==> Installing zen-browser-bin via paru...${NC}"
+        paru -S --needed --noconfirm zen-browser-bin dbus-glib || true
+    elif command -v pacman >/dev/null 2>&1 && command -v git >/dev/null 2>&1; then
+        echo -e "${BLUE}==> Building zen-browser-bin from AUR...${NC}"
+        sudo pacman -S --needed --noconfirm dbus-glib base-devel 2>/dev/null || true
+        TMP_DIR=$(mktemp -d)
+        if git clone https://aur.archlinux.org/zen-browser-bin.git "$TMP_DIR/zen-browser-bin"; then
+            (cd "$TMP_DIR/zen-browser-bin" && makepkg -si --noconfirm) || true
+        fi
+        rm -rf "$TMP_DIR"
+    elif command -v flatpak >/dev/null 2>&1; then
+        echo -e "${BLUE}==> Installing Zen Browser via Flatpak...${NC}"
+        flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
+        flatpak install -y flathub app.zen_browser.zen || true
+    else
+        echo -e "${BLUE}==> Downloading official Zen Browser release tarball...${NC}"
+        mkdir -p "$HOME/.local/opt"
+        curl -fsSL "https://github.com/zen-browser/desktop/releases/latest/download/zen.linux-x86_64.tar.xz" | tar -xJ -C "$HOME/.local/opt" 2>/dev/null || true
+        if [ -x "$HOME/.local/opt/zen/zen" ]; then
+            mkdir -p "$HOME/.local/bin"
+            ln -sf "$HOME/.local/opt/zen/zen" "$HOME/.local/bin/zen"
+            ln -sf "$HOME/.local/opt/zen/zen" "$HOME/.local/bin/zen-browser"
+        fi
+    fi
+
+    # Ensure symlinks exist in ~/.local/bin
+    mkdir -p "$HOME/.local/bin"
+    if command -v zen-browser >/dev/null 2>&1; then
+        ln -sf "$(command -v zen-browser)" "$HOME/.local/bin/zen" 2>/dev/null || true
+    elif command -v zen >/dev/null 2>&1; then
+        ln -sf "$(command -v zen)" "$HOME/.local/bin/zen-browser" 2>/dev/null || true
+    fi
+}
+
+ensure_zen_installed
+
 # 1. Apply Flatpak Cursor and Theme Overrides if flatpak is installed
 if command -v flatpak >/dev/null 2>&1; then
     if flatpak list --app 2>/dev/null | grep -q "app.zen_browser.zen"; then
@@ -33,7 +82,7 @@ fi
 
 # 2. Deploy Enterprise Policies if native distribution directory exists
 if [ -f "$POLICIES_SRC" ]; then
-    for dist_dir in "/opt/zen-browser-bin/distribution" "/usr/lib/zen-browser/distribution"; do
+    for dist_dir in "/opt/zen-browser-bin/distribution" "/usr/lib/zen-browser/distribution" "$HOME/.local/opt/zen/distribution"; do
         if [ -d "$dist_dir" ]; then
             if [ -w "$dist_dir" ]; then
                 cp "$POLICIES_SRC" "$dist_dir/policies.json"
@@ -69,17 +118,42 @@ SEARCH_DIRS=(
     "$HOME/.zen"
 )
 
-PROFILES=()
-for base in "${SEARCH_DIRS[@]}"; do
-    if [ -d "$base" ]; then
-        while IFS= read -r -d '' p; do
-            # Add directory if it contains prefs.js or compatibility.ini or matches profile patterns
-            if [ -f "$p/prefs.js" ] || [ -f "$p/compatibility.ini" ] || [[ "$(basename "$p")" =~ (default|Default|release) ]]; then
-                PROFILES+=("$p")
-            fi
-        done < <(find "$base" -maxdepth 1 -mindepth 1 -type d -print0)
+scan_profiles() {
+    PROFILES=()
+    for base in "${SEARCH_DIRS[@]}"; do
+        if [ -d "$base" ]; then
+            while IFS= read -r -d '' p; do
+                if [ -f "$p/prefs.js" ] || [ -f "$p/compatibility.ini" ] || [[ "$(basename "$p")" =~ (default|Default|release) ]]; then
+                    PROFILES+=("$p")
+                fi
+            done < <(find "$base" -maxdepth 1 -mindepth 1 -type d -print0)
+        fi
+    done
+}
+
+scan_profiles
+
+# If no profile exists yet, initialize default profile with a short headless run
+if [ ${#PROFILES[@]} -eq 0 ]; then
+    ZEN_BIN=""
+    if command -v zen-browser >/dev/null 2>&1; then
+        ZEN_BIN="$(command -v zen-browser)"
+    elif command -v zen >/dev/null 2>&1; then
+        ZEN_BIN="$(command -v zen)"
+    elif [ -x "$HOME/.local/bin/zen" ]; then
+        ZEN_BIN="$HOME/.local/bin/zen"
+    elif [ -x "$HOME/.local/bin/zen-browser" ]; then
+        ZEN_BIN="$HOME/.local/bin/zen-browser"
     fi
-done
+
+    if [ -n "$ZEN_BIN" ]; then
+        echo -e "${BLUE}==> Initializing default Zen profile structure...${NC}"
+        timeout 5s "$ZEN_BIN" --headless --screenshot /tmp/zen_init.png about:blank >/dev/null 2>&1 || true
+        pkill -f zen-bin >/dev/null 2>&1 || true
+        rm -f /tmp/zen_init.png 2>/dev/null || true
+        scan_profiles
+    fi
+fi
 
 ZEN_RUNNING=0
 if pgrep -i -f "zen-bin|zen-browser" >/dev/null 2>&1; then

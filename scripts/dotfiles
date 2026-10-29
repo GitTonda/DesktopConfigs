@@ -80,10 +80,10 @@ do_pull() {
     ln -sf "$DOTFILES_DIR/scripts/ori" "$HOME/.local/bin/ori" 2>/dev/null || true
     ln -sf "$DOTFILES_DIR/scripts/ori-window" "$HOME/.local/bin/ori-window" 2>/dev/null || true
 
-    # Deploy Zen Browser configurations and extensions
+    # Auto-install, configure, and customize Zen Browser
     if [ -x "$HOME/.config/zen/setup-zen.sh" ]; then
-        echo -e "${BLUE}==> Deploying Zen Browser customizations and extensions...${NC}"
-        "$HOME/.config/zen/setup-zen.sh" >/dev/null 2>&1 || true
+        echo -e "${BLUE}==> Auto-checking, installing, and configuring Zen Browser...${NC}"
+        "$HOME/.config/zen/setup-zen.sh" || true
     fi
 
     # Hot-reload desktop environment if running inside X11
