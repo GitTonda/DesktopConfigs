@@ -351,8 +351,48 @@ elif command -v apt >/dev/null 2>&1; then
         xorg xinit x11-xserver-utils x11-xkb-utils i3 polybar alacritty picom rofi \
         feh dunst pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils pulseaudio-utils \
         network-manager bluez rfkill brightnessctl playerctl maim xclip xdotool xdg-utils \
-        ranger mpv ncdu btop nvtop nano curl unzip git python3 ffmpeg fonts-font-awesome papirus-icon-theme
+        ranger mpv ncdu btop nvtop nano curl unzip git python3 ffmpeg fonts-font-awesome papirus-icon-theme \
+        thunar thunar-volman thunar-archive-plugin file-roller tumbler tumbler-plugins-extra ffmpegthumbnailer gvfs gvfs-backends \
+        fzf bat ripgrep fd-find xss-lock imagemagick xsettingsd zoxide libnotify-bin python3-gi gir1.2-gtk-3.0
     step_success "Debian packages installed"
+
+    # Symlink Debian-specific binary names (batcat -> bat, fdfind -> fd)
+    mkdir -p "$HOME/.local/bin"
+    if command -v batcat >/dev/null 2>&1 && ! command -v bat >/dev/null 2>&1; then
+        ln -sf "$(which batcat)" "$HOME/.local/bin/bat"
+    fi
+    if command -v fdfind >/dev/null 2>&1 && ! command -v fd >/dev/null 2>&1; then
+        ln -sf "$(which fdfind)" "$HOME/.local/bin/fd"
+    fi
+
+    # CLI Rice Tool Fallbacks (Starship, Fastfetch, Eza)
+    if ! command -v starship >/dev/null 2>&1; then
+        step_sub "Installing Starship prompt..."
+        curl -sS https://starship.rs/install.sh | sh -s -- -y -b "$HOME/.local/bin" 2>/dev/null || true
+    fi
+
+    if ! command -v fastfetch >/dev/null 2>&1; then
+        step_sub "Installing Fastfetch system banner..."
+        FF_TAG=$(curl -s "https://api.github.com/repos/fastfetch-cli/fastfetch/releases/latest" 2>/dev/null | grep '"tag_name":' | head -n1 | sed -E 's/.*"([^"]+)".*/\1/' || true)
+        if [ -n "$FF_TAG" ]; then
+            curl -sL "https://github.com/fastfetch-cli/fastfetch/releases/download/${FF_TAG}/fastfetch-linux-$(uname -m).tar.gz" -o /tmp/fastfetch.tar.gz 2>/dev/null && \
+            tar -xzf /tmp/fastfetch.tar.gz -C /tmp 2>/dev/null && \
+            cp "/tmp/fastfetch-linux-$(uname -m)/usr/bin/fastfetch" "$HOME/.local/bin/fastfetch" 2>/dev/null || true
+            chmod +x "$HOME/.local/bin/fastfetch" 2>/dev/null || true
+            rm -rf /tmp/fastfetch*
+        fi
+    fi
+
+    if ! command -v eza >/dev/null 2>&1; then
+        step_sub "Installing eza modern ls replacement..."
+        EZA_TAG=$(curl -s "https://api.github.com/repos/eza-community/eza/releases/latest" 2>/dev/null | grep '"tag_name":' | head -n1 | sed -E 's/.*"([^"]+)".*/\1/' || true)
+        if [ -n "$EZA_TAG" ]; then
+            curl -sL "https://github.com/eza-community/eza/releases/download/${EZA_TAG}/eza_$(uname -m)-unknown-linux-gnu.tar.gz" -o /tmp/eza.tar.gz 2>/dev/null && \
+            tar -xzf /tmp/eza.tar.gz -C "$HOME/.local/bin" 2>/dev/null || true
+            chmod +x "$HOME/.local/bin/eza" 2>/dev/null || true
+            rm -f /tmp/eza.tar.gz
+        fi
+    fi
 
 elif command -v dnf >/dev/null 2>&1; then
     step_info "Fedora detected. Installing base packages..."
@@ -401,7 +441,7 @@ if [ "$DRY_RUN" = true ]; then
 else
     backup_existing_configs() {
         mkdir -p "$BACKUP_DIR"
-        for app in i3 polybar alacritty rofi picom dunst fastfetch zen Thunar xsettingsd control-center; do
+        for app in i3 polybar alacritty rofi picom dunst fastfetch btop dxvk environment.d MangoHud control-center zen Thunar xsettingsd; do
             if [ -d "$HOME/.config/$app" ] || [ -f "$HOME/.config/$app" ]; then
                 cp -a "$HOME/.config/$app" "$BACKUP_DIR/" 2>/dev/null || true
             fi
@@ -426,25 +466,34 @@ else
         mkdir -p "$HOME/.config"
         cp -r "$DOTFILES_DIR/config/"* "$HOME/.config/"
         cp "$DOTFILES_DIR/home/.nanorc" "$HOME/.nanorc"
-        [ -f "$DOTFILES_DIR/home/.bashrc" ] && cp "$DOTFILES_DIR/home/.bashrc" "$HOME/.bashrc"
+        # Deploy shell environment safely without clobbering user configs
+        if [ ! -f "$HOME/.bashrc" ]; then
+            [ -f "$DOTFILES_DIR/home/.bashrc" ] && cp "$DOTFILES_DIR/home/.bashrc" "$HOME/.bashrc"
+        else
+            # Ensure ~/.local/bin is in PATH for bash
+            if ! grep -q '\.local/bin' "$HOME/.bashrc"; then
+                echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
+            fi
+            # Append Modern Terminal Rice if not already integrated
+            if ! grep -q "Modern Terminal Rice" "$HOME/.bashrc"; then
+                [ -f "$DOTFILES_DIR/home/.bashrc" ] && cat "$DOTFILES_DIR/home/.bashrc" >> "$HOME/.bashrc"
+            fi
+        fi
         [ -f "$DOTFILES_DIR/home/.xinputrc" ] && cp "$DOTFILES_DIR/home/.xinputrc" "$HOME/.xinputrc"
         [ -f "$DOTFILES_DIR/home/.xinitrc" ] && cp "$DOTFILES_DIR/home/.xinitrc" "$HOME/.xinitrc"
         chmod +x "$HOME/.xinitrc" 2>/dev/null || true
 
         # Link CLI management tools
         mkdir -p "$HOME/.local/bin"
-        chmod +x "$DOTFILES_DIR/scripts/dotfiles"
-        ln -sf "$DOTFILES_DIR/scripts/dotfiles" "$HOME/.local/bin/dotfiles"
+        for script in "$DOTFILES_DIR/scripts/"*; do
+            if [ -f "$script" ]; then
+                chmod +x "$script" 2>/dev/null || true
+                ln -sf "$script" "$HOME/.local/bin/$(basename "$script")"
+            fi
+        done
         ln -sf "$DOTFILES_DIR/scripts/dotfiles" "$HOME/.local/bin/update-desktop"
         ln -sf "$DOTFILES_DIR/scripts/dotfiles" "$HOME/.local/bin/desktop-update"
-        ln -sf "$DOTFILES_DIR/scripts/ori" "$HOME/.local/bin/ori" 2>/dev/null || true
-        ln -sf "$DOTFILES_DIR/scripts/ori-window" "$HOME/.local/bin/ori-window" 2>/dev/null || true
         ln -sf "$HOME/.config/rofi/shortcuts.py" "$HOME/.local/bin/shortcuts-manager"
-
-        # Ensure ~/.local/bin is in PATH for bash
-        if [ -f "$HOME/.bashrc" ] && ! grep -q '\.local/bin' "$HOME/.bashrc"; then
-            echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
-        fi
 
         # System-wide binary links if sudo permits
         if command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
@@ -453,37 +502,11 @@ else
             sudo ln -sf "$HOME/.config/rofi/shortcuts.py" "/usr/local/bin/shortcuts-manager" 2>/dev/null || true
         fi
 
-        # Desktop Launchers
+        # Desktop Launchers & Icons
         mkdir -p "$HOME/.local/share/applications" "$HOME/.local/share/icons"
-        [ -f "$DOTFILES_DIR/icons/ori.svg" ] && cp "$DOTFILES_DIR/icons/ori.svg" "$HOME/.local/share/icons/ori.svg"
-
-        cat << 'EOF' > "$HOME/.local/share/applications/ori.desktop"
-[Desktop Entry]
-Version=1.0
-Type=Application
-Name=Ori
-GenericName=Local AI Assistant & System Co-Pilot
-Comment=Autonomous Local AI Assistant for Linux System Monitoring & Modifications
-Exec=$HOME/.local/bin/ori-window
-Icon=$HOME/.local/share/icons/ori.svg
-Terminal=false
-Categories=Utility;System;Development;ArtificialIntelligence;
-StartupNotify=true
-StartupWMClass=FloatingOri
-Keywords=ai;assistant;ollama;ori;system;monitor;plan;local;
-EOF
-
-        cat << 'EOF' > "$HOME/.local/share/applications/wallpaper-picker.desktop"
-[Desktop Entry]
-Type=Application
-Name=Wallpaper Selector
-Comment=Change desktop wallpaper with Rofi or Visual Gallery
-Exec=$HOME/.config/rofi/wallpaper.sh
-Icon=preferences-desktop-wallpaper
-Terminal=false
-Categories=Utility;Settings;DesktopSettings;
-Keywords=wallpaper;background;feh;catppuccin;
-EOF
+        if [ -d "$DOTFILES_DIR/applications" ]; then
+            cp -r "$DOTFILES_DIR/applications/"* "$HOME/.local/share/applications/" 2>/dev/null || true
+        fi
 
         # Wallpapers
         mkdir -p "$HOME/Pictures/Wallpapers"
@@ -676,6 +699,9 @@ if [ -n "$DISPLAY" ]; then
             i3-msg reload >/dev/null 2>&1 || true
             "$HOME/.config/polybar/launch.sh" >/dev/null 2>&1 || true
             dunstctl reload >/dev/null 2>&1 || true
+            pkill picom 2>/dev/null || true
+            sleep 0.1
+            picom -b --config "$HOME/.config/picom/picom.conf" 2>/dev/null || true
             echo -e "  ${GREEN}✔ Desktop reloaded successfully!${NC}\n"
         fi
     fi

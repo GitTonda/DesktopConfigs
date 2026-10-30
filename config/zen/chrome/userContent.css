@@ -6,7 +6,7 @@
   @-moz-document url-prefix("about:") {
     :root {
       --in-content-page-color: #cdd6f4 !important;
-      --color-accent-primary: #ffaa45 !important;
+      --color-accent-primary: #2977af !important;
       --color-accent-primary-hover: rgb(163, 197, 251) !important;
       --color-accent-primary-active: rgb(138, 153, 250) !important;
       background-color: #1e1e2e !important;
@@ -24,11 +24,11 @@
       --newtab-element-hover-color: #313244 !important;
       --newtab-text-primary-color: #cdd6f4 !important;
       --newtab-wordmark-color: #cdd6f4 !important;
-      --newtab-primary-action-background: #ffaa45 !important;
+      --newtab-primary-action-background: #2977af !important;
     }
 
     .icon {
-      color: #ffaa45 !important;
+      color: #2977af !important;
     }
 
     .search-wrapper .logo-and-wordmark .logo {
@@ -65,11 +65,11 @@
     :root {
       --zen-colors-tertiary: #181825 !important;
       --in-content-text-color: #cdd6f4 !important;
-      --link-color: #ffaa45 !important;
+      --link-color: #2977af !important;
       --link-color-hover: rgb(163, 197, 251) !important;
       --zen-colors-primary: #313244 !important;
       --in-content-box-background: #313244 !important;
-      --zen-primary-color: #ffaa45 !important;
+      --zen-primary-color: #2977af !important;
     }
 
     groupbox , moz-card{
@@ -138,7 +138,7 @@
   /* Variables and styles specific to about:protections */
   @-moz-document url-prefix("about:protections") {
     :root {
-      --zen-primary-color: #ffaa45 !important;
+      --zen-primary-color: #2977af !important;
       --social-color: #cba6f7 !important;
       --coockie-color: #89dceb !important;
       --fingerprinter-color: #f9e2af !important;

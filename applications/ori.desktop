@@ -1,0 +1,18 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Ori
+GenericName=Local AI Assistant & System Co-Pilot
+Comment=Autonomous Local AI Assistant for Linux System Monitoring & Modifications
+Exec=sh -c '"$HOME/.local/bin/ori-window"'
+Icon=ori
+Terminal=false
+Categories=Utility;System;Development;ArtificialIntelligence;
+StartupNotify=true
+StartupWMClass=Ori
+Keywords=ai;assistant;ollama;ori;system;monitor;plan;local;coding;
+Actions=Fullscreen;
+
+[Desktop Action Fullscreen]
+Name=Open in Fullscreen
+Exec=sh -c '"$HOME/.local/bin/ori-window" --fullscreen'

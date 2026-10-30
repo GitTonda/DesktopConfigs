@@ -43,12 +43,11 @@ do_pull() {
     LOCAL=$(git rev-parse HEAD)
     REMOTE=$(git rev-parse origin/main)
 
-    if [ "$LOCAL" = "$REMOTE" ] && [ "$1" != "--force" ]; then
-        echo -e "${GREEN}==> Already up to date with origin/main.${NC}"
-        # Still ensure ~/.config has latest files if requested
+    if [ "$LOCAL" = "$REMOTE" ]; then
         if [ "$1" = "-f" ] || [ "$1" = "--force" ]; then
-            echo -e "${BLUE}==> Force re-applying configurations...${NC}"
+            echo -e "${BLUE}==> Local repository is up to date. Force re-applying configurations to desktop...${NC}"
         else
+            echo -e "${GREEN}==> Already up to date with origin/main.${NC}"
             echo -e "Use 'dotfiles pull --force' to re-deploy local configs."
             return 0
         fi
@@ -65,29 +64,60 @@ do_pull() {
     mkdir -p "$HOME/Pictures/Wallpapers"
     cp -r "$DOTFILES_DIR/wallpapers/"* "$HOME/Pictures/Wallpapers/"
 
-    # Xresources
+    # Icons & Desktop Applications
+    if [ -d "$DOTFILES_DIR/icons" ]; then
+        mkdir -p "$HOME/.local/share/icons/hicolor/scalable/apps"
+        cp -r "$DOTFILES_DIR/icons/"* "$HOME/.local/share/icons/" 2>/dev/null || true
+        cp -r "$DOTFILES_DIR/icons/"*.svg "$HOME/.local/share/icons/hicolor/scalable/apps/" 2>/dev/null || true
+        command -v gtk-update-icon-cache >/dev/null 2>&1 && gtk-update-icon-cache "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
+    fi
+
+    if [ -d "$DOTFILES_DIR/applications" ]; then
+        mkdir -p "$HOME/.local/share/applications"
+        cp -r "$DOTFILES_DIR/applications/"* "$HOME/.local/share/applications/" 2>/dev/null || true
+    fi
+
+    # Home dotfiles & Xresources
+    [ -f "$DOTFILES_DIR/home/.nanorc" ] && cp "$DOTFILES_DIR/home/.nanorc" "$HOME/.nanorc"
+    [ -f "$DOTFILES_DIR/home/.xinputrc" ] && cp "$DOTFILES_DIR/home/.xinputrc" "$HOME/.xinputrc"
+    [ -f "$DOTFILES_DIR/home/.xinitrc" ] && { cp "$DOTFILES_DIR/home/.xinitrc" "$HOME/.xinitrc"; chmod +x "$HOME/.xinitrc" 2>/dev/null || true; }
     if [ -f "$DOTFILES_DIR/Xresources" ]; then
         cp "$DOTFILES_DIR/Xresources" "$HOME/.Xresources"
         xrdb -merge "$HOME/.Xresources" 2>/dev/null || true
     fi
 
-    # Shell environment (~/.bashrc)
-    if [ -f "$DOTFILES_DIR/home/.bashrc" ]; then
+    # Shell environment (~/.bashrc) - safe & non-destructive
+    if [ ! -f "$HOME/.bashrc" ] && [ -f "$DOTFILES_DIR/home/.bashrc" ]; then
         cp "$DOTFILES_DIR/home/.bashrc" "$HOME/.bashrc"
+    elif [ -f "$HOME/.bashrc" ]; then
+        if ! grep -q '\.local/bin' "$HOME/.bashrc"; then
+            echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
+        fi
+        if ! grep -q "Modern Terminal Rice" "$HOME/.bashrc" && [ -f "$DOTFILES_DIR/home/.bashrc" ]; then
+            echo -e "${BLUE}==> Integrating Modern Terminal Rice into ~/.bashrc...${NC}"
+            cat "$DOTFILES_DIR/home/.bashrc" >> "$HOME/.bashrc"
+        fi
     fi
 
-    # Ensure executable permissions on all helper scripts
+    # Ensure executable permissions and link CLI helper scripts
+    mkdir -p "$HOME/.local/bin"
+    for script in "$DOTFILES_DIR/scripts/"*; do
+        if [ -f "$script" ]; then
+            chmod +x "$script" 2>/dev/null || true
+            ln -sf "$script" "$HOME/.local/bin/$(basename "$script")"
+        fi
+    done
+    [ -f "$HOME/.config/rofi/shortcuts.py" ] && ln -sf "$HOME/.config/rofi/shortcuts.py" "$HOME/.local/bin/shortcuts-manager"
+
     chmod +x "$HOME/.config/polybar/launch.sh" 2>/dev/null || true
     chmod +x "$HOME/.config/polybar/scripts/"*.sh 2>/dev/null || true
     chmod +x "$HOME/.config/dunst/launch.sh" 2>/dev/null || true
     chmod +x "$HOME/.config/dunst/scripts/"*.sh 2>/dev/null || true
     chmod +x "$HOME/.config/rofi/"*.sh "$HOME/.config/rofi/"*.py 2>/dev/null || true
+    chmod +x "$HOME/.config/control-center/"*.sh "$HOME/.config/control-center/"*.py 2>/dev/null || true
     chmod +x "$HOME/.config/theme/apply-theme.sh" 2>/dev/null || true
     chmod +x "$HOME/.config/i3/screenshot.sh" "$HOME/.config/i3/lock.sh" 2>/dev/null || true
     chmod +x "$HOME/.config/zen/setup-zen.sh" 2>/dev/null || true
-    chmod +x "$DOTFILES_DIR/scripts/ori" "$DOTFILES_DIR/scripts/ori-window" 2>/dev/null || true
-    ln -sf "$DOTFILES_DIR/scripts/ori" "$HOME/.local/bin/ori" 2>/dev/null || true
-    ln -sf "$DOTFILES_DIR/scripts/ori-window" "$HOME/.local/bin/ori-window" 2>/dev/null || true
 
     # Auto-install, configure, and customize Zen Browser
     if [ -x "$HOME/.config/zen/setup-zen.sh" ]; then
@@ -115,8 +145,14 @@ do_pull() {
         # Reload Dunst
         dunstctl reload >/dev/null 2>&1 || true
         # Reload xsettingsd
-        pkill xsettingsd 2>/dev/null || true
-        xsettingsd &
+        if command -v xsettingsd >/dev/null 2>&1; then
+            pkill xsettingsd 2>/dev/null || true
+            xsettingsd &
+        fi
+        # Restart Picom compositor
+        pkill picom 2>/dev/null || true
+        sleep 0.1
+        picom -b --config "$HOME/.config/picom/picom.conf" 2>/dev/null || true
         # Re-apply theme to active wallpaper
         if [ -f "$HOME/.fehbg" ]; then
             "$HOME/.fehbg" >/dev/null 2>&1 || true
@@ -147,8 +183,8 @@ do_push() {
     echo -e "${BLUE}${BOLD}==> Collecting local configurations from ~/.config/...${NC}"
     cd "$DOTFILES_DIR"
 
-    # Sync changed configs into dotfiles repo
-    for dir in alacritty autostart dunst fastfetch gtk-3.0 gtk-4.0 i3 ly openrgb ori picom polybar rofi systemd theme zen Thunar xfce4 xsettingsd; do
+    # Sync changed configs into dotfiles repo (including consoles, utilities, apps, gaming, custom themes)
+    for dir in alacritty autostart bat btop control-center dunst dxvk environment.d fastfetch gtk-3.0 gtk-4.0 i3 ly MangoHud openrgb ori picom polybar rofi systemd theme zen Thunar xfce4 xsettingsd; do
         if [ -d "$HOME/.config/$dir" ]; then
             mkdir -p "$DOTFILES_DIR/config/$dir"
             cp -a "$HOME/.config/$dir/"* "$DOTFILES_DIR/config/$dir/" 2>/dev/null || true
@@ -157,6 +193,22 @@ do_push() {
 
     # Clean any __pycache__
     rm -rf "$DOTFILES_DIR/config/rofi/__pycache__"
+
+    # Sync single configuration files
+    [ -f "$HOME/.config/starship.toml" ] && cp "$HOME/.config/starship.toml" "$DOTFILES_DIR/config/starship.toml"
+
+    # Sync custom icons & desktop applications
+    if [ -d "$HOME/.local/share/icons" ]; then
+        mkdir -p "$DOTFILES_DIR/icons"
+        [ -f "$HOME/.local/share/icons/ori.svg" ] && cp "$HOME/.local/share/icons/ori.svg" "$DOTFILES_DIR/icons/ori.svg"
+    fi
+
+    if [ -d "$HOME/.local/share/applications" ]; then
+        mkdir -p "$DOTFILES_DIR/applications"
+        for app in ori.desktop wallpaper-picker.desktop; do
+            [ -f "$HOME/.local/share/applications/$app" ] && cp "$HOME/.local/share/applications/$app" "$DOTFILES_DIR/applications/$app"
+        done
+    fi
 
     # Sync wallpapers
     if [ -d "$HOME/Pictures/Wallpapers" ]; then
@@ -169,11 +221,8 @@ do_push() {
         cp "$HOME/.Xresources" "$DOTFILES_DIR/Xresources"
     fi
 
-    # Sync shell environment (~/.bashrc)
-    if [ -f "$HOME/.bashrc" ]; then
-        mkdir -p "$DOTFILES_DIR/home"
-        cp "$HOME/.bashrc" "$DOTFILES_DIR/home/.bashrc"
-    fi
+    # Note: home/.bashrc is maintained as a clean, portable reference template
+    # and is not automatically overwritten by machine-specific ~/.bashrc
 
     # Check git status
     if [ -z "$(git status --porcelain)" ]; then
