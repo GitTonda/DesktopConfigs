@@ -350,8 +350,47 @@ elif command -v apt >/dev/null 2>&1; then
         xorg xinit x11-xserver-utils x11-xkb-utils i3 polybar alacritty picom rofi \
         feh dunst pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils pulseaudio-utils \
         network-manager bluez rfkill brightnessctl playerctl maim xclip xdotool xdg-utils \
-        ranger mpv ncdu btop nvtop nano curl unzip git python3 ffmpeg fonts-font-awesome papirus-icon-theme
+        ranger mpv ncdu btop nvtop nano curl unzip git python3 ffmpeg fonts-font-awesome papirus-icon-theme \
+        fzf bat ripgrep fd-find xss-lock imagemagick xsettingsd zoxide libnotify-bin
     step_success "Debian packages installed"
+
+    # Symlink Debian-specific binary names (batcat -> bat, fdfind -> fd)
+    mkdir -p "$HOME/.local/bin"
+    if command -v batcat >/dev/null 2>&1 && ! command -v bat >/dev/null 2>&1; then
+        ln -sf "$(which batcat)" "$HOME/.local/bin/bat"
+    fi
+    if command -v fdfind >/dev/null 2>&1 && ! command -v fd >/dev/null 2>&1; then
+        ln -sf "$(which fdfind)" "$HOME/.local/bin/fd"
+    fi
+
+    # CLI Rice Tool Fallbacks (Starship, Fastfetch, Eza)
+    if ! command -v starship >/dev/null 2>&1; then
+        step_sub "Installing Starship prompt..."
+        curl -sS https://starship.rs/install.sh | sh -s -- -y -b "$HOME/.local/bin" 2>/dev/null || true
+    fi
+
+    if ! command -v fastfetch >/dev/null 2>&1; then
+        step_sub "Installing Fastfetch system banner..."
+        FF_TAG=$(curl -s "https://api.github.com/repos/fastfetch-cli/fastfetch/releases/latest" 2>/dev/null | grep '"tag_name":' | head -n1 | sed -E 's/.*"([^"]+)".*/\1/' || true)
+        if [ -n "$FF_TAG" ]; then
+            curl -sL "https://github.com/fastfetch-cli/fastfetch/releases/download/${FF_TAG}/fastfetch-linux-$(uname -m).tar.gz" -o /tmp/fastfetch.tar.gz 2>/dev/null && \
+            tar -xzf /tmp/fastfetch.tar.gz -C /tmp 2>/dev/null && \
+            cp "/tmp/fastfetch-linux-$(uname -m)/usr/bin/fastfetch" "$HOME/.local/bin/fastfetch" 2>/dev/null || true
+            chmod +x "$HOME/.local/bin/fastfetch" 2>/dev/null || true
+            rm -rf /tmp/fastfetch*
+        fi
+    fi
+
+    if ! command -v eza >/dev/null 2>&1; then
+        step_sub "Installing eza modern ls replacement..."
+        EZA_TAG=$(curl -s "https://api.github.com/repos/eza-community/eza/releases/latest" 2>/dev/null | grep '"tag_name":' | head -n1 | sed -E 's/.*"([^"]+)".*/\1/' || true)
+        if [ -n "$EZA_TAG" ]; then
+            curl -sL "https://github.com/eza-community/eza/releases/download/${EZA_TAG}/eza_$(uname -m)-unknown-linux-gnu.tar.gz" -o /tmp/eza.tar.gz 2>/dev/null && \
+            tar -xzf /tmp/eza.tar.gz -C "$HOME/.local/bin" 2>/dev/null || true
+            chmod +x "$HOME/.local/bin/eza" 2>/dev/null || true
+            rm -f /tmp/eza.tar.gz
+        fi
+    fi
 
 elif command -v dnf >/dev/null 2>&1; then
     step_info "Fedora detected. Installing base packages..."
@@ -425,7 +464,19 @@ else
         mkdir -p "$HOME/.config"
         cp -r "$DOTFILES_DIR/config/"* "$HOME/.config/"
         cp "$DOTFILES_DIR/home/.nanorc" "$HOME/.nanorc"
-        [ -f "$DOTFILES_DIR/home/.bashrc" ] && cp "$DOTFILES_DIR/home/.bashrc" "$HOME/.bashrc"
+        # Deploy shell environment safely without clobbering user configs
+        if [ ! -f "$HOME/.bashrc" ]; then
+            [ -f "$DOTFILES_DIR/home/.bashrc" ] && cp "$DOTFILES_DIR/home/.bashrc" "$HOME/.bashrc"
+        else
+            # Ensure ~/.local/bin is in PATH for bash
+            if ! grep -q '\.local/bin' "$HOME/.bashrc"; then
+                echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
+            fi
+            # Append Modern Terminal Rice if not already integrated
+            if ! grep -q "Modern Terminal Rice" "$HOME/.bashrc"; then
+                [ -f "$DOTFILES_DIR/home/.bashrc" ] && cat "$DOTFILES_DIR/home/.bashrc" >> "$HOME/.bashrc"
+            fi
+        fi
         [ -f "$DOTFILES_DIR/home/.xinputrc" ] && cp "$DOTFILES_DIR/home/.xinputrc" "$HOME/.xinputrc"
         [ -f "$DOTFILES_DIR/home/.xinitrc" ] && cp "$DOTFILES_DIR/home/.xinitrc" "$HOME/.xinitrc"
         chmod +x "$HOME/.xinitrc" 2>/dev/null || true
@@ -439,11 +490,6 @@ else
         ln -sf "$DOTFILES_DIR/scripts/ori" "$HOME/.local/bin/ori" 2>/dev/null || true
         ln -sf "$DOTFILES_DIR/scripts/ori-window" "$HOME/.local/bin/ori-window" 2>/dev/null || true
         ln -sf "$HOME/.config/rofi/shortcuts.py" "$HOME/.local/bin/shortcuts-manager"
-
-        # Ensure ~/.local/bin is in PATH for bash
-        if [ -f "$HOME/.bashrc" ] && ! grep -q '\.local/bin' "$HOME/.bashrc"; then
-            echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
-        fi
 
         # System-wide binary links if sudo permits
         if command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
@@ -674,6 +720,9 @@ if [ -n "$DISPLAY" ]; then
             i3-msg reload >/dev/null 2>&1 || true
             "$HOME/.config/polybar/launch.sh" >/dev/null 2>&1 || true
             dunstctl reload >/dev/null 2>&1 || true
+            pkill picom 2>/dev/null || true
+            sleep 0.1
+            picom -b --config "$HOME/.config/picom/picom.conf" 2>/dev/null || true
             echo -e "  ${GREEN}✔ Desktop reloaded successfully!${NC}\n"
         fi
     fi

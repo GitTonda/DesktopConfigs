@@ -20,7 +20,7 @@
             "type": "custom"
         },
         {
-            "key": "{#90}│{#} {#38;2;255;170;69} user    {#90}│{#}",
+            "key": "{#90}│{#} {#38;2;41;119;175} user    {#90}│{#}",
             "type": "title",
             "format": "{user-name}{at-symbol-colored}{host-name}"
         },
