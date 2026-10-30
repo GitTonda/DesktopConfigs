@@ -364,13 +364,6 @@ class ControlCenterWindow(Gtk.Window):
         # Focus settling flag
         self._settled = False
 
-        # Animation state
-        self._target_x = 0
-        self._target_y = 0
-        self._is_closing = False
-        self._is_opening = False
-        self._open_start_time = None
-
         self._build_ui()
         self._apply_css()
 
@@ -400,9 +393,16 @@ class ControlCenterWindow(Gtk.Window):
                     text=True
                 )
                 for line in self._i3_sub_proc.stdout:
-                    if '"change":"focus"' in line or '"change":"init"' in line:
-                        GLib.idle_add(self.close_animated)
-                        break
+                    try:
+                        data = json.loads(line)
+                        if data.get("change") in ("focus", "init"):
+                            current_ws = data.get("current", {}).get("name")
+                            old_ws = data.get("old", {}).get("name")
+                            if old_ws is not None and current_ws != old_ws:
+                                GLib.idle_add(self.destroy)
+                                break
+                    except Exception:
+                        pass
             except Exception:
                 pass
 
@@ -413,7 +413,7 @@ class ControlCenterWindow(Gtk.Window):
         seat = Gdk.Display.get_default().get_default_seat()
         if seat:
             seat.grab(self.get_window(), Gdk.SeatCapabilities.ALL_POINTING, True, None, None, None)
-        GLib.timeout_add(250, self._mark_settled)
+        GLib.timeout_add(150, self._mark_settled)
 
     def _mark_settled(self):
         self._settled = True
@@ -423,8 +423,9 @@ class ControlCenterWindow(Gtk.Window):
         alloc = self.get_allocation()
         # Any click outside the control center bounds dismisses it
         if event.x < 0 or event.y < 0 or event.x > alloc.width or event.y > alloc.height:
-            self.close_animated()
-            return True
+            if self._settled:
+                self.destroy()
+                return True
         return False
 
     def _on_destroy(self, widget):
@@ -509,7 +510,7 @@ class ControlCenterWindow(Gtk.Window):
 
         close_btn = Gtk.Button(label="󰅖")
         close_btn.get_style_context().add_class("close-btn")
-        close_btn.connect("clicked", lambda b: self.close_animated())
+        close_btn.connect("clicked", lambda b: self.destroy())
         header_box.pack_end(close_btn, False, False, 0)
 
         # Settings App button (opens desktop-settings)
@@ -821,12 +822,12 @@ class ControlCenterWindow(Gtk.Window):
     # --------------------------------------------------------------------------
 
     def _on_open_settings(self, btn):
-        self.close_animated()
+        self.destroy()
         cmd = ["python3", os.path.expanduser("~/.config/desktop-settings/desktop_settings.py")]
         subprocess.Popen(cmd, start_new_session=True)
 
     def _open_settings_page(self, page_name, fallback_cmd=None):
-        self.close_animated()
+        self.destroy()
         settings_script = os.path.expanduser("~/.config/desktop-settings/desktop_settings.py")
         if os.path.exists(settings_script):
             subprocess.Popen(["python3", settings_script, "--page", page_name], start_new_session=True)
@@ -1110,18 +1111,18 @@ class ControlCenterWindow(Gtk.Window):
             pass
 
     def _on_launch_btop(self, box, event):
-        self.close_animated()
+        self.destroy()
         subprocess.Popen(["alacritty", "--class", "FloatingBtop", "-e", "btop"])
 
     def _run_action(self, cmd):
-        self.close_animated()
+        self.destroy()
         # Expand user in cmd
         expanded = [os.path.expanduser(c) for c in cmd]
         subprocess.Popen(expanded)
 
     def _on_key_press(self, widget, event):
         if event.keyval == Gdk.KEY_Escape:
-            self.close_animated()
+            self.destroy()
             return True
         return False
 
@@ -1129,8 +1130,6 @@ class ControlCenterWindow(Gtk.Window):
         return False
 
     def _update_hw_stats(self):
-        if self._is_closing:
-            return False
         cpu_pct = get_cpu_info()
         mem = get_memory_info()
         if hasattr(self, 'cpu_val') and hasattr(self, 'cpu_bar'):
@@ -1140,107 +1139,6 @@ class ControlCenterWindow(Gtk.Window):
             self.ram_val.set_text(f"{mem['used_gb']:.1f} / {mem['total_gb']:.1f} GB ({mem['pct']}%)")
             self.ram_bar.set_fraction(mem['pct'] / 100.0)
         return True
-
-    def start_open_animation(self, target_x, target_y):
-        self._target_x = target_x
-        self._target_y = target_y
-        self._is_opening = True
-        self._is_closing = False
-        self._open_start_time = None
-
-        # Subtle macOS-like micro-motion: emerges from top-right icon
-        delta_x = 8
-        delta_y = 10
-        self._open_start_x = target_x + delta_x
-        self._open_start_y = target_y - delta_y
-        self._open_duration_ms = 240.0
-
-        self.set_opacity(0.0)
-        self.move(self._open_start_x, self._open_start_y)
-        self.set_keep_above(True)
-
-        subprocess.run([
-            "i3-msg",
-            f'[class="(?i)control_center.*|ControlCenter"] border none, move position {self._open_start_x} {self._open_start_y}, focus'
-        ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
-
-        def _on_open_tick(widget, frame_clock):
-            if self._is_closing:
-                return False
-            now = frame_clock.get_frame_time() / 1000.0
-            if self._open_start_time is None:
-                self._open_start_time = now
-            elapsed = now - self._open_start_time
-            p = min(1.0, elapsed / self._open_duration_ms)
-            # Smooth macOS cubic ease-out deceleration
-            ease = 1.0 - pow(1.0 - p, 3.0)
-            cur_x = int(round(self._open_start_x + (self._target_x - self._open_start_x) * ease))
-            cur_y = int(round(self._open_start_y + (self._target_y - self._open_start_y) * ease))
-            cur_op = min(1.0, (1.0 - pow(1.0 - p, 2.0)) * 1.05)
-
-            self.move(cur_x, cur_y)
-            self.set_opacity(cur_op)
-
-            if p >= 1.0:
-                self.move(self._target_x, self._target_y)
-                self.set_opacity(1.0)
-                self._is_opening = False
-                return False
-            return True
-
-        self.add_tick_callback(_on_open_tick)
-
-    def close_animated(self):
-        if self._is_closing:
-            return
-        self._is_closing = True
-        self._is_opening = False
-
-        try:
-            seat = Gdk.Display.get_default().get_default_seat()
-            if seat:
-                seat.ungrab()
-        except Exception:
-            pass
-
-        start_x, start_y = self.get_position()
-        start_opacity = self.get_opacity() if hasattr(self, 'get_opacity') else 1.0
-
-        # Focuses and collapses into the top-right corner where the status icon is
-        delta_x = 8
-        delta_y = 10
-        end_x = self._target_x + delta_x
-        end_y = self._target_y - delta_y
-        duration_ms = 200.0
-        start_time = None
-
-        def _on_close_tick(widget, frame_clock):
-            nonlocal start_time
-            now = frame_clock.get_frame_time() / 1000.0
-            if start_time is None:
-                start_time = now
-            elapsed = now - start_time
-            p = min(1.0, elapsed / duration_ms)
-            # Smooth macOS ease-in acceleration towards the corner icon
-            ease = pow(p, 2.0)
-            cur_x = int(round(start_x + (end_x - start_x) * ease))
-            cur_y = int(round(start_y + (end_y - start_y) * ease))
-            cur_op = max(0.0, start_opacity * (1.0 - pow(p, 1.5)))
-
-            self.move(cur_x, cur_y)
-            self.set_opacity(cur_op)
-
-            if p >= 1.0:
-                self.destroy()
-                return False
-            return True
-
-        self.add_tick_callback(_on_close_tick)
-
-    def _on_sigterm(self):
-        self.close_animated()
-        return GLib.SOURCE_REMOVE
-
 
 # ------------------------------------------------------------------------------
 # Entry Point & Dynamic Placement
@@ -1338,14 +1236,20 @@ def main():
         pass
 
     win = ControlCenterWindow()
-    win.set_opacity(0.0)
-    win.show_all()
-
     x, y = calculate_target_position(win, inset=10)
 
-    GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGTERM, win._on_sigterm)
+    win.move(x, y)
+    win.show_all()
+    win.set_keep_above(True)
+    win.present()
 
-    win.start_open_animation(x, y)
+    subprocess.run([
+        "i3-msg",
+        f'[class="(?i)control_center.*|ControlCenter"] border none, move position {x} {y}, focus'
+    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+
+    GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGTERM, lambda: (win.destroy(), GLib.SOURCE_REMOVE)[1])
+
     Gtk.main()
 
 
