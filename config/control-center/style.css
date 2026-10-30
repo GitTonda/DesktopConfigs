@@ -8,17 +8,26 @@
     outline: none;
 }
 
+button {
+    background-image: none;
+    box-shadow: none;
+    text-shadow: none;
+    outline: none;
+    border-radius: 0px;
+}
+
 window#ControlCenterBackdrop {
     background-color: rgba(0, 0, 0, 0.001);
 }
 
-window.control-center {
+window.control-center,
+window {
     background-color: transparent;
     color: #cdd6f4;
 }
 
 .main-box {
-    background-color: rgba(17, 17, 27, 0.92);
+    background-color: rgba(17, 17, 27, @opacity@);
     border: 2px solid @accent@;
     padding: 16px;
 }
@@ -39,28 +48,34 @@ window.control-center {
     color: #a6adc8;
 }
 
-.close-btn {
+.close-btn,
+button.close-btn {
     background: transparent;
+    background-image: none;
     border: 1px solid transparent;
     color: #6c7086;
     padding: 2px 6px;
 }
 
-.close-btn:hover {
+.close-btn:hover,
+button.close-btn:hover {
     color: #f38ba8;
     background: rgba(243, 139, 168, 0.15);
     border: 1px solid #f38ba8;
 }
 
-.settings-btn {
+.settings-btn,
+button.settings-btn {
     background: transparent;
+    background-image: none;
     border: 1px solid transparent;
     color: #6c7086;
     padding: 2px 6px;
     margin-right: 2px;
 }
 
-.settings-btn:hover {
+.settings-btn:hover,
+button.settings-btn:hover {
     color: @accent@;
     background: rgba(137, 180, 250, 0.15);
     border: 1px solid @accent@;
@@ -82,28 +97,32 @@ separator {
 }
 
 /* Toggle Pills */
-.toggle-pill {
-    background-color: rgba(30, 30, 46, 0.7);
+.toggle-pill,
+button.toggle-pill {
+    background-image: none;
+    background-color: rgba(30, 30, 46, 0.70);
     border: 1px solid #313244;
-    padding: 8px 10px;
+    padding: 9px 12px;
     margin: 3px;
     transition: all 120ms ease-in-out;
 }
 
-.toggle-pill:hover {
-    background-color: #313244;
-    border-color: #45475a;
+.toggle-pill:hover,
+button.toggle-pill:hover {
+    background-image: none;
+    background-color: rgba(49, 50, 68, 0.85);
+    border-color: #585b70;
 }
 
 .toggle-pill .pill-icon {
     font-size: 15pt;
-    margin-right: 8px;
-    color: #6c7086;
+    margin-right: 10px;
+    color: #a6adc8;
 }
 
 .toggle-pill .pill-title {
     font-size: 9.5pt;
-    font-weight: bold;
+    font-weight: 600;
     color: #cdd6f4;
 }
 
@@ -122,38 +141,41 @@ separator {
     color: #a6adc8;
 }
 
-.toggle-pill.active .pill-chevron {
-    color: @accent@;
-}
-
-/* Active Pill State */
-.toggle-pill.active {
-    background-color: rgba(49, 50, 68, 0.85);
+/* Active Pill State - Android Style Clear High Contrast Accent */
+.toggle-pill.active,
+button.toggle-pill.active {
+    background-image: none;
+    background-color: @accent@;
     border: 1px solid @accent@;
 }
 
-.toggle-pill.active:hover {
-    background-color: rgba(69, 71, 90, 0.95);
-    border-color: @accent@;
+.toggle-pill.active:hover,
+button.toggle-pill.active:hover {
+    background-image: none;
+    background-color: @accent@;
 }
 
 .toggle-pill.active .pill-icon {
-    color: @accent@;
+    color: #11111b;
 }
 
 .toggle-pill.active .pill-title {
-    color: #ffffff;
+    color: #11111b;
     font-weight: bold;
 }
 
 .toggle-pill.active .pill-status {
-    color: @accent@;
-    font-weight: 500;
+    color: #181825;
+    font-weight: 600;
+}
+
+.toggle-pill.active .pill-chevron {
+    color: #11111b;
 }
 
 /* Slider Card */
 .slider-card {
-    background-color: rgba(30, 30, 46, 0.6);
+    background-color: rgba(30, 30, 46, 0.65);
     border: 1px solid #313244;
     padding: 10px 12px;
     margin-top: 4px;
@@ -202,21 +224,25 @@ scale slider:hover {
 }
 
 /* Device Switcher Button */
-.device-btn {
-    background-color: rgba(24, 24, 37, 0.7);
+.device-btn,
+button.device-btn {
+    background-image: none;
+    background-color: rgba(24, 24, 37, 0.70);
     border: 1px solid #313244;
-    padding: 6px 8px;
+    padding: 7px 10px;
     margin-top: 6px;
 }
 
-.device-btn:hover {
-    background-color: #313244;
+.device-btn:hover,
+button.device-btn:hover {
+    background-image: none;
+    background-color: rgba(49, 50, 68, 0.85);
     border-color: @accent@;
 }
 
 .device-btn label {
     font-size: 8.5pt;
-    color: #a6adc8;
+    color: #cdd6f4;
 }
 
 /* Media Card */
@@ -247,23 +273,27 @@ scale slider:hover {
     margin-bottom: 6px;
 }
 
-.media-btn {
-    background: rgba(49, 50, 68, 0.6);
+.media-btn,
+button.media-btn {
+    background: rgba(49, 50, 68, 0.60);
+    background-image: none;
     border: 1px solid #45475a;
     color: #cdd6f4;
     padding: 4px 14px;
     font-size: 11pt;
 }
 
-.media-btn:hover {
+.media-btn:hover,
+button.media-btn:hover {
     background: @accent@;
+    background-image: none;
     color: #11111b;
     border-color: @accent@;
 }
 
 /* Hardware Telemetry Card */
 .hardware-card {
-    background-color: rgba(30, 30, 46, 0.6);
+    background-color: rgba(30, 30, 46, 0.65);
     border: 1px solid #313244;
     padding: 10px 12px;
     margin-top: 4px;
@@ -272,7 +302,7 @@ scale slider:hover {
 
 .hardware-card:hover {
     border-color: @accent@;
-    background-color: rgba(49, 50, 68, 0.5);
+    background-color: rgba(49, 50, 68, 0.70);
 }
 
 .hw-label {
@@ -303,8 +333,10 @@ progressbar progress {
     margin-top: 8px;
 }
 
-.power-btn {
-    background-color: rgba(30, 30, 46, 0.7);
+.power-btn,
+button.power-btn {
+    background-image: none;
+    background-color: rgba(30, 30, 46, 0.70);
     border: 1px solid #313244;
     padding: 8px 12px;
     font-size: 13pt;
@@ -312,14 +344,18 @@ progressbar progress {
     transition: all 120ms ease;
 }
 
-.power-btn:hover {
-    background-color: #313244;
+.power-btn:hover,
+button.power-btn:hover {
+    background-image: none;
+    background-color: @accent@;
     border-color: @accent@;
-    color: @accent@;
+    color: #11111b;
 }
 
-.power-btn.danger:hover {
-    background-color: rgba(243, 139, 168, 0.2);
+.power-btn.danger:hover,
+button.power-btn.danger:hover {
+    background-image: none;
+    background-color: #f38ba8;
     border-color: #f38ba8;
-    color: #f38ba8;
+    color: #11111b;
 }

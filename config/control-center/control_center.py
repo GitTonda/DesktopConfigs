@@ -42,6 +42,27 @@ def get_accent_color():
     return "#89b4fa"
 
 
+def get_system_opacity():
+    opacity_file = os.path.expanduser("~/.config/theme/opacity")
+    if os.path.exists(opacity_file):
+        try:
+            with open(opacity_file, "r") as f:
+                val = float(f.read().strip())
+                return max(0.3, min(1.0, val))
+        except Exception:
+            pass
+    alacritty_file = os.path.expanduser("~/.config/alacritty/alacritty.toml")
+    if os.path.exists(alacritty_file):
+        try:
+            with open(alacritty_file, "r") as f:
+                for line in f:
+                    if "opacity" in line and "=" in line:
+                        return float(line.split("=")[1].strip())
+        except Exception:
+            pass
+    return 0.70
+
+
 def get_audio_state():
     vol = 50
     muted = False
@@ -87,7 +108,7 @@ def get_audio_state():
 
 def get_wifi_state():
     enabled = False
-    ssid = "Disconnesso"
+    ssid = "Disconnected"
     try:
         radio = subprocess.check_output(["nmcli", "-t", "-f", "WIFI", "g"], text=True, stderr=subprocess.DEVNULL).strip()
         enabled = (radio == "enabled")
@@ -106,7 +127,7 @@ def get_wifi_state():
 
 def get_bluetooth_state():
     powered = False
-    device_name = "Disconnesso"
+    device_name = "Disconnected"
     try:
         out = subprocess.check_output(["bluetoothctl", "show"], text=True, stderr=subprocess.DEVNULL)
         powered = "Powered: yes" in out
@@ -116,11 +137,11 @@ def get_bluetooth_state():
                 lines = con.splitlines()
                 # Line format: "Device XX:XX:XX:XX:XX:XX DeviceName"
                 parts = lines[0].split(" ", 2)
-                device_name = parts[2] if len(parts) >= 3 else "Connesso"
+                device_name = parts[2] if len(parts) >= 3 else "Connected"
             else:
-                device_name = "Attivo"
+                device_name = "Active"
         else:
-            device_name = "Spento"
+            device_name = "Off"
     except Exception:
         pass
     return {"powered": powered, "device": device_name}
@@ -332,17 +353,20 @@ class ControlCenterWindow(Gtk.Window):
 
     def _apply_css(self):
         accent = get_accent_color()
+        opacity = get_system_opacity()
         css_path = os.path.expanduser("~/.config/control-center/style.css")
+        if not os.path.exists(css_path):
+            css_path = os.path.expanduser("~/.local/share/dotfiles/config/control-center/style.css")
         if os.path.exists(css_path):
             with open(css_path, "r") as f:
                 raw_css = f.read()
-            css_data = raw_css.replace("@accent@", accent)
+            css_data = raw_css.replace("@accent@", accent).replace("@opacity@", f"{opacity:.2f}")
             provider = Gtk.CssProvider()
             provider.load_from_data(css_data.encode("utf-8"))
             Gtk.StyleContext.add_provider_for_screen(
                 Gdk.Screen.get_default(),
                 provider,
-                Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+                Gtk.STYLE_PROVIDER_PRIORITY_USER
             )
 
     def _build_ui(self):
@@ -396,7 +420,7 @@ class ControlCenterWindow(Gtk.Window):
         # Settings App button (opens desktop-settings)
         settings_btn = Gtk.Button(label="󰒓")
         settings_btn.get_style_context().add_class("settings-btn")
-        settings_btn.set_tooltip_text("Apri Impostazioni")
+        settings_btn.set_tooltip_text("Open Settings")
         settings_btn.connect("clicked", self._on_open_settings)
         header_box.pack_end(settings_btn, False, False, 4)
 
@@ -441,7 +465,7 @@ class ControlCenterWindow(Gtk.Window):
         self.mute_btn, self.mute_icon, self.mute_sub = self._create_toggle_pill(
             icon="󰝟" if self.audio_state["muted"] else "󰕾",
             title="Audio Out",
-            status="Muto" if self.audio_state["muted"] else f"{self.audio_state['volume']}%",
+            status="Muted" if self.audio_state["muted"] else f"{self.audio_state['volume']}%",
             is_active=not self.audio_state["muted"]
         )
         self.mute_btn.connect("clicked", self._on_toggle_mute)
@@ -450,8 +474,8 @@ class ControlCenterWindow(Gtk.Window):
         # Mic Mute Pill
         self.mic_btn, self.mic_icon, self.mic_sub = self._create_toggle_pill(
             icon="󰍭" if self.audio_state["mic_muted"] else "󰍬",
-            title="Microfono",
-            status="Muto" if self.audio_state["mic_muted"] else "Attivo",
+            title="Microphone",
+            status="Muted" if self.audio_state["mic_muted"] else "Active",
             is_active=not self.audio_state["mic_muted"]
         )
         self.mic_btn.connect("clicked", self._on_toggle_mic)
@@ -461,7 +485,7 @@ class ControlCenterWindow(Gtk.Window):
         self.dnd_btn, self.dnd_icon, self.dnd_sub = self._create_toggle_pill(
             icon="󱤓",
             title="Do Not Disturb",
-            status="Attivo" if self.dnd_state else "Spento",
+            status="Active" if self.dnd_state else "Off",
             is_active=self.dnd_state
         )
         self.dnd_btn.connect("clicked", self._on_toggle_dnd)
@@ -470,8 +494,8 @@ class ControlCenterWindow(Gtk.Window):
         # Wallpaper / Theme Pill
         self.wall_btn, _, _ = self._create_toggle_pill(
             icon="󰸉",
-            title="Aspetto",
-            status="Personalizza",
+            title="Appearance",
+            status="Customize",
             is_active=False,
             has_chevron=True
         )
@@ -506,7 +530,7 @@ class ControlCenterWindow(Gtk.Window):
 
         # Brightness Row
         bri_hdr = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        bri_title = Gtk.Label(label="󰃠 Luminosità", xalign=0)
+        bri_title = Gtk.Label(label="󰃠 Brightness", xalign=0)
         bri_title.get_style_context().add_class("slider-label")
         bri_hdr.pack_start(bri_title, True, True, 0)
 
@@ -525,7 +549,7 @@ class ControlCenterWindow(Gtk.Window):
         sink_short = self.audio_state["sink_desc"]
         if len(sink_short) > 28:
             sink_short = sink_short[:25] + "..."
-        self.sink_btn = Gtk.Button(label=f"󰓃 Dispositivo: {sink_short}")
+        self.sink_btn = Gtk.Button(label=f"󰓃 Device: {sink_short}")
         self.sink_btn.get_style_context().add_class("device-btn")
         lbl = self.sink_btn.get_child()
         if isinstance(lbl, Gtk.Label):
@@ -769,7 +793,7 @@ class ControlCenterWindow(Gtk.Window):
         if muted:
             self.mute_btn.get_style_context().remove_class("active")
             self.mute_icon.set_text("󰝟")
-            self.mute_sub.set_text("Muto")
+            self.mute_sub.set_text("Muted")
         else:
             self.mute_btn.get_style_context().add_class("active")
             self.mute_icon.set_text("󰕾")
@@ -782,21 +806,21 @@ class ControlCenterWindow(Gtk.Window):
         if mic_muted:
             self.mic_btn.get_style_context().remove_class("active")
             self.mic_icon.set_text("󰍭")
-            self.mic_sub.set_text("Muto")
+            self.mic_sub.set_text("Muted")
         else:
             self.mic_btn.get_style_context().add_class("active")
             self.mic_icon.set_text("󰍬")
-            self.mic_sub.set_text("Attivo")
+            self.mic_sub.set_text("Active")
 
     def _on_toggle_dnd(self, btn):
         subprocess.run(["dunstctl", "set-paused", "toggle"], check=False)
         self.dnd_state = get_dnd_state()
         if self.dnd_state:
             self.dnd_btn.get_style_context().add_class("active")
-            self.dnd_sub.set_text("Attivo")
+            self.dnd_sub.set_text("Active")
         else:
             self.dnd_btn.get_style_context().remove_class("active")
-            self.dnd_sub.set_text("Spento")
+            self.dnd_sub.set_text("Off")
 
 
 
@@ -870,7 +894,7 @@ class ControlCenterWindow(Gtk.Window):
                 desc = self.audio_state["sink_desc"]
                 if len(desc) > 28:
                     desc = desc[:25] + "..."
-                self.sink_btn.set_label(f"󰓃 Dispositivo: {desc}")
+                self.sink_btn.set_label(f"󰓃 Device: {desc}")
                 lbl = self.sink_btn.get_child()
                 if isinstance(lbl, Gtk.Label):
                     lbl.set_ellipsize(Pango.EllipsizeMode.END)
@@ -895,8 +919,6 @@ class ControlCenterWindow(Gtk.Window):
         return False
 
     def _on_focus_out(self, widget, event):
-        if self._settled:
-            self.destroy()
         return False
 
 

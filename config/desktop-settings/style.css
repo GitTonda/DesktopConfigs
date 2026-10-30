@@ -9,14 +9,29 @@
     outline: none;
 }
 
-window.main-window {
-    background-color: #1e1e2e;
+button {
+    background-image: none;
+    border-radius: 0px;
+    box-shadow: none;
+    text-shadow: none;
+    outline: none;
+}
+
+window.desktop-settings,
+window#DesktopSettings,
+window {
+    background-color: transparent;
+}
+
+.main-window {
+    background-color: rgba(24, 24, 37, @opacity@);
+    border: 2px solid @accent@;
     color: #cdd6f4;
 }
 
 /* Header */
 .header-bar {
-    background-color: #181825;
+    background-color: rgba(17, 17, 27, @header_opacity@);
     padding: 12px 16px;
     border-bottom: 1px solid #313244;
 }
@@ -32,15 +47,18 @@ window.main-window {
     color: #cdd6f4;
 }
 
-.header-close-btn {
+.header-close-btn,
+button.header-close-btn {
     background: transparent;
+    background-image: none;
     border: 1px solid transparent;
     color: #6c7086;
     padding: 2px 8px;
     font-size: 11pt;
 }
 
-.header-close-btn:hover {
+.header-close-btn:hover,
+button.header-close-btn:hover {
     color: #f38ba8;
     background: rgba(243, 139, 168, 0.15);
     border: 1px solid #f38ba8;
@@ -55,7 +73,7 @@ separator {
 
 /* Sidebar */
 .sidebar-container {
-    background-color: #181825;
+    background-color: rgba(17, 17, 27, @sidebar_opacity@);
 }
 
 .sidebar-list {
@@ -97,7 +115,7 @@ separator {
 
 /* Content Stack */
 .content-stack {
-    background-color: #1e1e2e;
+    background-color: transparent;
 }
 
 .page-title {
@@ -109,7 +127,7 @@ separator {
 
 /* Settings Card */
 .settings-card {
-    background-color: #181825;
+    background-color: rgba(30, 30, 46, @card_opacity@);
     border: 1px solid #313244;
     padding: 6px 14px;
     margin-bottom: 12px;
@@ -169,15 +187,9 @@ separator {
     padding: 4px 8px;
 }
 
-button {
-    background-image: none;
-    border-radius: 0px;
-    box-shadow: none;
-    text-shadow: none;
-}
-
 /* Action Buttons */
-button.action-btn, .action-btn {
+button.action-btn,
+.action-btn {
     background-color: #313244;
     background-image: none;
     border: 1px solid #45475a;
@@ -188,15 +200,18 @@ button.action-btn, .action-btn {
     transition: all 120ms ease;
 }
 
-button.action-btn:hover, .action-btn:hover {
+button.action-btn:hover,
+.action-btn:hover {
     background-color: @accent@;
+    background-image: none;
     color: #11111b;
     border-color: @accent@;
 }
 
 /* Wallpaper Item Buttons */
-button.wp-item-btn, .wp-item-btn {
-    background-color: #181825;
+button.wp-item-btn,
+.wp-item-btn {
+    background-color: rgba(24, 24, 37, 0.70);
     background-image: none;
     border: 1px solid #313244;
     color: #cdd6f4;
@@ -208,9 +223,11 @@ button.wp-item-btn label {
     color: #cdd6f4;
 }
 
-button.wp-item-btn:hover, .wp-item-btn:hover {
+button.wp-item-btn:hover,
+.wp-item-btn:hover {
     border-color: @accent@;
-    background-color: #313244;
+    background-color: rgba(49, 50, 68, 0.85);
+    background-image: none;
 }
 
 button.wp-item-btn:hover label {
@@ -270,8 +287,10 @@ scale slider:hover {
 }
 
 /* ComboBox & Entry */
-combobox button {
+combobox button,
+button.combo {
     background-color: #313244;
+    background-image: none;
     border: 1px solid #45475a;
     color: #cdd6f4;
     padding: 4px 10px;
@@ -282,7 +301,7 @@ combobox button:hover {
 }
 
 entry {
-    background-color: #181825;
+    background-color: rgba(24, 24, 37, 0.70);
     border: 1px solid #313244;
     color: #cdd6f4;
     padding: 6px 10px;

@@ -1,9 +1,8 @@
 [Desktop Entry]
-Name=Impostazioni
-Name[it]=Impostazioni di Sistema
+Name=Settings
 GenericName=System Settings
-Comment=Gestione e personalizzazione del sistema Catppuccin Mocha
-Exec=python3 /home/tonda/.config/desktop-settings/desktop_settings.py
+Comment=Catppuccin Mocha Desktop Settings and Customization
+Exec=desktop-settings
 Icon=preferences-system
 Terminal=false
 Type=Application

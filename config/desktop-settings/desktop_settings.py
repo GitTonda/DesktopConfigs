@@ -83,16 +83,58 @@ def apply_accent_color(accent_hex):
         # 6. Notify
         subprocess.run([
             "dunstify", "-r", "4445", "-u", "normal",
-            "󰏘 Accento Aggiornato",
-            f"Nuovo colore: <span foreground='{accent_hex}'><b>{accent_hex}</b></span>"
+            "󰏘 Accent Updated",
+            f"New accent color: <span foreground='{accent_hex}'><b>{accent_hex}</b></span>"
         ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except Exception as e:
         print(f"Error applying accent: {e}")
 
 
+def get_system_opacity():
+    """Gets synchronized system opacity (float between 0.3 and 1.0)."""
+    opacity_file = os.path.expanduser("~/.config/theme/opacity")
+    if os.path.exists(opacity_file):
+        try:
+            with open(opacity_file, "r") as f:
+                val = float(f.read().strip())
+                return max(0.3, min(1.0, val))
+        except Exception:
+            pass
+    alacritty_file = os.path.expanduser("~/.config/alacritty/alacritty.toml")
+    if os.path.exists(alacritty_file):
+        try:
+            with open(alacritty_file, "r") as f:
+                for line in f:
+                    if "opacity" in line and "=" in line:
+                        return float(line.split("=")[1].strip())
+        except Exception:
+            pass
+    return 0.70
+
+
+def set_system_opacity(pct):
+    """Sets synchronized opacity across Alacritty, Control Center, and Desktop Settings."""
+    val = round(max(0.3, min(1.0, pct / 100.0)), 2)
+    theme_dir = os.path.expanduser("~/.config/theme")
+    os.makedirs(theme_dir, exist_ok=True)
+    with open(os.path.join(theme_dir, "opacity"), "w") as f:
+        f.write(f"{val}\n")
+
+    alacritty_file = os.path.expanduser("~/.config/alacritty/alacritty.toml")
+    if os.path.exists(alacritty_file):
+        try:
+            with open(alacritty_file, "r") as f:
+                content = f.read()
+            content = re.sub(r'opacity\s*=\s*[0-9.]+', f'opacity = {val}', content)
+            with open(alacritty_file, "w") as f:
+                f.write(content)
+        except Exception:
+            pass
+
+
 def get_wifi_state():
     enabled = False
-    ssid = "Disconnesso"
+    ssid = "Disconnected"
     try:
         radio = subprocess.check_output(["nmcli", "-t", "-f", "WIFI", "g"], text=True, stderr=subprocess.DEVNULL).strip()
         enabled = (radio == "enabled")
@@ -116,13 +158,11 @@ def get_network_details():
     iface = "N/A"
     try:
         out = subprocess.check_output(["ip", "route", "get", "1.1.1.1"], text=True, stderr=subprocess.DEVNULL)
-        # Format: 1.1.1.1 via <gateway> dev <iface> src <ip>
         m = re.search(r"via\s+(\S+)\s+dev\s+(\S+)\s+src\s+(\S+)", out)
         if m:
             gateway = m.group(1)
             iface = m.group(2)
             ip_addr = m.group(3)
-        # DNS
         with open("/etc/resolv.conf", "r") as f:
             for line in f:
                 if line.startswith("nameserver"):
@@ -146,12 +186,11 @@ def get_wifi_networks():
                     continue
                 seen.add(ssid)
                 sig = int(parts[1]) if parts[1].isdigit() else 50
-                sec = parts[2].strip() or "Aperta"
+                sec = parts[2].strip() or "Open"
                 in_use = (parts[3].strip() == "*")
                 nets.append({"ssid": ssid, "signal": sig, "security": sec, "active": in_use})
     except Exception:
         pass
-    # Sort active first, then signal descending
     nets.sort(key=lambda x: (not x["active"], -x["signal"]))
     return nets
 
@@ -175,7 +214,6 @@ def get_bluetooth_devices():
             if len(parts) >= 3 and parts[0] == "Device":
                 mac = parts[1]
                 name = parts[2]
-                # Get device info
                 info = subprocess.check_output(["bluetoothctl", "info", mac], text=True, stderr=subprocess.DEVNULL)
                 connected = "Connected: yes" in info
                 paired = "Paired: yes" in info
@@ -324,34 +362,6 @@ def set_brightness(pct):
         pass
 
 
-def get_alacritty_opacity():
-    conf = os.path.expanduser("~/.config/alacritty/alacritty.toml")
-    if os.path.exists(conf):
-        try:
-            with open(conf, "r") as f:
-                for line in f:
-                    if "opacity" in line and "=" in line:
-                        val = line.split("=")[1].strip()
-                        return int(float(val) * 100)
-        except Exception:
-            pass
-    return 85
-
-
-def set_alacritty_opacity(pct):
-    conf = os.path.expanduser("~/.config/alacritty/alacritty.toml")
-    if os.path.exists(conf):
-        try:
-            with open(conf, "r") as f:
-                content = f.read()
-            val = round(pct / 100.0, 2)
-            content = re.sub(r'opacity\s*=\s*[0-9.]+', f'opacity = {val}', content)
-            with open(conf, "w") as f:
-                f.write(content)
-        except Exception:
-            pass
-
-
 def get_wallpapers():
     wp_dir = os.path.expanduser("~/Pictures/Wallpapers")
     wps = []
@@ -377,33 +387,33 @@ def get_i3_shortcuts():
                             cmd = parts[2].replace("exec --no-startup-id ", "").replace("exec ", "")
                             desc = cmd
                             if "alacritty" in cmd:
-                                desc = "Terminale Alacritty"
+                                desc = "Alacritty Terminal"
                             elif "zen-browser" in cmd:
-                                desc = "Browser Web Zen"
+                                desc = "Zen Web Browser"
                             elif "thunar" in cmd:
-                                desc = "File Manager Thunar"
+                                desc = "Thunar File Manager"
                             elif "rofi" in cmd:
-                                desc = "Rofi App Launcher / Menu"
+                                desc = "Rofi App Launcher"
                             elif "toggle.sh" in cmd:
                                 desc = "Control Center (Quick Settings)"
                             elif "desktop_settings.py" in cmd:
-                                desc = "Impostazioni di Sistema"
+                                desc = "Desktop Settings"
                             elif "lock.sh" in cmd:
-                                desc = "Blocca Schermo"
+                                desc = "Lock Screen"
                             elif "kill" in cmd:
-                                desc = "Chiudi Finestra Attiva"
+                                desc = "Close Active Window"
                             elif "split" in cmd:
-                                desc = "Dividi Layout Finestre"
+                                desc = "Split Window Layout"
                             elif "fullscreen" in cmd:
-                                desc = "Schermo Intero Toggle"
+                                desc = "Toggle Fullscreen"
                             elif "floating" in cmd:
-                                desc = "Finestra Fluttuante Toggle"
+                                desc = "Toggle Floating Window"
                             elif "focus" in cmd:
-                                desc = f"Sposta Focus ({key})"
+                                desc = f"Move Focus ({key})"
                             elif "move" in cmd:
-                                desc = f"Sposta Finestra ({key})"
+                                desc = f"Move Window ({key})"
                             elif "workspace" in cmd:
-                                desc = f"Vai al Workspace ({key})"
+                                desc = f"Switch to Workspace ({key})"
                             shortcuts.append((key, desc, cmd))
         except Exception:
             pass
@@ -413,7 +423,6 @@ def get_i3_shortcuts():
 def get_system_specs():
     specs = {}
     try:
-        # Hostname & User
         specs["user"] = os.environ.get("USER", "user")
         with open("/etc/hostname") as f:
             specs["hostname"] = f.read().strip()
@@ -422,7 +431,6 @@ def get_system_specs():
         specs["hostname"] = "pop-sos"
 
     try:
-        # OS Info
         with open("/etc/os-release") as f:
             for line in f:
                 if line.startswith("PRETTY_NAME="):
@@ -544,7 +552,7 @@ class NetworkPage(Gtk.ScrolledWindow):
 
         # Header
         hdr = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        lbl = Gtk.Label(label="󰤨 Rete & Wi-Fi", xalign=0)
+        lbl = Gtk.Label(label="󰤨 Network & Wi-Fi", xalign=0)
         lbl.get_style_context().add_class("page-title")
         hdr.pack_start(lbl, True, True, 0)
         content.pack_start(hdr, False, False, 0)
@@ -558,28 +566,28 @@ class NetworkPage(Gtk.ScrolledWindow):
         card_wifi.add_row(
             icon="󰤨",
             title="Wi-Fi",
-            subtitle="Connettiti alle reti senza fili disponibili",
+            subtitle="Connect to available wireless networks",
             widget=self.wifi_sw
         )
         content.pack_start(card_wifi, False, False, 0)
 
         # 2. Connection Details Card
         net_det = get_network_details()
-        card_det = SettingsCard(title="CONNESSIONE ATTIVA")
-        card_det.add_row("󰩠", "Indirizzo IP Locale", net_det["ip"])
+        card_det = SettingsCard(title="ACTIVE CONNECTION")
+        card_det.add_row("󰩠", "Local IP Address", net_det["ip"])
         card_det.add_row("󰒍", "Gateway / Router", net_det["gateway"])
-        card_det.add_row("󰇚", "Server DNS", net_det["dns"])
-        card_det.add_row("󰈀", "Interfaccia", net_det["iface"])
+        card_det.add_row("󰇚", "DNS Server", net_det["dns"])
+        card_det.add_row("󰈀", "Network Interface", net_det["iface"])
         content.pack_start(card_det, False, False, 0)
 
         # 3. Available Networks Card
-        card_nets = SettingsCard(title="RETI WI-FI DISPONIBILI")
-        scan_btn = Gtk.Button(label="󰑓 Scansiona")
+        card_nets = SettingsCard(title="AVAILABLE WI-FI NETWORKS")
+        scan_btn = Gtk.Button(label="󰑓 Scan")
         scan_btn.get_style_context().add_class("action-btn")
         scan_btn.connect("clicked", self._on_rescan_wifi)
 
         scan_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        scan_lbl = Gtk.Label(label="Cerca nuove reti nelle vicinanze", xalign=0)
+        scan_lbl = Gtk.Label(label="Search for nearby wireless networks", xalign=0)
         scan_lbl.get_style_context().add_class("settings-row-sub")
         scan_row.pack_start(scan_lbl, True, True, 0)
         scan_row.pack_end(scan_btn, False, False, 0)
@@ -607,7 +615,7 @@ class NetworkPage(Gtk.ScrolledWindow):
 
         nets = get_wifi_networks()
         if not nets:
-            no_lbl = Gtk.Label(label="Nessuna rete Wi-Fi rilevata o Wi-Fi disattivato.", xalign=0)
+            no_lbl = Gtk.Label(label="No Wi-Fi networks found or Wi-Fi is disabled.", xalign=0)
             no_lbl.get_style_context().add_class("settings-row-sub")
             self.nets_box.pack_start(no_lbl, False, False, 8)
             self.nets_box.show_all()
@@ -625,18 +633,18 @@ class NetworkPage(Gtk.ScrolledWindow):
             txt = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1)
             name_lbl = Gtk.Label(label=net["ssid"], xalign=0)
             name_lbl.get_style_context().add_class("settings-row-title")
-            sub_lbl = Gtk.Label(label=f"Segnale: {net['signal']}% • {net['security']}", xalign=0)
+            sub_lbl = Gtk.Label(label=f"Signal: {net['signal']}% • {net['security']}", xalign=0)
             sub_lbl.get_style_context().add_class("settings-row-sub")
             txt.pack_start(name_lbl, False, False, 0)
             txt.pack_start(sub_lbl, False, False, 0)
             row.pack_start(txt, True, True, 0)
 
             if net["active"]:
-                badge = Gtk.Label(label="󰄬 Connesso")
+                badge = Gtk.Label(label="󰄬 Connected")
                 badge.get_style_context().add_class("connected-badge")
                 row.pack_end(badge, False, False, 0)
             else:
-                con_btn = Gtk.Button(label="Connetti")
+                con_btn = Gtk.Button(label="Connect")
                 con_btn.get_style_context().add_class("action-btn")
                 con_btn.connect("clicked", lambda b, s=net["ssid"]: self._connect_dialog(s))
                 row.pack_end(con_btn, False, False, 0)
@@ -647,11 +655,11 @@ class NetworkPage(Gtk.ScrolledWindow):
 
     def _connect_dialog(self, ssid):
         dialog = Gtk.Dialog(
-            title=f"Connetti a {ssid}",
+            title=f"Connect to {ssid}",
             parent=self.get_toplevel(),
             flags=Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT
         )
-        dialog.add_buttons("Annulla", Gtk.ResponseType.CANCEL, "Connetti", Gtk.ResponseType.OK)
+        dialog.add_buttons("Cancel", Gtk.ResponseType.CANCEL, "Connect", Gtk.ResponseType.OK)
         box = dialog.get_content_area()
         box.set_spacing(10)
         box.set_margin_start(16)
@@ -659,7 +667,7 @@ class NetworkPage(Gtk.ScrolledWindow):
         box.set_margin_top(16)
         box.set_margin_bottom(16)
 
-        lbl = Gtk.Label(label=f"Inserisci la password per la rete '{ssid}':", xalign=0)
+        lbl = Gtk.Label(label=f"Enter password for network '{ssid}':", xalign=0)
         entry = Gtk.Entry()
         entry.set_visibility(False)
         box.pack_start(lbl, False, False, 0)
@@ -674,7 +682,7 @@ class NetworkPage(Gtk.ScrolledWindow):
             cmd = ["nmcli", "dev", "wifi", "connect", ssid]
             if pwd:
                 cmd.extend(["password", pwd])
-            res = subprocess.run(cmd, check=False)
+            subprocess.run(cmd, check=False)
             GLib.timeout_add(1500, self._populate_wifi_nets)
 
 
@@ -704,19 +712,19 @@ class BluetoothPage(Gtk.ScrolledWindow):
         card_pwr.add_row(
             icon="󰂯",
             title="Bluetooth",
-            subtitle="Connettiti a cuffie, tastiere e altri accessori",
+            subtitle="Connect to wireless headphones, keyboards, and accessories",
             widget=self.pwr_sw
         )
         content.pack_start(card_pwr, False, False, 0)
 
         # 2. Devices Card
-        card_devs = SettingsCard(title="DISPOSITIVI ASSOCIATI & RILEVATI")
-        scan_btn = Gtk.Button(label="󰑓 Scansiona")
+        card_devs = SettingsCard(title="PAIRED & DETECTED DEVICES")
+        scan_btn = Gtk.Button(label="󰑓 Scan")
         scan_btn.get_style_context().add_class("action-btn")
         scan_btn.connect("clicked", self._on_scan_bt)
 
         top_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        sub = Gtk.Label(label="Gestisci i dispositivi wireless", xalign=0)
+        sub = Gtk.Label(label="Manage wireless Bluetooth accessories", xalign=0)
         sub.get_style_context().add_class("settings-row-sub")
         top_row.pack_start(sub, True, True, 0)
         top_row.pack_end(scan_btn, False, False, 0)
@@ -744,7 +752,7 @@ class BluetoothPage(Gtk.ScrolledWindow):
 
         devs = get_bluetooth_devices()
         if not devs:
-            no_lbl = Gtk.Label(label="Nessun dispositivo associato o Bluetooth disattivato.", xalign=0)
+            no_lbl = Gtk.Label(label="No devices found or Bluetooth is turned off.", xalign=0)
             no_lbl.get_style_context().add_class("settings-row-sub")
             self.devs_box.pack_start(no_lbl, False, False, 8)
             self.devs_box.show_all()
@@ -761,14 +769,14 @@ class BluetoothPage(Gtk.ScrolledWindow):
             txt = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1)
             name_lbl = Gtk.Label(label=d["name"], xalign=0)
             name_lbl.get_style_context().add_class("settings-row-title")
-            st_text = "Connesso" if d["connected"] else ("Associato" if d["paired"] else "Disponibile")
+            st_text = "Connected" if d["connected"] else ("Paired" if d["paired"] else "Available")
             sub_lbl = Gtk.Label(label=f"{d['mac']} • {st_text}", xalign=0)
             sub_lbl.get_style_context().add_class("settings-row-sub")
             txt.pack_start(name_lbl, False, False, 0)
             txt.pack_start(sub_lbl, False, False, 0)
             row.pack_start(txt, True, True, 0)
 
-            act_btn = Gtk.Button(label="Disconnetti" if d["connected"] else "Connetti")
+            act_btn = Gtk.Button(label="Disconnect" if d["connected"] else "Connect")
             act_btn.get_style_context().add_class("action-btn")
             act_btn.connect("clicked", lambda b, mac=d["mac"], con=d["connected"]: self._toggle_con(mac, con))
             row.pack_end(act_btn, False, False, 0)
@@ -796,12 +804,12 @@ class SoundPage(Gtk.ScrolledWindow):
         self.add(content)
 
         # Header
-        lbl = Gtk.Label(label="󰕾 Audio & Suoni", xalign=0)
+        lbl = Gtk.Label(label="󰕾 Sound & Audio", xalign=0)
         lbl.get_style_context().add_class("page-title")
         content.pack_start(lbl, False, False, 0)
 
         # 1. Output Sound Card
-        card_out = SettingsCard(title="USCITA AUDIO (ALTOPARLANTI / CUFFIE)")
+        card_out = SettingsCard(title="SOUND OUTPUT (SPEAKERS / HEADPHONES)")
 
         # Volume slider
         vol_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
@@ -817,7 +825,7 @@ class SoundPage(Gtk.ScrolledWindow):
         self.vol_scale.set_value(cur_vol)
         self.vol_scale.connect("value-changed", self._on_volume_change)
         vol_box.pack_start(self.vol_scale, True, True, 0)
-        card_out.add_row("󰕾", "Volume Master", "Regola il volume principale del sistema", vol_box)
+        card_out.add_row("󰕾", "Master Volume", "Adjust primary system volume", vol_box)
 
         # Output Device dropdown
         sinks = get_audio_sinks()
@@ -831,17 +839,17 @@ class SoundPage(Gtk.ScrolledWindow):
         if sinks:
             self.sink_combo.set_active(cur_idx)
         self.sink_combo.connect("changed", self._on_sink_changed)
-        card_out.add_row("󰓃", "Dispositivo di Uscita", "Scegli dove riprodurre l'audio", self.sink_combo)
+        card_out.add_row("󰓃", "Output Device", "Choose audio playback destination", self.sink_combo)
 
         # Test sound button
-        test_btn = Gtk.Button(label="󰐊 Riproduci Suono di Test")
+        test_btn = Gtk.Button(label="󰐊 Play Test Sound")
         test_btn.get_style_context().add_class("action-btn")
         test_btn.connect("clicked", lambda b: subprocess.Popen(["paplay", "/usr/share/sounds/freedesktop/stereo/bell.oga"]))
-        card_out.add_row("󰎈", "Test Altoparlanti", "Verifica che il suono funzioni correttamente", test_btn)
+        card_out.add_row("󰎈", "Speaker Test", "Check that audio output is working properly", test_btn)
         content.pack_start(card_out, False, False, 0)
 
         # 2. Input Microphone Card
-        card_in = SettingsCard(title="INGRESSO AUDIO (MICROFONO)")
+        card_in = SettingsCard(title="SOUND INPUT (MICROPHONE)")
         sources = get_audio_sources()
         def_src = get_default_source()
         self.src_combo = Gtk.ComboBoxText()
@@ -853,7 +861,7 @@ class SoundPage(Gtk.ScrolledWindow):
         if sources:
             self.src_combo.set_active(cur_s_idx)
         self.src_combo.connect("changed", self._on_source_changed)
-        card_in.add_row("󰍬", "Dispositivo Microfono", "Scegli quale sorgente audio registrare", self.src_combo)
+        card_in.add_row("󰍬", "Microphone Device", "Select audio recording source", self.src_combo)
 
         # Mic Mute Toggle
         mic_muted = False
@@ -865,7 +873,7 @@ class SoundPage(Gtk.ScrolledWindow):
         self.mic_sw = Gtk.Switch()
         self.mic_sw.set_active(not mic_muted)
         self.mic_sw.connect("state-set", lambda sw, st: subprocess.run(["pactl", "set-source-mute", "@DEFAULT_SOURCE@", "0" if st else "1"], check=False) or False)
-        card_in.add_row("󰍭", "Microfono Attivo", "Consenti l'acquisizione della voce", self.mic_sw)
+        card_in.add_row("󰍭", "Microphone Active", "Enable voice recording input", self.mic_sw)
         content.pack_start(card_in, False, False, 0)
 
     def _on_volume_change(self, scale):
@@ -876,7 +884,6 @@ class SoundPage(Gtk.ScrolledWindow):
         name = combo.get_active_id()
         if name:
             subprocess.run(["pactl", "set-default-sink", name], check=False)
-            # Move active streams
             try:
                 inp_out = subprocess.check_output(["pactl", "list", "short", "sink-inputs"], text=True)
                 for line in inp_out.splitlines():
@@ -904,31 +911,31 @@ class DisplayPage(Gtk.ScrolledWindow):
         self.add(content)
 
         # Header
-        lbl = Gtk.Label(label="󰍹 Schermo & Luminosità", xalign=0)
+        lbl = Gtk.Label(label="󰍹 Display & Brightness", xalign=0)
         lbl.get_style_context().add_class("page-title")
         content.pack_start(lbl, False, False, 0)
 
-        # 1. Luminosità Card
-        card_bri = SettingsCard(title="LUMINOSITÀ DISPLAY")
+        # 1. Brightness Card
+        card_bri = SettingsCard(title="DISPLAY BRIGHTNESS")
         cur_bri = get_brightness()
         self.bri_scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 10, 100, 1)
         self.bri_scale.set_value(cur_bri)
         self.bri_scale.set_hexpand(True)
         self.bri_scale.connect("value-changed", lambda s: set_brightness(int(round(s.get_value()))))
-        card_bri.add_row("󰃠", "Livello Luminosità", "Regola la luminosità del monitor", self.bri_scale)
+        card_bri.add_row("󰃠", "Brightness Level", "Adjust screen backlight", self.bri_scale)
 
         # Night Light Gamma
         self.night_sw = Gtk.Switch()
         self.night_sw.set_active(False)
         self.night_sw.connect("state-set", self._on_night_light)
-        card_bri.add_row("󱤓", "Luce Notturna (Filtro Blu)", "Tonalità calde per ridurre l'affaticamento visivo", self.night_sw)
+        card_bri.add_row("󱤓", "Night Light (Blue Light Filter)", "Warm colors to reduce eye strain during evening hours", self.night_sw)
         content.pack_start(card_bri, False, False, 0)
 
         # 2. Monitors Card
         displays = get_displays_info()
-        card_disp = SettingsCard(title="MONITOR CONNESSI")
+        card_disp = SettingsCard(title="CONNECTED MONITORS")
         for d in displays:
-            pri_str = " (Principale)" if d["primary"] else ""
+            pri_str = " (Primary)" if d["primary"] else ""
             res_cur = d["geom"]
 
             res_combo = Gtk.ComboBoxText()
@@ -940,7 +947,7 @@ class DisplayPage(Gtk.ScrolledWindow):
             card_disp.add_row(
                 "󰍹",
                 f"{d['name']}{pri_str}",
-                f"Risoluzione corrente: {res_cur}",
+                f"Current resolution: {res_cur}",
                 res_combo
             )
         content.pack_start(card_disp, False, False, 0)
@@ -971,12 +978,12 @@ class AppearancePage(Gtk.ScrolledWindow):
         self.add(content)
 
         # Header
-        lbl = Gtk.Label(label="󰏘 Personalizzazione & Aspetto", xalign=0)
+        lbl = Gtk.Label(label="󰏘 Appearance & Themes", xalign=0)
         lbl.get_style_context().add_class("page-title")
         content.pack_start(lbl, False, False, 0)
 
         # 1. Catppuccin Accents
-        card_acc = SettingsCard(title="COLORE D'ACCENTO CATPPUCCIN MOCHA")
+        card_acc = SettingsCard(title="CATPPUCCIN MOCHA ACCENT COLOR")
         acc_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         acc_box.set_margin_start(12)
         acc_box.set_margin_end(12)
@@ -1001,30 +1008,34 @@ class AppearancePage(Gtk.ScrolledWindow):
             btn = Gtk.Button()
             btn.set_tooltip_text(f"{name} ({hex_col})")
             btn.get_style_context().add_class("color-swatch-btn")
-            # Custom style per button with high priority
             prov = Gtk.CssProvider()
             border_col = "#ffffff" if hex_col.lower() == cur_acc else "#313244"
             css = f"button, button.color-swatch-btn {{ background-image: none; background-color: {hex_col}; background: {hex_col}; min-width: 32px; min-height: 32px; border: 2px solid {border_col}; border-radius: 0px; box-shadow: none; }}"
             prov.load_from_data(css.encode())
             btn.get_style_context().add_provider(prov, Gtk.STYLE_PROVIDER_PRIORITY_USER)
-            btn.connect("clicked", lambda b, h=hex_col: apply_accent_color(h))
+            btn.connect("clicked", lambda b, h=hex_col: self._on_pick_accent(h))
             acc_box.pack_start(btn, False, False, 0)
 
         card_acc.pack_start(acc_box, False, False, 0)
         content.pack_start(card_acc, False, False, 0)
 
-        # 2. Terminal Transparency
-        card_term = SettingsCard(title="TRASPARENZA FINESTRE & TERMINALE")
-        cur_op = get_alacritty_opacity()
-        self.op_scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 40, 100, 1)
-        self.op_scale.set_value(cur_op)
+        # 2. Synchronized System Transparency
+        card_term = SettingsCard(title="SYSTEM TRANSPARENCY & BLUR")
+        cur_op_pct = int(round(get_system_opacity() * 100))
+        self.op_scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 30, 100, 1)
+        self.op_scale.set_value(cur_op_pct)
         self.op_scale.set_hexpand(True)
-        self.op_scale.connect("value-changed", lambda s: set_alacritty_opacity(int(round(s.get_value()))))
-        card_term.add_row("󰞕", "Opacità Alacritty", f"Attuale: {cur_op}%", self.op_scale)
+        self.op_scale.connect("value-changed", self._on_opacity_change)
+        self.op_row = card_term.add_row(
+            icon="󰞕",
+            title="Window & Terminal Opacity",
+            subtitle=f"Current: {cur_op_pct}% (Synced with Alacritty & Control Center)",
+            widget=self.op_scale
+        )
         content.pack_start(card_term, False, False, 0)
 
         # 3. Wallpapers Gallery
-        card_wp = SettingsCard(title="GALLERIA SFONDI (PICTURES/WALLPAPERS)")
+        card_wp = SettingsCard(title="WALLPAPERS GALLERY (~/Pictures/Wallpapers)")
         wps = get_wallpapers()
         if wps:
             wp_flow = Gtk.FlowBox()
@@ -1052,10 +1063,29 @@ class AppearancePage(Gtk.ScrolledWindow):
 
             card_wp.pack_start(wp_flow, False, False, 0)
         else:
-            no_wp = Gtk.Label(label="Nessuno sfondo trovato in ~/Pictures/Wallpapers", xalign=0)
+            no_wp = Gtk.Label(label="No wallpapers found in ~/Pictures/Wallpapers", xalign=0)
             card_wp.pack_start(no_wp, False, False, 8)
 
         content.pack_start(card_wp, False, False, 0)
+
+    def _on_pick_accent(self, hex_col):
+        apply_accent_color(hex_col)
+        toplevel = self.get_toplevel()
+        if hasattr(toplevel, "_apply_css"):
+            toplevel._apply_css()
+
+    def _on_opacity_change(self, scale):
+        pct = int(round(scale.get_value()))
+        set_system_opacity(pct)
+        # Update subtitle
+        txt_box = self.op_row.get_children()[1]
+        if hasattr(txt_box, "get_children") and len(txt_box.get_children()) >= 2:
+            sub = txt_box.get_children()[1]
+            sub.set_text(f"Current: {pct}% (Synced with Alacritty & Control Center)")
+        # Live reload CSS on Settings window
+        toplevel = self.get_toplevel()
+        if hasattr(toplevel, "_apply_css"):
+            toplevel._apply_css()
 
 
 class NotificationsPage(Gtk.ScrolledWindow):
@@ -1071,7 +1101,7 @@ class NotificationsPage(Gtk.ScrolledWindow):
         self.add(content)
 
         # Header
-        lbl = Gtk.Label(label="󰂚 Notifiche & Dunst", xalign=0)
+        lbl = Gtk.Label(label="󰂚 Notifications & Dunst", xalign=0)
         lbl.get_style_context().add_class("page-title")
         content.pack_start(lbl, False, False, 0)
 
@@ -1083,29 +1113,29 @@ class NotificationsPage(Gtk.ScrolledWindow):
         except Exception:
             pass
 
-        card_dnd = SettingsCard(title="MODALITÀ NON DISTURBARE")
+        card_dnd = SettingsCard(title="DO NOT DISTURB MODE")
         self.dnd_sw = Gtk.Switch()
         self.dnd_sw.set_active(is_paused)
         self.dnd_sw.connect("state-set", lambda sw, st: subprocess.run(["dunstctl", "set-paused", "true" if st else "false"], check=False) or False)
-        card_dnd.add_row("󱤓", "Silenzia Notifiche", "Metti in pausa i popup a schermo", self.dnd_sw)
+        card_dnd.add_row("󱤓", "Mute Notifications", "Pause on-screen notification popups", self.dnd_sw)
         content.pack_start(card_dnd, False, False, 0)
 
         # 2. Test Notification Card
-        card_test = SettingsCard(title="TEST NOTIFICHE")
-        norm_btn = Gtk.Button(label="Invia Notifica Normale")
+        card_test = SettingsCard(title="NOTIFICATION TEST & CONTROLS")
+        norm_btn = Gtk.Button(label="Send Normal Alert")
         norm_btn.get_style_context().add_class("action-btn")
-        norm_btn.connect("clicked", lambda b: subprocess.run(["dunstify", "-u", "normal", "󰂚 Test Notifica", "Questa è una notifica di prova Pop!_OS!"], check=False))
-        card_test.add_row("󰵅", "Notifica Informativa", "Invia un avviso standard", norm_btn)
+        norm_btn.connect("clicked", lambda b: subprocess.run(["dunstify", "-u", "normal", "󰂚 Normal Alert", "This is a test notification from Desktop Settings!"], check=False))
+        card_test.add_row("󰵅", "Informational Notification", "Send a standard alert", norm_btn)
 
-        crit_btn = Gtk.Button(label="Invia Notifica Critica")
+        crit_btn = Gtk.Button(label="Send Urgent Alert")
         crit_btn.get_style_context().add_class("action-btn")
-        crit_btn.connect("clicked", lambda b: subprocess.run(["dunstify", "-u", "critical", "󰀪 Avviso Critico", "Test notifica prioritaria urgente!"], check=False))
-        card_test.add_row("󰀪", "Notifica di Urgenza", "Invia un popup critico persistente", crit_btn)
+        crit_btn.connect("clicked", lambda b: subprocess.run(["dunstify", "-u", "critical", "󰀪 Urgent Alert", "Critical priority test notification!"], check=False))
+        card_test.add_row("󰀪", "Urgent Alert", "Send an urgent persistent popup", crit_btn)
 
-        clear_btn = Gtk.Button(label="Chiudi Tutte")
+        clear_btn = Gtk.Button(label="Clear All")
         clear_btn.get_style_context().add_class("action-btn")
         clear_btn.connect("clicked", lambda b: subprocess.run(["dunstctl", "close-all"], check=False))
-        card_test.add_row("󰅖", "Pulisci Schermo", "Chiudi tutti i popup attualmente visualizzati", clear_btn)
+        card_test.add_row("󰅖", "Clear Screen", "Dismiss all active on-screen popups", clear_btn)
         content.pack_start(card_test, False, False, 0)
 
 
@@ -1122,18 +1152,18 @@ class ShortcutsPage(Gtk.ScrolledWindow):
         self.add(content)
 
         # Header
-        lbl = Gtk.Label(label="󰌌 Scorciatoie da Tastiera i3", xalign=0)
+        lbl = Gtk.Label(label="󰌌 i3 Keyboard Shortcuts", xalign=0)
         lbl.get_style_context().add_class("page-title")
         content.pack_start(lbl, False, False, 0)
 
         # Search Bar
         self.search_entry = Gtk.SearchEntry()
-        self.search_entry.set_placeholder_text("Filtra per tasto o comando (es. Super, terminale, focus)...")
+        self.search_entry.set_placeholder_text("Filter by key or command (e.g. Super, terminal, focus)...")
         self.search_entry.connect("search-changed", self._on_search_changed)
         content.pack_start(self.search_entry, False, False, 0)
 
         # Shortcuts Table Card
-        self.card_keys = SettingsCard(title="COMBINAZIONI CONFIGURATE (~/.config/i3/config)")
+        self.card_keys = SettingsCard(title="CONFIGURED BINDINGS (~/.config/i3/config)")
         content.pack_start(self.card_keys, True, True, 0)
 
         self.all_shortcuts = get_i3_shortcuts()
@@ -1148,12 +1178,11 @@ class ShortcutsPage(Gtk.ScrolledWindow):
         self._populate_shortcuts(filtered)
 
     def _populate_shortcuts(self, shortcuts):
-        # Clear existing rows
         for c in self.card_keys.rows_box.get_children():
             self.card_keys.rows_box.remove(c)
         self.card_keys._count = 0
 
-        for key, desc, cmd in shortcuts[:40]:  # Limit top 40 for performance
+        for key, desc, cmd in shortcuts[:40]:
             badge = Gtk.Label(label=key)
             badge.get_style_context().add_class("key-badge")
             self.card_keys.add_row("󰌌", desc, subtitle=cmd, widget=badge)
@@ -1174,28 +1203,28 @@ class SystemPage(Gtk.ScrolledWindow):
         self.add(content)
 
         # Header
-        lbl = Gtk.Label(label="󰘚 Informazioni di Sistema & Dotfiles", xalign=0)
+        lbl = Gtk.Label(label="󰘚 System Information & Dotfiles", xalign=0)
         lbl.get_style_context().add_class("page-title")
         content.pack_start(lbl, False, False, 0)
 
         specs = get_system_specs()
 
         # 1. Hardware Specs Card
-        card_hw = SettingsCard(title="SPECIFICHE HARDWARE & SISTEMA")
-        card_hw.add_row("", "Dispositivo / Utente", f"{specs['user']}@{specs['hostname']}")
-        card_hw.add_row("󰣇", "Distribuzione SO", specs["os"])
-        card_hw.add_row("", "Kernel Linux", specs["kernel"])
-        card_hw.add_row("", "Processore (CPU)", specs["cpu"])
-        card_hw.add_row("󰾲", "Scheda Grafica (GPU)", specs["gpu"])
-        card_hw.add_row("", "Memoria RAM Totale", specs["ram_total"])
-        card_hw.add_row("󰉉", "Spazio Disco Root (/)", specs["disk_used"])
+        card_hw = SettingsCard(title="HARDWARE & SYSTEM SPECIFICATIONS")
+        card_hw.add_row("", "Device / User", f"{specs['user']}@{specs['hostname']}")
+        card_hw.add_row("󰣇", "OS Distribution", specs["os"])
+        card_hw.add_row("", "Linux Kernel", specs["kernel"])
+        card_hw.add_row("", "Processor (CPU)", specs["cpu"])
+        card_hw.add_row("󰾲", "Graphics Card (GPU)", specs["gpu"])
+        card_hw.add_row("", "Total RAM Memory", specs["ram_total"])
+        card_hw.add_row("󰉉", "Root Disk Space (/)", specs["disk_used"])
         content.pack_start(card_hw, False, False, 0)
 
         # 2. Dotfiles Management Card
-        card_git = SettingsCard(title="SINCRONIZZAZIONE CONFIGURAZIONI (DOTFILES)")
+        card_git = SettingsCard(title="CONFIGURATIONS SYNC (DOTFILES)")
         dotfiles_dir = os.path.expanduser("~/.local/share/dotfiles")
         branch = "experimental/control-center"
-        commit_msg = "Allineato"
+        commit_msg = "Up to date"
         if os.path.exists(dotfiles_dir):
             try:
                 b_out = subprocess.check_output(["git", "-C", dotfiles_dir, "branch", "--show-current"], text=True).strip()
@@ -1205,13 +1234,13 @@ class SystemPage(Gtk.ScrolledWindow):
             except Exception:
                 pass
 
-        card_git.add_row("", "Branch Dotfiles Attivo", branch)
-        card_git.add_row("󰊢", "Ultimo Commit Locale", commit_msg)
+        card_git.add_row("", "Active Dotfiles Branch", branch)
+        card_git.add_row("󰊢", "Latest Local Commit", commit_msg)
 
-        sync_btn = Gtk.Button(label="󰑓 Sincronizza Configs")
+        sync_btn = Gtk.Button(label="󰑓 Sync Configs")
         sync_btn.get_style_context().add_class("action-btn")
         sync_btn.connect("clicked", self._on_sync_dotfiles)
-        card_git.add_row("󰄬", "Aggiorna Desktop", "Effettua il pull e applica le ultime configurazioni", sync_btn)
+        card_git.add_row("󰄬", "Update Desktop", "Pull and apply latest dotfiles configuration", sync_btn)
 
         content.pack_start(card_git, False, False, 0)
 
@@ -1230,9 +1259,19 @@ class DesktopSettingsWindow(Gtk.Window):
         GLib.set_prgname("DesktopSettings")
         self.set_wmclass("DesktopSettings", "DesktopSettings")
         self.set_name("DesktopSettings")
-        self.set_title("Impostazioni di Sistema")
+        self.set_title("Desktop Settings")
         self.set_default_size(940, 640)
         self.set_position(Gtk.WindowPosition.CENTER)
+        self.set_decorated(False)
+        self.set_app_paintable(True)
+
+        # Enable translucency matching Alacritty
+        screen = self.get_screen()
+        visual = screen.get_rgba_visual()
+        if visual and screen.is_composited():
+            self.set_visual(visual)
+
+        self.get_style_context().add_class("desktop-settings")
 
         self._apply_css()
 
@@ -1241,23 +1280,28 @@ class DesktopSettingsWindow(Gtk.Window):
         root_box.get_style_context().add_class("main-window")
         self.add(root_box)
 
-        # Header bar
-        header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-        header.get_style_context().add_class("header-bar")
+        # Header bar (Draggable)
+        header = Gtk.EventBox()
+        header.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+        header.connect("button-press-event", self._on_header_drag)
+
+        header_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        header_box.get_style_context().add_class("header-bar")
+        header.add(header_box)
 
         title_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         gear_icon = Gtk.Label(label="󰒓")
         gear_icon.get_style_context().add_class("header-gear")
-        win_title = Gtk.Label(label="Impostazioni", xalign=0)
+        win_title = Gtk.Label(label="Settings", xalign=0)
         win_title.get_style_context().add_class("header-title")
         title_box.pack_start(gear_icon, False, False, 0)
         title_box.pack_start(win_title, False, False, 0)
-        header.pack_start(title_box, False, False, 0)
+        header_box.pack_start(title_box, False, False, 0)
 
         close_btn = Gtk.Button(label="󰅖")
         close_btn.get_style_context().add_class("header-close-btn")
         close_btn.connect("clicked", lambda b: self.destroy())
-        header.pack_end(close_btn, False, False, 0)
+        header_box.pack_end(close_btn, False, False, 0)
 
         root_box.pack_start(header, False, False, 0)
         root_box.pack_start(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL), False, False, 0)
@@ -1288,16 +1332,16 @@ class DesktopSettingsWindow(Gtk.Window):
         self.stack.get_style_context().add_class("content-stack")
         body.pack_start(self.stack, True, True, 0)
 
-        # Pages definition
+        # Pages definition (Strictly English)
         self.pages = [
-            ("wifi", "󰤨", "Rete & Wi-Fi", NetworkPage()),
+            ("wifi", "󰤨", "Network & Wi-Fi", NetworkPage()),
             ("bluetooth", "󰂯", "Bluetooth", BluetoothPage()),
-            ("sound", "󰕾", "Audio & Suoni", SoundPage()),
-            ("display", "󰍹", "Schermo & Display", DisplayPage()),
-            ("appearance", "󰏘", "Personalizzazione", AppearancePage()),
-            ("notifications", "󰂚", "Notifiche", NotificationsPage()),
-            ("shortcuts", "󰌌", "Scorciatoie i3", ShortcutsPage()),
-            ("system", "󰘚", "Sistema & Dotfiles", SystemPage()),
+            ("sound", "󰕾", "Sound & Audio", SoundPage()),
+            ("display", "󰍹", "Display & Brightness", DisplayPage()),
+            ("appearance", "󰏘", "Appearance & Themes", AppearancePage()),
+            ("notifications", "󰂚", "Notifications", NotificationsPage()),
+            ("shortcuts", "󰌌", "Keyboard Shortcuts", ShortcutsPage()),
+            ("system", "󰘚", "System & Dotfiles", SystemPage()),
         ]
 
         self.page_rows = {}
@@ -1331,6 +1375,10 @@ class DesktopSettingsWindow(Gtk.Window):
         self.initial_target = initial_page if (initial_page and initial_page in self.page_rows) else "wifi"
         self.set_active_page(self.initial_target)
 
+    def _on_header_drag(self, widget, event):
+        if event.button == 1:
+            self.begin_move_drag(event.button, int(event.x_root), int(event.y_root), event.time)
+
     def set_active_page(self, page_id):
         if page_id in self.page_rows:
             self.sidebar_list.select_row(self.page_rows[page_id])
@@ -1343,6 +1391,7 @@ class DesktopSettingsWindow(Gtk.Window):
 
     def _apply_css(self):
         accent = get_accent_color()
+        opacity = get_system_opacity()
         css_path = os.path.expanduser("~/.config/desktop-settings/style.css")
         if not os.path.exists(css_path):
             css_path = os.path.expanduser("~/.local/share/dotfiles/config/desktop-settings/style.css")
@@ -1350,13 +1399,19 @@ class DesktopSettingsWindow(Gtk.Window):
         if os.path.exists(css_path):
             with open(css_path, "r") as f:
                 raw = f.read()
-            css_data = raw.replace("@accent@", accent)
+            css_data = (
+                raw.replace("@accent@", accent)
+                   .replace("@opacity@", f"{opacity:.2f}")
+                   .replace("@header_opacity@", f"{min(1.0, opacity + 0.10):.2f}")
+                   .replace("@sidebar_opacity@", f"{min(1.0, opacity + 0.05):.2f}")
+                   .replace("@card_opacity@", f"{max(0.3, opacity * 0.85):.2f}")
+            )
             provider = Gtk.CssProvider()
             provider.load_from_data(css_data.encode("utf-8"))
             Gtk.StyleContext.add_provider_for_screen(
                 Gdk.Screen.get_default(),
                 provider,
-                Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+                Gtk.STYLE_PROVIDER_PRIORITY_USER
             )
 
     def _on_sidebar_selected(self, listbox, row):
