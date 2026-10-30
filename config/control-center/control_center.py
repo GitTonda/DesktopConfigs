@@ -10,11 +10,12 @@ import subprocess
 import shutil
 import time
 import re
+import json
 
 import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('Gdk', '3.0')
-from gi.repository import Gtk, Gdk, GLib
+from gi.repository import Gtk, Gdk, GLib, Pango
 
 
 PID_FILE = os.path.expanduser("~/.cache/control_center.pid")
@@ -213,14 +214,47 @@ class ControlCenterWindow(Gtk.Window):
         self.bt_state = get_bluetooth_state()
         self.dnd_state = get_dnd_state()
 
+        # Focus settling flag
+        self._settled = False
+
         self._build_ui()
         self._apply_css()
 
-        # Connect events for closing
+        # Enable pointer and focus events
+        self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.FOCUS_CHANGE_MASK)
+
+        # Connect events
+        self.connect("map-event", self._on_map)
+        self.connect("button-press-event", self._on_button_press)
+        self.connect("focus-out-event", self._on_focus_out)
         self.connect("key-press-event", self._on_key_press)
         self.connect("destroy", self._on_destroy)
 
+    def _on_map(self, widget, event):
+        seat = Gdk.Display.get_default().get_default_seat()
+        if seat:
+            seat.grab(self.get_window(), Gdk.SeatCapabilities.ALL_POINTING, True, None, None, None)
+        GLib.timeout_add(250, self._mark_settled)
+
+    def _mark_settled(self):
+        self._settled = True
+        return False
+
+    def _on_button_press(self, widget, event):
+        alloc = self.get_allocation()
+        # Any click outside the control center bounds dismisses it
+        if event.x < 0 or event.y < 0 or event.x > alloc.width or event.y > alloc.height:
+            self.destroy()
+            return True
+        return False
+
     def _on_destroy(self, widget):
+        try:
+            seat = Gdk.Display.get_default().get_default_seat()
+            if seat:
+                seat.ungrab()
+        except Exception:
+            pass
         if os.path.exists(PID_FILE):
             try:
                 os.remove(PID_FILE)
@@ -288,7 +322,7 @@ class ControlCenterWindow(Gtk.Window):
 
         close_btn = Gtk.Button(label="󰅖")
         close_btn.get_style_context().add_class("close-btn")
-        close_btn.connect("clicked", lambda b: Gtk.main_quit())
+        close_btn.connect("clicked", lambda b: self.destroy())
         header_box.pack_end(close_btn, False, False, 0)
 
         main_box.pack_start(header_box, False, False, 0)
@@ -393,10 +427,14 @@ class ControlCenterWindow(Gtk.Window):
 
         # Sink device switcher button
         sink_short = self.audio_state["sink_desc"]
-        if len(sink_short) > 34:
-            sink_short = sink_short[:31] + "..."
+        if len(sink_short) > 28:
+            sink_short = sink_short[:25] + "..."
         self.sink_btn = Gtk.Button(label=f"󰓃 Dispositivo: {sink_short}")
         self.sink_btn.get_style_context().add_class("device-btn")
+        lbl = self.sink_btn.get_child()
+        if isinstance(lbl, Gtk.Label):
+            lbl.set_ellipsize(Pango.EllipsizeMode.END)
+            lbl.set_max_width_chars(26)
         self.sink_btn.connect("clicked", self._on_switch_output_device)
         slider_card_box.pack_start(self.sink_btn, False, False, 0)
 
@@ -520,14 +558,14 @@ class ControlCenterWindow(Gtk.Window):
 
     def _on_wifi_right_click(self, btn, event):
         if event.button == 3: # Right click
-            Gtk.main_quit()
+            self.destroy()
             subprocess.Popen(["alacritty", "--class", "FloatingWifi", "-e", "nmtui"])
             return True
         return False
 
     def _on_bt_right_click(self, btn, event):
         if event.button == 3: # Right click
-            Gtk.main_quit()
+            self.destroy()
             subprocess.Popen(["alacritty", "--class", "FloatingBluetooth", "-e", "bluetoothctl"])
             return True
         return False
@@ -597,7 +635,7 @@ class ControlCenterWindow(Gtk.Window):
             self.dnd_sub.set_text("Spento")
 
     def _on_open_wallpaper_gallery(self, btn):
-        Gtk.main_quit()
+        self.destroy()
         subprocess.Popen([
             "feh", "-t", "-E", "180", "-y", "140", "-W", "1080", "-H", "720",
             "--title", "Wallpaper Gallery - Click to Apply",
@@ -652,18 +690,22 @@ class ControlCenterWindow(Gtk.Window):
                 time.sleep(0.1)
                 self.audio_state = get_audio_state()
                 desc = self.audio_state["sink_desc"]
-                if len(desc) > 34:
-                    desc = desc[:31] + "..."
+                if len(desc) > 28:
+                    desc = desc[:25] + "..."
                 self.sink_btn.set_label(f"󰓃 Dispositivo: {desc}")
+                lbl = self.sink_btn.get_child()
+                if isinstance(lbl, Gtk.Label):
+                    lbl.set_ellipsize(Pango.EllipsizeMode.END)
+                    lbl.set_max_width_chars(26)
         except Exception:
             pass
 
     def _on_launch_btop(self, box, event):
-        Gtk.main_quit()
+        self.destroy()
         subprocess.Popen(["alacritty", "--class", "FloatingBtop", "-e", "btop"])
 
     def _run_action(self, cmd):
-        Gtk.main_quit()
+        self.destroy()
         # Expand user in cmd
         expanded = [os.path.expanduser(c) for c in cmd]
         subprocess.Popen(expanded)
@@ -675,13 +717,94 @@ class ControlCenterWindow(Gtk.Window):
         return False
 
     def _on_focus_out(self, widget, event):
-        self.destroy()
+        if self._settled:
+            self.destroy()
         return False
 
 
 # ------------------------------------------------------------------------------
-# Entry Point & Placement
+# Entry Point & Dynamic Placement
 # ------------------------------------------------------------------------------
+
+def calculate_target_position(win, inset=10):
+    """
+    Dynamically calculate (x, y) coordinates for the control center so that:
+    1. It anchors under Polybar on the active workspace.
+    2. It aligns inside the active/top-right open window.
+    3. The inset from the window's top border EQUALS the inset from the window's right border.
+    4. NO hardcoded screen resolutions, widths, or fixed gaps are used.
+    """
+    target_top = None
+    target_right = None
+
+    try:
+        tree = json.loads(subprocess.check_output(['i3-msg', '-t', 'get_tree'], stderr=subprocess.DEVNULL))
+        workspaces = json.loads(subprocess.check_output(['i3-msg', '-t', 'get_workspaces'], stderr=subprocess.DEVNULL))
+
+        focused_ws = next((w for w in workspaces if w.get('focused')), None)
+        if not focused_ws:
+            focused_ws = next((w for w in workspaces if w.get('visible')), None)
+
+        ws_name = focused_ws.get('name') if focused_ws else None
+        ws_rect = focused_ws.get('rect') if focused_ws else None
+
+        def find_ws_node(node, name):
+            if node.get('type') == 'workspace' and node.get('name') == name:
+                return node
+            for child in node.get('nodes', []) + node.get('floating_nodes', []):
+                res = find_ws_node(child, name)
+                if res:
+                    return res
+            return None
+
+        ws_node = find_ws_node(tree, ws_name) if ws_name else None
+
+        def collect_windows(node):
+            wins = []
+            if node.get('window') and node.get('window_properties'):
+                cls = node.get('window_properties', {}).get('class', '')
+                if cls.lower() not in ('polybar', 'controlcenter', 'control_center'):
+                    wins.append(node)
+            for child in node.get('nodes', []) + node.get('floating_nodes', []):
+                wins.extend(collect_windows(child))
+            return wins
+
+        open_wins = collect_windows(ws_node) if ws_node else []
+
+        if open_wins:
+            # Find the top-rightmost window:
+            # Sort by: (x + width) descending, then y ascending
+            top_right_win = sorted(
+                open_wins,
+                key=lambda w: (w['rect']['x'] + w['rect']['width'], -w['rect']['y']),
+                reverse=True
+            )[0]
+            rect = top_right_win['rect']
+            target_top = rect['y']
+            target_right = rect['x'] + rect['width']
+        elif ws_rect:
+            target_top = ws_rect['y']
+            target_right = ws_rect['x'] + ws_rect['width']
+    except Exception:
+        pass
+
+    # GDK Fallback if i3 query didn't return values
+    if target_top is None or target_right is None:
+        display = Gdk.Display.get_default()
+        monitor = display.get_primary_monitor() or display.get_monitor(0)
+        geom = monitor.get_geometry()
+        target_top = geom.y + 40
+        target_right = geom.x + geom.width - 7
+
+    win_w, _ = win.get_size()
+    _, nat_size = win.get_preferred_size()
+    panel_width = max(win_w, nat_size.width)
+
+    x = int(target_right - panel_width - inset)
+    y = int(target_top + inset)
+
+    return x, y
+
 
 def main():
     try:
@@ -694,22 +817,16 @@ def main():
     win = ControlCenterWindow()
     win.show_all()
     win.set_keep_above(True)
+
+    x, y = calculate_target_position(win, inset=10)
+
+    win.move(x, y)
     win.present()
 
-    # Calculate monitor coordinates for top-right anchoring
-    display = Gdk.Display.get_default()
-    monitor = display.get_primary_monitor() or display.get_monitor(0)
-    geometry = monitor.get_geometry()
-
-    width = 380
-    gap = 12
-    # Perfectly symmetrical 12px inset from both window borders (Top Y=43, Right X=1913)
-    x = 1913 - width - gap  # 1521
-    y = 43 + gap           # 55
-
-    # Explicitly position in i3 floating mode, enforce zero border, and set focus
-    win.move(x, y)
-    subprocess.run(["i3-msg", f"[class=\"(?i)control_center.*|ControlCenter\"] border none, move position {x} {y}, focus"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+    subprocess.run([
+        "i3-msg",
+        f'[class="(?i)control_center.*|ControlCenter"] border none, move position {x} {y}, focus'
+    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
 
     Gtk.main()
 
