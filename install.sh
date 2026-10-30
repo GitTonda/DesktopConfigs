@@ -441,7 +441,7 @@ if [ "$DRY_RUN" = true ]; then
 else
     backup_existing_configs() {
         mkdir -p "$BACKUP_DIR"
-        for app in i3 polybar alacritty rofi picom dunst fastfetch btop dxvk environment.d MangoHud control-center zen Thunar xsettingsd; do
+        for app in i3 polybar alacritty rofi picom dunst fastfetch btop dxvk environment.d MangoHud control-center desktop-settings zen Thunar xsettingsd; do
             if [ -d "$HOME/.config/$app" ] || [ -f "$HOME/.config/$app" ]; then
                 cp -a "$HOME/.config/$app" "$BACKUP_DIR/" 2>/dev/null || true
             fi
@@ -526,6 +526,7 @@ else
             "$HOME/.config/dunst/launch.sh" "$HOME/.config/dunst/scripts/"*.sh \
             "$HOME/.config/rofi/"*.sh "$HOME/.config/rofi/"*.py \
             "$HOME/.config/control-center/"*.sh "$HOME/.config/control-center/"*.py \
+            "$HOME/.config/desktop-settings/"*.py \
             "$HOME/.config/theme/"*.sh "$HOME/.config/i3/"*.sh \
             "$HOME/.config/zen/setup-zen.sh" "$DOTFILES_DIR/scripts/"* 2>/dev/null || true
     }

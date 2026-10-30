@@ -1,0 +1,293 @@
+/* Catppuccin Mocha Desktop Settings Stylesheet */
+
+* {
+    border-radius: 0px;
+    font-family: 'JetBrainsMono Nerd Font', 'JetBrains Mono', monospace;
+    font-size: 10pt;
+    text-shadow: none;
+    box-shadow: none;
+    outline: none;
+}
+
+window.main-window {
+    background-color: #1e1e2e;
+    color: #cdd6f4;
+}
+
+/* Header */
+.header-bar {
+    background-color: #181825;
+    padding: 12px 16px;
+    border-bottom: 1px solid #313244;
+}
+
+.header-gear {
+    font-size: 14pt;
+    color: @accent@;
+}
+
+.header-title {
+    font-size: 12pt;
+    font-weight: bold;
+    color: #cdd6f4;
+}
+
+.header-close-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: #6c7086;
+    padding: 2px 8px;
+    font-size: 11pt;
+}
+
+.header-close-btn:hover {
+    color: #f38ba8;
+    background: rgba(243, 139, 168, 0.15);
+    border: 1px solid #f38ba8;
+}
+
+/* Separator */
+separator {
+    background-color: #313244;
+    min-height: 1px;
+    min-width: 1px;
+}
+
+/* Sidebar */
+.sidebar-container {
+    background-color: #181825;
+}
+
+.sidebar-list {
+    background-color: transparent;
+}
+
+.sidebar-row {
+    background-color: transparent;
+    color: #a6adc8;
+    transition: all 120ms ease-in-out;
+    border-left: 3px solid transparent;
+}
+
+.sidebar-row:hover {
+    background-color: rgba(49, 50, 68, 0.4);
+    color: #cdd6f4;
+}
+
+.sidebar-row:selected {
+    background-color: rgba(49, 50, 68, 0.85);
+    color: #ffffff;
+    border-left: 3px solid @accent@;
+}
+
+.sidebar-icon {
+    font-size: 13pt;
+    color: @accent@;
+}
+
+.sidebar-title {
+    font-size: 10pt;
+    font-weight: 500;
+}
+
+.sidebar-row:selected .sidebar-title {
+    font-weight: bold;
+    color: #ffffff;
+}
+
+/* Content Stack */
+.content-stack {
+    background-color: #1e1e2e;
+}
+
+.page-title {
+    font-size: 14pt;
+    font-weight: bold;
+    color: #cdd6f4;
+    margin-bottom: 6px;
+}
+
+/* Settings Card */
+.settings-card {
+    background-color: #181825;
+    border: 1px solid #313244;
+    padding: 6px 14px;
+    margin-bottom: 12px;
+}
+
+.settings-card-title {
+    font-size: 8.5pt;
+    font-weight: bold;
+    color: #a6adc8;
+    margin-top: 6px;
+    margin-bottom: 4px;
+}
+
+/* Rows Inside Cards */
+.settings-row {
+    padding: 10px 0px;
+}
+
+.settings-row-icon {
+    font-size: 14pt;
+    color: @accent@;
+    min-width: 24px;
+}
+
+.settings-row-title {
+    font-size: 10pt;
+    font-weight: bold;
+    color: #cdd6f4;
+}
+
+.settings-row-sub {
+    font-size: 8.5pt;
+    color: #a6adc8;
+}
+
+.settings-separator {
+    background-color: #313244;
+    min-height: 1px;
+}
+
+/* Badges */
+.connected-badge {
+    background-color: rgba(166, 227, 161, 0.15);
+    border: 1px solid #a6e3a1;
+    color: #a6e3a1;
+    font-size: 8.5pt;
+    font-weight: bold;
+    padding: 4px 8px;
+}
+
+.key-badge {
+    background-color: #313244;
+    border: 1px solid #45475a;
+    color: @accent@;
+    font-size: 8.5pt;
+    font-weight: bold;
+    padding: 4px 8px;
+}
+
+button {
+    background-image: none;
+    border-radius: 0px;
+    box-shadow: none;
+    text-shadow: none;
+}
+
+/* Action Buttons */
+button.action-btn, .action-btn {
+    background-color: #313244;
+    background-image: none;
+    border: 1px solid #45475a;
+    color: #cdd6f4;
+    padding: 6px 14px;
+    font-size: 9pt;
+    font-weight: 500;
+    transition: all 120ms ease;
+}
+
+button.action-btn:hover, .action-btn:hover {
+    background-color: @accent@;
+    color: #11111b;
+    border-color: @accent@;
+}
+
+/* Wallpaper Item Buttons */
+button.wp-item-btn, .wp-item-btn {
+    background-color: #181825;
+    background-image: none;
+    border: 1px solid #313244;
+    color: #cdd6f4;
+    padding: 10px;
+    font-size: 9pt;
+}
+
+button.wp-item-btn label {
+    color: #cdd6f4;
+}
+
+button.wp-item-btn:hover, .wp-item-btn:hover {
+    border-color: @accent@;
+    background-color: #313244;
+}
+
+button.wp-item-btn:hover label {
+    color: #ffffff;
+}
+
+/* GTK Switches */
+switch {
+    background-color: #313244;
+    border: 1px solid #45475a;
+    border-radius: 0px;
+    min-width: 44px;
+    min-height: 22px;
+}
+
+switch:checked {
+    background-color: @accent@;
+    border-color: @accent@;
+}
+
+switch slider {
+    background-color: #cdd6f4;
+    border-radius: 0px;
+    min-width: 18px;
+    min-height: 18px;
+}
+
+switch:checked slider {
+    background-color: #11111b;
+}
+
+/* GTK Scales */
+scale trough {
+    background-color: #313244;
+    min-height: 6px;
+    border-radius: 0px;
+    border: none;
+}
+
+scale highlight {
+    background-color: @accent@;
+    border-radius: 0px;
+    border: none;
+}
+
+scale slider {
+    background-color: #cdd6f4;
+    min-height: 14px;
+    min-width: 14px;
+    margin: -4px;
+    border-radius: 0px;
+    border: 1px solid #11111b;
+}
+
+scale slider:hover {
+    background-color: #ffffff;
+}
+
+/* ComboBox & Entry */
+combobox button {
+    background-color: #313244;
+    border: 1px solid #45475a;
+    color: #cdd6f4;
+    padding: 4px 10px;
+}
+
+combobox button:hover {
+    border-color: @accent@;
+}
+
+entry {
+    background-color: #181825;
+    border: 1px solid #313244;
+    color: #cdd6f4;
+    padding: 6px 10px;
+}
+
+entry:focus {
+    border-color: @accent@;
+}

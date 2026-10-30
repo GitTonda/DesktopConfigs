@@ -136,6 +136,72 @@ def get_dnd_state():
     return is_paused
 
 
+def get_brightness():
+    # 1. Check brightnessctl backlight class
+    try:
+        out = subprocess.check_output(["brightnessctl", "-m"], text=True, stderr=subprocess.DEVNULL)
+        for line in out.splitlines():
+            parts = line.split(",")
+            if len(parts) >= 5 and parts[1] == "backlight":
+                return int(parts[3].replace("%", ""))
+    except Exception:
+        pass
+
+    # 2. Check xrandr
+    try:
+        out = subprocess.check_output(["xrandr", "--verbose"], text=True, stderr=subprocess.DEVNULL)
+        m = re.search(r"Brightness:\s*([0-9.]+)", out)
+        if m:
+            val = float(m.group(1))
+            return int(round(val * 100))
+    except Exception:
+        pass
+    return 100
+
+
+def set_brightness(pct):
+    pct = max(10, min(100, pct))
+    # 1. Check brightnessctl
+    try:
+        out = subprocess.check_output(["brightnessctl", "-m"], text=True, stderr=subprocess.DEVNULL)
+        for line in out.splitlines():
+            parts = line.split(",")
+            if len(parts) >= 5 and parts[1] == "backlight":
+                subprocess.run(["brightnessctl", "set", f"{pct}%"], check=False)
+                return
+    except Exception:
+        pass
+
+    # 2. Check xrandr
+    try:
+        out = subprocess.check_output(["xrandr", "--query"], text=True, stderr=subprocess.DEVNULL)
+        outputs = [line.split()[0] for line in out.splitlines() if " connected" in line]
+        ratio = round(pct / 100.0, 2)
+        for mon in outputs:
+            subprocess.run(["xrandr", "--output", mon, "--brightness", str(ratio)], check=False)
+    except Exception:
+        pass
+
+
+def get_media_info():
+    try:
+        status = subprocess.check_output(["playerctl", "status"], text=True, stderr=subprocess.DEVNULL).strip()
+        if status in ("Playing", "Paused"):
+            artist = subprocess.check_output(["playerctl", "metadata", "artist"], text=True, stderr=subprocess.DEVNULL).strip()
+            title = subprocess.check_output(["playerctl", "metadata", "title"], text=True, stderr=subprocess.DEVNULL).strip()
+            player = subprocess.check_output(["playerctl", "metadata", "--format", "{{playerName}}"], text=True, stderr=subprocess.DEVNULL).strip()
+            return {
+                "active": True,
+                "status": status,
+                "artist": artist or "Unknown Artist",
+                "title": title or "Unknown Title",
+                "player": player or "Media Player"
+            }
+    except Exception:
+        pass
+    return {"active": False}
+
+
 def get_memory_info():
     total_gb = 0.0
     used_gb = 0.0
@@ -213,6 +279,8 @@ class ControlCenterWindow(Gtk.Window):
         self.wifi_state = get_wifi_state()
         self.bt_state = get_bluetooth_state()
         self.dnd_state = get_dnd_state()
+        self.brightness = get_brightness()
+        self.media_info = get_media_info()
 
         # Focus settling flag
         self._settled = False
@@ -325,6 +393,13 @@ class ControlCenterWindow(Gtk.Window):
         close_btn.connect("clicked", lambda b: self.destroy())
         header_box.pack_end(close_btn, False, False, 0)
 
+        # Settings App button (opens desktop-settings)
+        settings_btn = Gtk.Button(label="󰒓")
+        settings_btn.get_style_context().add_class("settings-btn")
+        settings_btn.set_tooltip_text("Apri Impostazioni")
+        settings_btn.connect("clicked", self._on_open_settings)
+        header_box.pack_end(settings_btn, False, False, 4)
+
         main_box.pack_start(header_box, False, False, 0)
         main_box.pack_start(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL), False, False, 0)
 
@@ -343,7 +418,8 @@ class ControlCenterWindow(Gtk.Window):
             icon="󰤨" if self.wifi_state["enabled"] else "󰤮",
             title="Wi-Fi",
             status=self.wifi_state["ssid"],
-            is_active=self.wifi_state["enabled"]
+            is_active=self.wifi_state["enabled"],
+            has_chevron=True
         )
         self.wifi_btn.connect("clicked", self._on_toggle_wifi)
         self.wifi_btn.connect("button-press-event", self._on_wifi_right_click)
@@ -354,7 +430,8 @@ class ControlCenterWindow(Gtk.Window):
             icon="󰂯" if self.bt_state["powered"] else "󰂲",
             title="Bluetooth",
             status=self.bt_state["device"],
-            is_active=self.bt_state["powered"]
+            is_active=self.bt_state["powered"],
+            has_chevron=True
         )
         self.bt_btn.connect("clicked", self._on_toggle_bt)
         self.bt_btn.connect("button-press-event", self._on_bt_right_click)
@@ -390,25 +467,27 @@ class ControlCenterWindow(Gtk.Window):
         self.dnd_btn.connect("clicked", self._on_toggle_dnd)
         grid.attach(self.dnd_btn, 0, 2, 1, 1)
 
-        # Wallpaper Gallery Pill
+        # Wallpaper / Theme Pill
         self.wall_btn, _, _ = self._create_toggle_pill(
             icon="󰸉",
-            title="Wallpapers",
-            status="Apri Galleria",
-            is_active=False
+            title="Aspetto",
+            status="Personalizza",
+            is_active=False,
+            has_chevron=True
         )
-        self.wall_btn.connect("clicked", self._on_open_wallpaper_gallery)
+        self.wall_btn.connect("clicked", self._on_open_wallpaper_settings)
         grid.attach(self.wall_btn, 1, 2, 1, 1)
 
         main_box.pack_start(grid, False, False, 0)
         main_box.pack_start(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL), False, False, 0)
 
-        # 3. Interactive Volume Slider Card
+        # 3. Interactive Volume & Brightness Slider Card
         slider_card = Gtk.EventBox()
         slider_card_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         slider_card_box.get_style_context().add_class("slider-card")
         slider_card.add(slider_card_box)
 
+        # Volume Row
         vol_hdr = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         vol_title = Gtk.Label(label="󰕾 Master Volume", xalign=0)
         vol_title.get_style_context().add_class("slider-label")
@@ -425,6 +504,23 @@ class ControlCenterWindow(Gtk.Window):
         self.vol_scale.connect("value-changed", self._on_scale_volume_changed)
         slider_card_box.pack_start(self.vol_scale, False, False, 0)
 
+        # Brightness Row
+        bri_hdr = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        bri_title = Gtk.Label(label="󰃠 Luminosità", xalign=0)
+        bri_title.get_style_context().add_class("slider-label")
+        bri_hdr.pack_start(bri_title, True, True, 0)
+
+        self.bri_val_lbl = Gtk.Label(label=f"{self.brightness}%", xalign=1)
+        self.bri_val_lbl.get_style_context().add_class("slider-value")
+        bri_hdr.pack_end(self.bri_val_lbl, False, False, 0)
+        slider_card_box.pack_start(bri_hdr, False, False, 0)
+
+        self.bri_scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 10, 100, 1)
+        self.bri_scale.set_value(self.brightness)
+        self.bri_scale.set_draw_value(False)
+        self.bri_scale.connect("value-changed", self._on_scale_brightness_changed)
+        slider_card_box.pack_start(self.bri_scale, False, False, 0)
+
         # Sink device switcher button
         sink_short = self.audio_state["sink_desc"]
         if len(sink_short) > 28:
@@ -440,6 +536,50 @@ class ControlCenterWindow(Gtk.Window):
 
         slider_card.connect("scroll-event", self._on_scroll_volume)
         main_box.pack_start(slider_card, False, False, 0)
+
+        # Media Player Card (Visible only when playing/paused)
+        if self.media_info.get("active"):
+            media_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+            media_card.get_style_context().add_class("media-card")
+
+            media_top = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+            media_icon = Gtk.Label(label="󰝚")
+            media_icon.get_style_context().add_class("media-icon")
+            player_name = self.media_info.get("player", "Media")
+            media_player_lbl = Gtk.Label(label=player_name, xalign=0)
+            media_player_lbl.get_style_context().add_class("media-player-name")
+            media_top.pack_start(media_icon, False, False, 0)
+            media_top.pack_start(media_player_lbl, True, True, 0)
+            media_card.pack_start(media_top, False, False, 0)
+
+            title_str = f"{self.media_info.get('title', 'Unknown')} - {self.media_info.get('artist', 'Unknown')}"
+            media_title = Gtk.Label(label=title_str, xalign=0)
+            media_title.get_style_context().add_class("media-track-title")
+            media_title.set_ellipsize(Pango.EllipsizeMode.END)
+            media_title.set_max_width_chars(32)
+            media_card.pack_start(media_title, False, False, 0)
+
+            ctrl_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+            ctrl_box.set_halign(Gtk.Align.CENTER)
+            prev_btn = Gtk.Button(label="󰒮")
+            prev_btn.get_style_context().add_class("media-btn")
+            prev_btn.connect("clicked", lambda b: self._run_media("previous"))
+
+            play_icon = "󰏤" if self.media_info.get("status") == "Playing" else "󰐊"
+            self.play_btn = Gtk.Button(label=play_icon)
+            self.play_btn.get_style_context().add_class("media-btn")
+            self.play_btn.connect("clicked", self._on_toggle_play)
+
+            next_btn = Gtk.Button(label="󰒭")
+            next_btn.get_style_context().add_class("media-btn")
+            next_btn.connect("clicked", lambda b: self._run_media("next"))
+
+            ctrl_box.pack_start(prev_btn, False, False, 0)
+            ctrl_box.pack_start(self.play_btn, False, False, 0)
+            ctrl_box.pack_start(next_btn, False, False, 0)
+            media_card.pack_start(ctrl_box, False, False, 0)
+
+            main_box.pack_start(media_card, False, False, 0)
 
         # 4. Hardware Telemetry Card (Clickable to launch btop)
         hw_card = Gtk.EventBox()
@@ -522,7 +662,7 @@ class ControlCenterWindow(Gtk.Window):
 
         main_box.pack_start(power_box, False, False, 0)
 
-    def _create_toggle_pill(self, icon, title, status, is_active):
+    def _create_toggle_pill(self, icon, title, status, is_active, has_chevron=False):
         btn = Gtk.Button()
         btn.get_style_context().add_class("toggle-pill")
         if is_active:
@@ -541,8 +681,8 @@ class ControlCenterWindow(Gtk.Window):
 
         # Trim long status
         display_status = status
-        if len(display_status) > 16:
-            display_status = display_status[:14] + "..."
+        if len(display_status) > 14:
+            display_status = display_status[:12] + "..."
         status_lbl = Gtk.Label(label=display_status, xalign=0)
         status_lbl.get_style_context().add_class("pill-status")
 
@@ -550,25 +690,49 @@ class ControlCenterWindow(Gtk.Window):
         txt_box.pack_start(status_lbl, False, False, 0)
         box.pack_start(txt_box, True, True, 0)
 
+        if has_chevron:
+            chev = Gtk.Label(label="󰅂")
+            chev.get_style_context().add_class("pill-chevron")
+            box.pack_end(chev, False, False, 0)
+
         return btn, icon_lbl, status_lbl
 
     # --------------------------------------------------------------------------
     # Callbacks & Actions
     # --------------------------------------------------------------------------
 
+    def _on_open_settings(self, btn):
+        self.destroy()
+        cmd = ["python3", os.path.expanduser("~/.config/desktop-settings/desktop_settings.py")]
+        subprocess.Popen(cmd, start_new_session=True)
+
+    def _open_settings_page(self, page_name, fallback_cmd=None):
+        self.destroy()
+        settings_script = os.path.expanduser("~/.config/desktop-settings/desktop_settings.py")
+        if os.path.exists(settings_script):
+            subprocess.Popen(["python3", settings_script, "--page", page_name], start_new_session=True)
+        elif fallback_cmd:
+            subprocess.Popen(fallback_cmd, start_new_session=True)
+
     def _on_wifi_right_click(self, btn, event):
         if event.button == 3: # Right click
-            self.destroy()
-            subprocess.Popen(["alacritty", "--class", "FloatingWifi", "-e", "nmtui"])
+            self._open_settings_page("wifi", ["alacritty", "--class", "FloatingWifi", "-e", "nmtui"])
             return True
         return False
 
     def _on_bt_right_click(self, btn, event):
         if event.button == 3: # Right click
-            self.destroy()
-            subprocess.Popen(["alacritty", "--class", "FloatingBluetooth", "-e", "bluetoothctl"])
+            self._open_settings_page("bluetooth", ["alacritty", "--class", "FloatingBluetooth", "-e", "bluetoothctl"])
             return True
         return False
+
+    def _on_open_wallpaper_settings(self, btn):
+        self._open_settings_page("appearance", [
+            "feh", "-t", "-E", "180", "-y", "140", "-W", "1080", "-H", "720",
+            "--title", "Wallpaper Gallery - Click to Apply",
+            "--action", os.path.expanduser("~/.config/theme/apply-theme.sh '%f'"),
+            os.path.expanduser("~/Pictures/Wallpapers")
+        ])
 
     def _on_toggle_wifi(self, btn):
         curr = self.wifi_state["enabled"]
@@ -634,14 +798,7 @@ class ControlCenterWindow(Gtk.Window):
             self.dnd_btn.get_style_context().remove_class("active")
             self.dnd_sub.set_text("Spento")
 
-    def _on_open_wallpaper_gallery(self, btn):
-        self.destroy()
-        subprocess.Popen([
-            "feh", "-t", "-E", "180", "-y", "140", "-W", "1080", "-H", "720",
-            "--title", "Wallpaper Gallery - Click to Apply",
-            "--action", os.path.expanduser("~/.config/theme/apply-theme.sh '%f'"),
-            os.path.expanduser("~/Pictures/Wallpapers")
-        ])
+
 
     def _on_scroll_volume(self, widget, event):
         curr = int(round(self.vol_scale.get_value()))
@@ -667,6 +824,27 @@ class ControlCenterWindow(Gtk.Window):
             self.mute_btn.get_style_context().add_class("active")
             self.mute_icon.set_text("󰕾")
         self.mute_sub.set_text(f"{val}%")
+
+    def _on_scale_brightness_changed(self, scale):
+        val = int(round(scale.get_value()))
+        self.bri_val_lbl.set_text(f"{val}%")
+        set_brightness(val)
+
+    def _run_media(self, action):
+        subprocess.run(["playerctl", action], check=False)
+        time.sleep(0.1)
+        self._refresh_media()
+
+    def _on_toggle_play(self, btn):
+        subprocess.run(["playerctl", "play-pause"], check=False)
+        time.sleep(0.1)
+        self._refresh_media()
+
+    def _refresh_media(self):
+        self.media_info = get_media_info()
+        if hasattr(self, 'play_btn'):
+            play_icon = "󰏤" if self.media_info.get("status") == "Playing" else "󰐊"
+            self.play_btn.set_label(play_icon)
 
     def _on_switch_output_device(self, btn):
         # Cycle through sinks

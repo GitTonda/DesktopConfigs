@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Wrapper to launch Catppuccin Mocha Desktop Settings
+exec python3 "$HOME/.config/desktop-settings/desktop_settings.py" "$@"

@@ -43,6 +43,7 @@ for_window [class="File-roller|org.gnome.FileRoller"] floating enable, move posi
 for_window [class="FloatingTerm|FloatingBtop|FloatingGPU|FloatingAudio|FloatingWifi|FloatingBluetooth"] floating enable, resize set 950 620, move position center
 for_window [class="(?i)control_center.*|ControlCenter"] floating enable, border none
 for_window [instance="(?i)control_center.*|ControlCenter"] floating enable, border none
+for_window [class="(?i)desktop[-_]settings|DesktopSettings"] floating enable, resize set 960 640, move position center
 # Ori: main application window tiles; all dialogs, popups, and confirmation alerts float in center
 for_window [class="(?i)ori" window_type="normal"] floating disable
 for_window [class="(?i)ori" window_type="dialog"] floating enable, move position center
@@ -104,6 +105,9 @@ bindsym $mod+slash exec --no-startup-id ~/.config/rofi/shortcuts.sh
 
 # Unified Control Center (Super + Shift + S)
 bindsym $mod+Shift+s exec --no-startup-id ~/.config/control-center/toggle.sh
+
+# Desktop Settings App (Super + I)
+bindsym $mod+i exec --no-startup-id ~/.local/bin/desktop-settings
 
 # Window Switcher (Super + Tab and Alt + Tab)
 bindsym $mod+Tab exec --no-startup-id rofi -show window -theme ~/.config/rofi/window.rasi
