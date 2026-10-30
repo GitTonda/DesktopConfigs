@@ -484,15 +484,10 @@ class ControlCenterWindow(Gtk.Window):
         main_box.get_style_context().add_class("main-box")
         self.add(main_box)
 
-        # 1. Header (User & Hostname & Close)
-        header_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        # 1. Header (User & Hostname & Settings)
+        header_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         header_box.get_style_context().add_class("header-box")
 
-        os_icon = Gtk.Label(label="")
-        os_icon.get_style_context().add_class("pill-icon")
-        header_box.pack_start(os_icon, False, False, 0)
-
-        user_host_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1)
         user = os.environ.get("USER", "user")
         hostname = "borch"
         try:
@@ -503,36 +498,16 @@ class ControlCenterWindow(Gtk.Window):
 
         user_lbl = Gtk.Label(label=f"{user}@{hostname}", xalign=0)
         user_lbl.get_style_context().add_class("header-user")
-        
-        # Simple uptime
-        up_str = "Session Active"
-        try:
-            with open("/proc/uptime", "r") as f:
-                up_sec = float(f.readline().split()[0])
-                h = int(up_sec // 3600)
-                m = int((up_sec % 3600) // 60)
-                up_str = f"Uptime: {h}h {m}m"
-        except Exception:
-            pass
-
-        host_lbl = Gtk.Label(label=up_str, xalign=0)
-        host_lbl.get_style_context().add_class("header-host")
-
-        user_host_box.pack_start(user_lbl, False, False, 0)
-        user_host_box.pack_start(host_lbl, False, False, 0)
-        header_box.pack_start(user_host_box, True, True, 0)
-
-        close_btn = Gtk.Button(label="󰅖")
-        close_btn.get_style_context().add_class("close-btn")
-        close_btn.connect("clicked", lambda b: self.destroy())
-        header_box.pack_end(close_btn, False, False, 0)
+        user_lbl.set_valign(Gtk.Align.CENTER)
+        header_box.pack_start(user_lbl, True, True, 0)
 
         # Settings App button (opens desktop-settings)
         settings_btn = Gtk.Button(label="󰒓")
         settings_btn.get_style_context().add_class("settings-btn")
         settings_btn.set_tooltip_text("Open Settings")
+        settings_btn.set_valign(Gtk.Align.CENTER)
         settings_btn.connect("clicked", self._on_open_settings)
-        header_box.pack_end(settings_btn, False, False, 4)
+        header_box.pack_end(settings_btn, False, False, 0)
 
         main_box.pack_start(header_box, False, False, 0)
         main_box.pack_start(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL), False, False, 0)
@@ -1252,7 +1227,8 @@ def main():
     win = ControlCenterWindow()
     x, y = calculate_target_position(win, inset=10)
 
-    win.move(x, y)
+    # Offset by -2, -2 to counteract i3 floating container decoration border offset
+    win.move(x - 2, y - 2)
     win.show_all()
     win.set_keep_above(True)
 
