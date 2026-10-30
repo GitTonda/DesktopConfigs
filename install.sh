@@ -351,7 +351,8 @@ elif command -v apt >/dev/null 2>&1; then
         feh dunst pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils pulseaudio-utils \
         network-manager bluez rfkill brightnessctl playerctl maim xclip xdotool xdg-utils \
         ranger mpv ncdu btop nvtop nano curl unzip git python3 ffmpeg fonts-font-awesome papirus-icon-theme \
-        fzf bat ripgrep fd-find xss-lock imagemagick xsettingsd zoxide libnotify-bin
+        thunar thunar-volman thunar-archive-plugin file-roller tumbler tumbler-plugins-extra ffmpegthumbnailer gvfs gvfs-backends \
+        fzf bat ripgrep fd-find xss-lock imagemagick xsettingsd zoxide libnotify-bin python3-gi gir1.2-gtk-3.0
     step_success "Debian packages installed"
 
     # Symlink Debian-specific binary names (batcat -> bat, fdfind -> fd)
