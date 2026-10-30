@@ -12,6 +12,7 @@ import time
 import re
 import json
 import threading
+import signal
 
 import gi
 gi.require_version('Gtk', '3.0')
@@ -114,13 +115,12 @@ def get_wifi_state():
         radio = subprocess.check_output(["nmcli", "-t", "-f", "WIFI", "g"], text=True, stderr=subprocess.DEVNULL).strip()
         enabled = (radio == "enabled")
         if enabled:
-            out = subprocess.check_output(["nmcli", "-t", "-f", "ACTIVE,SSID", "dev", "wifi"], text=True, stderr=subprocess.DEVNULL)
+            out = subprocess.check_output(["nmcli", "-t", "-f", "NAME,TYPE", "c", "show", "--active"], text=True, stderr=subprocess.DEVNULL)
             for line in out.splitlines():
-                if line.startswith("yes:"):
-                    cur = line.split(":", 1)[1].strip()
-                    if cur:
-                        ssid = cur
-                        break
+                parts = line.rsplit(":", 1)
+                if len(parts) == 2 and "wireless" in parts[1]:
+                    ssid = parts[0]
+                    break
     except Exception:
         pass
     return {"enabled": enabled, "ssid": ssid}
@@ -159,13 +159,30 @@ def get_dnd_state():
 
 
 def get_brightness():
+    # 0. Check cache file
+    cache_file = os.path.expanduser("~/.config/theme/brightness")
+    if os.path.exists(cache_file):
+        try:
+            with open(cache_file, "r") as f:
+                val = int(f.read().strip())
+                return max(10, min(100, val))
+        except Exception:
+            pass
+
     # 1. Check brightnessctl backlight class
     try:
         out = subprocess.check_output(["brightnessctl", "-m"], text=True, stderr=subprocess.DEVNULL)
         for line in out.splitlines():
             parts = line.split(",")
             if len(parts) >= 5 and parts[1] == "backlight":
-                return int(parts[3].replace("%", ""))
+                b = int(parts[3].replace("%", ""))
+                try:
+                    os.makedirs(os.path.dirname(cache_file), exist_ok=True)
+                    with open(cache_file, "w") as f:
+                        f.write(str(b))
+                except Exception:
+                    pass
+                return b
     except Exception:
         pass
 
@@ -175,7 +192,14 @@ def get_brightness():
         m = re.search(r"Brightness:\s*([0-9.]+)", out)
         if m:
             val = float(m.group(1))
-            return int(round(val * 100))
+            b = int(round(val * 100))
+            try:
+                os.makedirs(os.path.dirname(cache_file), exist_ok=True)
+                with open(cache_file, "w") as f:
+                    f.write(str(b))
+            except Exception:
+                pass
+            return b
     except Exception:
         pass
     return 100
@@ -183,6 +207,14 @@ def get_brightness():
 
 def set_brightness(pct):
     pct = max(10, min(100, pct))
+    cache_file = os.path.expanduser("~/.config/theme/brightness")
+    try:
+        os.makedirs(os.path.dirname(cache_file), exist_ok=True)
+        with open(cache_file, "w") as f:
+            f.write(str(pct))
+    except Exception:
+        pass
+
     # 1. Check brightnessctl
     try:
         out = subprocess.check_output(["brightnessctl", "-m"], text=True, stderr=subprocess.DEVNULL)
@@ -247,24 +279,43 @@ def get_memory_info():
     return {"pct": pct, "used_gb": used_gb, "total_gb": total_gb}
 
 
-def get_cpu_info():
-    pct = 0
-    try:
-        def read_cpu():
-            with open("/proc/stat", "r") as f:
-                fields = [float(x) for x in f.readline().strip().split()[1:5]]
-            return sum(fields), fields[3] # total, idle
+_last_cpu_time = 0.0
+_last_cpu_stat = (0.0, 0.0)
 
-        t1, i1 = read_cpu()
-        time.sleep(0.06)
-        t2, i2 = read_cpu()
-        dt = t2 - t1
-        di = i2 - i1
+
+def _read_proc_stat():
+    try:
+        with open("/proc/stat", "r") as f:
+            parts = f.readline().split()[1:]
+            vals = [float(x) for x in parts]
+            total = sum(vals)
+            idle = vals[3] + (vals[4] if len(parts) > 4 else 0.0)
+            return total, idle
+    except Exception:
+        return 0.0, 0.0
+
+
+def get_cpu_info():
+    global _last_cpu_time, _last_cpu_stat
+    now = time.time()
+    t, i = _read_proc_stat()
+    if _last_cpu_stat[0] > 0 and (now - _last_cpu_time) > 0.05:
+        dt = t - _last_cpu_stat[0]
+        di = i - _last_cpu_stat[1]
+        _last_cpu_stat = (t, i)
+        _last_cpu_time = now
         if dt > 0:
             pct = int(round(100.0 * (1.0 - (di / dt))))
+            return min(100, max(0, pct))
+    _last_cpu_stat = (t, i)
+    _last_cpu_time = now
+    try:
+        with open("/proc/loadavg", "r") as f:
+            load = float(f.read().split()[0])
+            cpus = os.cpu_count() or 1
+            return int(min(100, max(0, round((load / cpus) * 100))))
     except Exception:
-        pass
-    return min(100, max(0, pct))
+        return 0
 
 
 # ------------------------------------------------------------------------------
@@ -307,8 +358,18 @@ class ControlCenterWindow(Gtk.Window):
         # Focus settling flag
         self._settled = False
 
+        # Animation state
+        self._target_x = 0
+        self._target_y = 0
+        self._is_closing = False
+        self._is_opening = False
+        self._open_start_time = None
+
         self._build_ui()
         self._apply_css()
+
+        # Telemetry live refresh
+        GLib.timeout_add(1500, self._update_hw_stats)
 
         # Listen for workspace switches to dismiss automatically
         self._start_workspace_listener()
@@ -334,7 +395,7 @@ class ControlCenterWindow(Gtk.Window):
                 )
                 for line in self._i3_sub_proc.stdout:
                     if '"change":"focus"' in line or '"change":"init"' in line:
-                        GLib.idle_add(self.destroy)
+                        GLib.idle_add(self.close_animated)
                         break
             except Exception:
                 pass
@@ -356,7 +417,7 @@ class ControlCenterWindow(Gtk.Window):
         alloc = self.get_allocation()
         # Any click outside the control center bounds dismisses it
         if event.x < 0 or event.y < 0 or event.x > alloc.width or event.y > alloc.height:
-            self.destroy()
+            self.close_animated()
             return True
         return False
 
@@ -442,7 +503,7 @@ class ControlCenterWindow(Gtk.Window):
 
         close_btn = Gtk.Button(label="󰅖")
         close_btn.get_style_context().add_class("close-btn")
-        close_btn.connect("clicked", lambda b: self.destroy())
+        close_btn.connect("clicked", lambda b: self.close_animated())
         header_box.pack_end(close_btn, False, False, 0)
 
         # Settings App button (opens desktop-settings)
@@ -654,30 +715,30 @@ class ControlCenterWindow(Gtk.Window):
         cpu_pct = get_cpu_info()
         cpu_lbl = Gtk.Label(label="CPU Load", xalign=0)
         cpu_lbl.get_style_context().add_class("hw-label")
-        cpu_val = Gtk.Label(label=f"{cpu_pct}%", xalign=1)
-        cpu_val.get_style_context().add_class("hw-value")
+        self.cpu_val = Gtk.Label(label=f"{cpu_pct}%", xalign=1)
+        self.cpu_val.get_style_context().add_class("hw-value")
         cpu_box.pack_start(cpu_lbl, True, True, 0)
-        cpu_box.pack_end(cpu_val, False, False, 0)
+        cpu_box.pack_end(self.cpu_val, False, False, 0)
         hw_card_box.pack_start(cpu_box, False, False, 0)
 
-        cpu_bar = Gtk.ProgressBar()
-        cpu_bar.set_fraction(cpu_pct / 100.0)
-        hw_card_box.pack_start(cpu_bar, False, False, 0)
+        self.cpu_bar = Gtk.ProgressBar()
+        self.cpu_bar.set_fraction(cpu_pct / 100.0)
+        hw_card_box.pack_start(self.cpu_bar, False, False, 0)
 
         # RAM bar
         mem = get_memory_info()
         ram_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         ram_lbl = Gtk.Label(label="Memory (RAM)", xalign=0)
         ram_lbl.get_style_context().add_class("hw-label")
-        ram_val = Gtk.Label(label=f"{mem['used_gb']:.1f} / {mem['total_gb']:.1f} GB ({mem['pct']}%)", xalign=1)
-        ram_val.get_style_context().add_class("hw-value")
+        self.ram_val = Gtk.Label(label=f"{mem['used_gb']:.1f} / {mem['total_gb']:.1f} GB ({mem['pct']}%)", xalign=1)
+        self.ram_val.get_style_context().add_class("hw-value")
         ram_box.pack_start(ram_lbl, True, True, 0)
-        ram_box.pack_end(ram_val, False, False, 0)
+        ram_box.pack_end(self.ram_val, False, False, 0)
         hw_card_box.pack_start(ram_box, False, False, 0)
 
-        ram_bar = Gtk.ProgressBar()
-        ram_bar.set_fraction(mem['pct'] / 100.0)
-        hw_card_box.pack_start(ram_bar, False, False, 0)
+        self.ram_bar = Gtk.ProgressBar()
+        self.ram_bar.set_fraction(mem['pct'] / 100.0)
+        hw_card_box.pack_start(self.ram_bar, False, False, 0)
 
         hw_card.connect("button-press-event", self._on_launch_btop)
         main_box.pack_start(hw_card, False, False, 0)
@@ -754,12 +815,12 @@ class ControlCenterWindow(Gtk.Window):
     # --------------------------------------------------------------------------
 
     def _on_open_settings(self, btn):
-        self.destroy()
+        self.close_animated()
         cmd = ["python3", os.path.expanduser("~/.config/desktop-settings/desktop_settings.py")]
         subprocess.Popen(cmd, start_new_session=True)
 
     def _open_settings_page(self, page_name, fallback_cmd=None):
-        self.destroy()
+        self.close_animated()
         settings_script = os.path.expanduser("~/.config/desktop-settings/desktop_settings.py")
         if os.path.exists(settings_script):
             subprocess.Popen(["python3", settings_script, "--page", page_name], start_new_session=True)
@@ -931,23 +992,123 @@ class ControlCenterWindow(Gtk.Window):
             pass
 
     def _on_launch_btop(self, box, event):
-        self.destroy()
+        self.close_animated()
         subprocess.Popen(["alacritty", "--class", "FloatingBtop", "-e", "btop"])
 
     def _run_action(self, cmd):
-        self.destroy()
+        self.close_animated()
         # Expand user in cmd
         expanded = [os.path.expanduser(c) for c in cmd]
         subprocess.Popen(expanded)
 
     def _on_key_press(self, widget, event):
         if event.keyval == Gdk.KEY_Escape:
-            self.destroy()
+            self.close_animated()
             return True
         return False
 
     def _on_focus_out(self, widget, event):
         return False
+
+    def _update_hw_stats(self):
+        if self._is_closing:
+            return False
+        cpu_pct = get_cpu_info()
+        mem = get_memory_info()
+        if hasattr(self, 'cpu_val') and hasattr(self, 'cpu_bar'):
+            self.cpu_val.set_text(f"{cpu_pct}%")
+            self.cpu_bar.set_fraction(cpu_pct / 100.0)
+        if hasattr(self, 'ram_val') and hasattr(self, 'ram_bar'):
+            self.ram_val.set_text(f"{mem['used_gb']:.1f} / {mem['total_gb']:.1f} GB ({mem['pct']}%)")
+            self.ram_bar.set_fraction(mem['pct'] / 100.0)
+        return True
+
+    def start_open_animation(self, target_x, target_y):
+        self._target_x = target_x
+        self._target_y = target_y
+        self._is_opening = True
+        self._is_closing = False
+        self._open_start_time = None
+        self._open_start_y = target_y - 24
+        self._open_duration_ms = 160.0
+
+        self.set_opacity(0.0)
+        self.show_all()
+        self.move(target_x, self._open_start_y)
+        self.set_keep_above(True)
+
+        subprocess.run([
+            "i3-msg",
+            f'[class="(?i)control_center.*|ControlCenter"] border none, move position {target_x} {self._open_start_y}, focus'
+        ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+
+        def _on_open_tick(widget, frame_clock):
+            if self._is_closing:
+                return False
+            now = frame_clock.get_frame_time() / 1000.0
+            if self._open_start_time is None:
+                self._open_start_time = now
+            elapsed = now - self._open_start_time
+            p = min(1.0, elapsed / self._open_duration_ms)
+            # Cubic ease-out
+            ease = 1.0 - (1.0 - p) ** 3
+            cur_y = int(round(self._open_start_y + (self._target_y - self._open_start_y) * ease))
+            self.move(self._target_x, cur_y)
+            self.set_opacity(max(0.05, ease))
+
+            if p >= 1.0:
+                self.move(self._target_x, self._target_y)
+                self.set_opacity(1.0)
+                self._is_opening = False
+                return False
+            return True
+
+        self.add_tick_callback(_on_open_tick)
+
+    def close_animated(self):
+        if self._is_closing:
+            return
+        self._is_closing = True
+        self._is_opening = False
+
+        try:
+            seat = Gdk.Display.get_default().get_default_seat()
+            if seat:
+                seat.ungrab()
+        except Exception:
+            pass
+
+        start_x, start_y = self.get_position()
+        start_opacity = self.get_opacity() if hasattr(self, 'get_opacity') else 1.0
+        end_y = self._target_y - 20
+        duration_ms = 120.0
+        start_time = None
+
+        def _on_close_tick(widget, frame_clock):
+            nonlocal start_time
+            now = frame_clock.get_frame_time() / 1000.0
+            if start_time is None:
+                start_time = now
+            elapsed = now - start_time
+            p = min(1.0, elapsed / duration_ms)
+            # Quadratic ease-in
+            ease = p * p
+            cur_y = int(round(start_y + (end_y - start_y) * ease))
+            cur_op = max(0.0, start_opacity * (1.0 - ease))
+
+            self.move(self._target_x, cur_y)
+            self.set_opacity(cur_op)
+
+            if p >= 1.0:
+                self.destroy()
+                return False
+            return True
+
+        self.add_tick_callback(_on_close_tick)
+
+    def _on_sigterm(self):
+        self.close_animated()
+        return GLib.SOURCE_REMOVE
 
 
 # ------------------------------------------------------------------------------
@@ -1043,19 +1204,11 @@ def main():
         pass
 
     win = ControlCenterWindow()
-    win.show_all()
-    win.set_keep_above(True)
-
     x, y = calculate_target_position(win, inset=10)
 
-    win.move(x, y)
-    win.present()
+    GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGTERM, win._on_sigterm)
 
-    subprocess.run([
-        "i3-msg",
-        f'[class="(?i)control_center.*|ControlCenter"] border none, move position {x} {y}, focus'
-    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
-
+    win.start_open_animation(x, y)
     Gtk.main()
 
 

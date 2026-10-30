@@ -322,12 +322,27 @@ def get_displays_info():
 
 
 def get_brightness():
+    cache_file = os.path.expanduser("~/.config/theme/brightness")
+    if os.path.exists(cache_file):
+        try:
+            with open(cache_file, "r") as f:
+                val = int(f.read().strip())
+                return max(10, min(100, val))
+        except Exception:
+            pass
     try:
         out = subprocess.check_output(["brightnessctl", "-m"], text=True, stderr=subprocess.DEVNULL)
         for line in out.splitlines():
             parts = line.split(",")
             if len(parts) >= 5 and parts[1] == "backlight":
-                return int(parts[3].replace("%", ""))
+                b = int(parts[3].replace("%", ""))
+                try:
+                    os.makedirs(os.path.dirname(cache_file), exist_ok=True)
+                    with open(cache_file, "w") as f:
+                        f.write(str(b))
+                except Exception:
+                    pass
+                return b
     except Exception:
         pass
     try:
@@ -335,7 +350,14 @@ def get_brightness():
         m = re.search(r"Brightness:\s*([0-9.]+)", out)
         if m:
             val = float(m.group(1))
-            return int(round(val * 100))
+            b = int(round(val * 100))
+            try:
+                os.makedirs(os.path.dirname(cache_file), exist_ok=True)
+                with open(cache_file, "w") as f:
+                    f.write(str(b))
+            except Exception:
+                pass
+            return b
     except Exception:
         pass
     return 100
@@ -343,6 +365,13 @@ def get_brightness():
 
 def set_brightness(pct):
     pct = max(10, min(100, pct))
+    cache_file = os.path.expanduser("~/.config/theme/brightness")
+    try:
+        os.makedirs(os.path.dirname(cache_file), exist_ok=True)
+        with open(cache_file, "w") as f:
+            f.write(str(pct))
+    except Exception:
+        pass
     try:
         out = subprocess.check_output(["brightnessctl", "-m"], text=True, stderr=subprocess.DEVNULL)
         for line in out.splitlines():
