@@ -333,7 +333,7 @@ class ControlCenterWindow(Gtk.Window):
         self.set_role("pop-up")
         self.set_decorated(False)
         self.set_resizable(False)
-        self.set_default_size(380, -1)
+        self.set_default_size(390, -1)
         self.set_app_paintable(True)
         self.set_skip_taskbar_hint(True)
         self.set_skip_pager_hint(True)
@@ -1029,17 +1029,21 @@ class ControlCenterWindow(Gtk.Window):
         self._is_opening = True
         self._is_closing = False
         self._open_start_time = None
-        self._open_start_y = target_y - 24
-        self._open_duration_ms = 160.0
+
+        # Mac-like: emerges smoothly from top-right status bar icon
+        delta_x = 24
+        delta_y = 28
+        self._open_start_x = target_x + delta_x
+        self._open_start_y = target_y - delta_y
+        self._open_duration_ms = 260.0
 
         self.set_opacity(0.0)
-        self.show_all()
-        self.move(target_x, self._open_start_y)
+        self.move(self._open_start_x, self._open_start_y)
         self.set_keep_above(True)
 
         subprocess.run([
             "i3-msg",
-            f'[class="(?i)control_center.*|ControlCenter"] border none, move position {target_x} {self._open_start_y}, focus'
+            f'[class="(?i)control_center.*|ControlCenter"] border none, move position {self._open_start_x} {self._open_start_y}, focus'
         ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
 
         def _on_open_tick(widget, frame_clock):
@@ -1050,11 +1054,14 @@ class ControlCenterWindow(Gtk.Window):
                 self._open_start_time = now
             elapsed = now - self._open_start_time
             p = min(1.0, elapsed / self._open_duration_ms)
-            # Cubic ease-out
-            ease = 1.0 - (1.0 - p) ** 3
+            # Smooth macOS quintic ease-out deceleration
+            ease = 1.0 - pow(1.0 - p, 3.5)
+            cur_x = int(round(self._open_start_x + (self._target_x - self._open_start_x) * ease))
             cur_y = int(round(self._open_start_y + (self._target_y - self._open_start_y) * ease))
-            self.move(self._target_x, cur_y)
-            self.set_opacity(max(0.05, ease))
+            cur_op = min(1.0, (1.0 - pow(1.0 - p, 2.5)) * 1.05)
+
+            self.move(cur_x, cur_y)
+            self.set_opacity(cur_op)
 
             if p >= 1.0:
                 self.move(self._target_x, self._target_y)
@@ -1080,8 +1087,13 @@ class ControlCenterWindow(Gtk.Window):
 
         start_x, start_y = self.get_position()
         start_opacity = self.get_opacity() if hasattr(self, 'get_opacity') else 1.0
-        end_y = self._target_y - 20
-        duration_ms = 120.0
+
+        # Mac-like: focuses and collapses into the top-right corner where the status icon is
+        delta_x = 24
+        delta_y = 28
+        end_x = self._target_x + delta_x
+        end_y = self._target_y - delta_y
+        duration_ms = 240.0
         start_time = None
 
         def _on_close_tick(widget, frame_clock):
@@ -1091,12 +1103,13 @@ class ControlCenterWindow(Gtk.Window):
                 start_time = now
             elapsed = now - start_time
             p = min(1.0, elapsed / duration_ms)
-            # Quadratic ease-in
-            ease = p * p
+            # Smooth macOS ease-in acceleration towards the corner icon
+            ease = pow(p, 2.5)
+            cur_x = int(round(start_x + (end_x - start_x) * ease))
             cur_y = int(round(start_y + (end_y - start_y) * ease))
-            cur_op = max(0.0, start_opacity * (1.0 - ease))
+            cur_op = max(0.0, start_opacity * (1.0 - pow(p, 1.8)))
 
-            self.move(self._target_x, cur_y)
+            self.move(cur_x, cur_y)
             self.set_opacity(cur_op)
 
             if p >= 1.0:
@@ -1185,9 +1198,12 @@ def calculate_target_position(win, inset=10):
         target_top = geom.y + 40
         target_right = geom.x + geom.width - 7
 
+    min_w, nat_w = win.get_preferred_width()
+    alloc = win.get_allocation()
     win_w, _ = win.get_size()
-    _, nat_size = win.get_preferred_size()
-    panel_width = max(win_w, nat_size.width)
+    panel_width = max(win_w, min_w, nat_w, alloc.width)
+    if panel_width <= 1:
+        panel_width = 390
 
     x = int(target_right - panel_width - inset)
     y = int(target_top + inset)
@@ -1204,6 +1220,9 @@ def main():
         pass
 
     win = ControlCenterWindow()
+    win.set_opacity(0.0)
+    win.show_all()
+
     x, y = calculate_target_position(win, inset=10)
 
     GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGTERM, win._on_sigterm)
