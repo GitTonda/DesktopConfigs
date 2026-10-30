@@ -64,7 +64,23 @@ do_pull() {
     mkdir -p "$HOME/Pictures/Wallpapers"
     cp -r "$DOTFILES_DIR/wallpapers/"* "$HOME/Pictures/Wallpapers/"
 
-    # Xresources
+    # Icons & Desktop Applications
+    if [ -d "$DOTFILES_DIR/icons" ]; then
+        mkdir -p "$HOME/.local/share/icons/hicolor/scalable/apps"
+        cp -r "$DOTFILES_DIR/icons/"* "$HOME/.local/share/icons/" 2>/dev/null || true
+        cp -r "$DOTFILES_DIR/icons/"*.svg "$HOME/.local/share/icons/hicolor/scalable/apps/" 2>/dev/null || true
+        command -v gtk-update-icon-cache >/dev/null 2>&1 && gtk-update-icon-cache "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
+    fi
+
+    if [ -d "$DOTFILES_DIR/applications" ]; then
+        mkdir -p "$HOME/.local/share/applications"
+        cp -r "$DOTFILES_DIR/applications/"* "$HOME/.local/share/applications/" 2>/dev/null || true
+    fi
+
+    # Home dotfiles & Xresources
+    [ -f "$DOTFILES_DIR/home/.nanorc" ] && cp "$DOTFILES_DIR/home/.nanorc" "$HOME/.nanorc"
+    [ -f "$DOTFILES_DIR/home/.xinputrc" ] && cp "$DOTFILES_DIR/home/.xinputrc" "$HOME/.xinputrc"
+    [ -f "$DOTFILES_DIR/home/.xinitrc" ] && { cp "$DOTFILES_DIR/home/.xinitrc" "$HOME/.xinitrc"; chmod +x "$HOME/.xinitrc" 2>/dev/null || true; }
     if [ -f "$DOTFILES_DIR/Xresources" ]; then
         cp "$DOTFILES_DIR/Xresources" "$HOME/.Xresources"
         xrdb -merge "$HOME/.Xresources" 2>/dev/null || true
@@ -83,7 +99,16 @@ do_pull() {
         fi
     fi
 
-    # Ensure executable permissions on all helper scripts
+    # Ensure executable permissions and link CLI helper scripts
+    mkdir -p "$HOME/.local/bin"
+    for script in "$DOTFILES_DIR/scripts/"*; do
+        if [ -f "$script" ]; then
+            chmod +x "$script" 2>/dev/null || true
+            ln -sf "$script" "$HOME/.local/bin/$(basename "$script")"
+        fi
+    done
+    [ -f "$HOME/.config/rofi/shortcuts.py" ] && ln -sf "$HOME/.config/rofi/shortcuts.py" "$HOME/.local/bin/shortcuts-manager"
+
     chmod +x "$HOME/.config/polybar/launch.sh" 2>/dev/null || true
     chmod +x "$HOME/.config/polybar/scripts/"*.sh 2>/dev/null || true
     chmod +x "$HOME/.config/dunst/launch.sh" 2>/dev/null || true
@@ -92,9 +117,6 @@ do_pull() {
     chmod +x "$HOME/.config/theme/apply-theme.sh" 2>/dev/null || true
     chmod +x "$HOME/.config/i3/screenshot.sh" "$HOME/.config/i3/lock.sh" 2>/dev/null || true
     chmod +x "$HOME/.config/zen/setup-zen.sh" 2>/dev/null || true
-    chmod +x "$DOTFILES_DIR/scripts/ori" "$DOTFILES_DIR/scripts/ori-window" 2>/dev/null || true
-    ln -sf "$DOTFILES_DIR/scripts/ori" "$HOME/.local/bin/ori" 2>/dev/null || true
-    ln -sf "$DOTFILES_DIR/scripts/ori-window" "$HOME/.local/bin/ori-window" 2>/dev/null || true
 
     # Auto-install, configure, and customize Zen Browser
     if [ -x "$HOME/.config/zen/setup-zen.sh" ]; then
@@ -160,8 +182,8 @@ do_push() {
     echo -e "${BLUE}${BOLD}==> Collecting local configurations from ~/.config/...${NC}"
     cd "$DOTFILES_DIR"
 
-    # Sync changed configs into dotfiles repo
-    for dir in alacritty autostart dunst fastfetch gtk-3.0 gtk-4.0 i3 ly openrgb ori picom polybar rofi systemd theme zen Thunar xfce4 xsettingsd; do
+    # Sync changed configs into dotfiles repo (including consoles, utilities, apps, gaming, custom themes)
+    for dir in alacritty autostart bat btop dunst dxvk environment.d fastfetch gtk-3.0 gtk-4.0 i3 ly MangoHud openrgb ori picom polybar rofi systemd theme zen Thunar xfce4 xsettingsd; do
         if [ -d "$HOME/.config/$dir" ]; then
             mkdir -p "$DOTFILES_DIR/config/$dir"
             cp -a "$HOME/.config/$dir/"* "$DOTFILES_DIR/config/$dir/" 2>/dev/null || true
@@ -170,6 +192,22 @@ do_push() {
 
     # Clean any __pycache__
     rm -rf "$DOTFILES_DIR/config/rofi/__pycache__"
+
+    # Sync single configuration files
+    [ -f "$HOME/.config/starship.toml" ] && cp "$HOME/.config/starship.toml" "$DOTFILES_DIR/config/starship.toml"
+
+    # Sync custom icons & desktop applications
+    if [ -d "$HOME/.local/share/icons" ]; then
+        mkdir -p "$DOTFILES_DIR/icons"
+        [ -f "$HOME/.local/share/icons/ori.svg" ] && cp "$HOME/.local/share/icons/ori.svg" "$DOTFILES_DIR/icons/ori.svg"
+    fi
+
+    if [ -d "$HOME/.local/share/applications" ]; then
+        mkdir -p "$DOTFILES_DIR/applications"
+        for app in ori.desktop wallpaper-picker.desktop; do
+            [ -f "$HOME/.local/share/applications/$app" ] && cp "$HOME/.local/share/applications/$app" "$DOTFILES_DIR/applications/$app"
+        done
+    fi
 
     # Sync wallpapers
     if [ -d "$HOME/Pictures/Wallpapers" ]; then

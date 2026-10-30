@@ -439,7 +439,7 @@ if [ "$DRY_RUN" = true ]; then
 else
     backup_existing_configs() {
         mkdir -p "$BACKUP_DIR"
-        for app in i3 polybar alacritty rofi picom dunst fastfetch zen Thunar xsettingsd; do
+        for app in i3 polybar alacritty rofi picom dunst fastfetch btop dxvk environment.d MangoHud zen Thunar xsettingsd; do
             if [ -d "$HOME/.config/$app" ] || [ -f "$HOME/.config/$app" ]; then
                 cp -a "$HOME/.config/$app" "$BACKUP_DIR/" 2>/dev/null || true
             fi
@@ -483,12 +483,14 @@ else
 
         # Link CLI management tools
         mkdir -p "$HOME/.local/bin"
-        chmod +x "$DOTFILES_DIR/scripts/dotfiles"
-        ln -sf "$DOTFILES_DIR/scripts/dotfiles" "$HOME/.local/bin/dotfiles"
+        for script in "$DOTFILES_DIR/scripts/"*; do
+            if [ -f "$script" ]; then
+                chmod +x "$script" 2>/dev/null || true
+                ln -sf "$script" "$HOME/.local/bin/$(basename "$script")"
+            fi
+        done
         ln -sf "$DOTFILES_DIR/scripts/dotfiles" "$HOME/.local/bin/update-desktop"
         ln -sf "$DOTFILES_DIR/scripts/dotfiles" "$HOME/.local/bin/desktop-update"
-        ln -sf "$DOTFILES_DIR/scripts/ori" "$HOME/.local/bin/ori" 2>/dev/null || true
-        ln -sf "$DOTFILES_DIR/scripts/ori-window" "$HOME/.local/bin/ori-window" 2>/dev/null || true
         ln -sf "$HOME/.config/rofi/shortcuts.py" "$HOME/.local/bin/shortcuts-manager"
 
         # System-wide binary links if sudo permits
@@ -498,37 +500,11 @@ else
             sudo ln -sf "$HOME/.config/rofi/shortcuts.py" "/usr/local/bin/shortcuts-manager" 2>/dev/null || true
         fi
 
-        # Desktop Launchers
+        # Desktop Launchers & Icons
         mkdir -p "$HOME/.local/share/applications" "$HOME/.local/share/icons"
-        [ -f "$DOTFILES_DIR/icons/ori.svg" ] && cp "$DOTFILES_DIR/icons/ori.svg" "$HOME/.local/share/icons/ori.svg"
-
-        cat << 'EOF' > "$HOME/.local/share/applications/ori.desktop"
-[Desktop Entry]
-Version=1.0
-Type=Application
-Name=Ori
-GenericName=Local AI Assistant & System Co-Pilot
-Comment=Autonomous Local AI Assistant for Linux System Monitoring & Modifications
-Exec=$HOME/.local/bin/ori-window
-Icon=$HOME/.local/share/icons/ori.svg
-Terminal=false
-Categories=Utility;System;Development;ArtificialIntelligence;
-StartupNotify=true
-StartupWMClass=FloatingOri
-Keywords=ai;assistant;ollama;ori;system;monitor;plan;local;
-EOF
-
-        cat << 'EOF' > "$HOME/.local/share/applications/wallpaper-picker.desktop"
-[Desktop Entry]
-Type=Application
-Name=Wallpaper Selector
-Comment=Change desktop wallpaper with Rofi or Visual Gallery
-Exec=$HOME/.config/rofi/wallpaper.sh
-Icon=preferences-desktop-wallpaper
-Terminal=false
-Categories=Utility;Settings;DesktopSettings;
-Keywords=wallpaper;background;feh;catppuccin;
-EOF
+        if [ -d "$DOTFILES_DIR/applications" ]; then
+            cp -r "$DOTFILES_DIR/applications/"* "$HOME/.local/share/applications/" 2>/dev/null || true
+        fi
 
         # Wallpapers
         mkdir -p "$HOME/Pictures/Wallpapers"
