@@ -196,6 +196,12 @@ def get_wifi_networks():
 
 
 def get_bluetooth_state():
+    try:
+        rf = subprocess.check_output(["rfkill", "list", "bluetooth"], text=True, stderr=subprocess.DEVNULL)
+        if "Soft blocked: yes" in rf or "Hard blocked: yes" in rf:
+            return False
+    except Exception:
+        pass
     powered = False
     try:
         out = subprocess.check_output(["bluetoothctl", "show"], text=True, stderr=subprocess.DEVNULL)
@@ -766,9 +772,24 @@ class BluetoothPage(Gtk.ScrolledWindow):
         self._populate_devices()
 
     def _on_power_switch(self, sw, state):
-        cmd = ["bluetoothctl", "power", "on" if state else "off"]
-        subprocess.run(cmd, check=False)
-        GLib.timeout_add(600, self._populate_devices)
+        def _worker():
+            if state:
+                subprocess.run(["rfkill", "unblock", "bluetooth"], check=False)
+                for _ in range(6):
+                    time.sleep(0.15)
+                    try:
+                        out = subprocess.check_output(["bluetoothctl", "show"], text=True, stderr=subprocess.DEVNULL)
+                        if "Powered: yes" in out:
+                            break
+                    except Exception:
+                        pass
+                    subprocess.run(["bluetoothctl", "power", "on"], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            else:
+                subprocess.run(["bluetoothctl", "power", "off"], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                subprocess.run(["rfkill", "block", "bluetooth"], check=False)
+            GLib.idle_add(self._populate_devices)
+
+        threading.Thread(target=_worker, daemon=True).start()
         return False
 
     def _on_scan_bt(self, btn):

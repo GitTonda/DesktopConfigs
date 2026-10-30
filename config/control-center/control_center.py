@@ -130,6 +130,12 @@ def get_bluetooth_state():
     powered = False
     device_name = "Disconnected"
     try:
+        rf = subprocess.check_output(["rfkill", "list", "bluetooth"], text=True, stderr=subprocess.DEVNULL)
+        if "Soft blocked: yes" in rf or "Hard blocked: yes" in rf:
+            return {"powered": False, "device": "Off"}
+    except Exception:
+        pass
+    try:
         out = subprocess.check_output(["bluetoothctl", "show"], text=True, stderr=subprocess.DEVNULL)
         powered = "Powered: yes" in out
         if powered:
@@ -893,7 +899,29 @@ class ControlCenterWindow(Gtk.Window):
             self.bt_sub.set_text("Off")
 
         def _worker():
-            subprocess.run(["bluetoothctl", "power", "on" if new_state else "off"], check=False)
+            if new_state:
+                subprocess.run(["rfkill", "unblock", "bluetooth"], check=False)
+                for _ in range(6):
+                    time.sleep(0.15)
+                    try:
+                        out = subprocess.check_output(["bluetoothctl", "show"], text=True, stderr=subprocess.DEVNULL)
+                        if "Powered: yes" in out:
+                            break
+                    except Exception:
+                        pass
+                    subprocess.run(["bluetoothctl", "power", "on"], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            else:
+                subprocess.run(["bluetoothctl", "power", "off"], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                subprocess.run(["rfkill", "block", "bluetooth"], check=False)
+                for _ in range(4):
+                    time.sleep(0.1)
+                    try:
+                        out = subprocess.check_output(["bluetoothctl", "show"], text=True, stderr=subprocess.DEVNULL)
+                        if "Powered: yes" not in out:
+                            break
+                    except Exception:
+                        pass
+
             st = get_bluetooth_state()
             def _apply():
                 self.bt_state = st
