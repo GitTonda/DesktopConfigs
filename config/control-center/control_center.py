@@ -11,6 +11,7 @@ import shutil
 import time
 import re
 import json
+import threading
 
 import gi
 gi.require_version('Gtk', '3.0')
@@ -309,6 +310,9 @@ class ControlCenterWindow(Gtk.Window):
         self._build_ui()
         self._apply_css()
 
+        # Listen for workspace switches to dismiss automatically
+        self._start_workspace_listener()
+
         # Enable pointer and focus events
         self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.FOCUS_CHANGE_MASK)
 
@@ -318,6 +322,25 @@ class ControlCenterWindow(Gtk.Window):
         self.connect("focus-out-event", self._on_focus_out)
         self.connect("key-press-event", self._on_key_press)
         self.connect("destroy", self._on_destroy)
+
+    def _start_workspace_listener(self):
+        def _watch():
+            try:
+                self._i3_sub_proc = subprocess.Popen(
+                    ["i3-msg", "-t", "subscribe", "-m", '["workspace"]'],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.DEVNULL,
+                    text=True
+                )
+                for line in self._i3_sub_proc.stdout:
+                    if '"change":"focus"' in line or '"change":"init"' in line:
+                        GLib.idle_add(self.destroy)
+                        break
+            except Exception:
+                pass
+
+        t = threading.Thread(target=_watch, daemon=True)
+        t.start()
 
     def _on_map(self, widget, event):
         seat = Gdk.Display.get_default().get_default_seat()
@@ -338,6 +361,11 @@ class ControlCenterWindow(Gtk.Window):
         return False
 
     def _on_destroy(self, widget):
+        if hasattr(self, '_i3_sub_proc') and self._i3_sub_proc:
+            try:
+                self._i3_sub_proc.terminate()
+            except Exception:
+                pass
         try:
             seat = Gdk.Display.get_default().get_default_seat()
             if seat:
