@@ -84,37 +84,19 @@ bindsym $mod+Shift+f exec --no-startup-id thunar
 bindsym $mod+Ctrl+l exec --no-startup-id ~/.config/i3/lock.sh
 bindsym XF86ScreenSaver exec --no-startup-id ~/.config/i3/lock.sh
 
-# Launch system monitor (Rofi System Dashboard / Btop)
-bindsym $mod+Shift+m exec --no-startup-id ~/.config/rofi/system.sh
+# Launch system monitor (Btop)
 bindsym $mod+Ctrl+m exec --no-startup-id alacritty --class FloatingBtop -e btop
+bindsym $mod+Shift+m exec --no-startup-id alacritty --class FloatingBtop -e btop
 
-# Launch GPU monitor & dashboard (Rofi / nvitop)
-bindsym $mod+Shift+g exec --no-startup-id ~/.config/rofi/gpu.sh
-
-# Quick applet keybindings
-bindsym $mod+Shift+w exec --no-startup-id ~/.config/rofi/wifi.sh
-bindsym $mod+Shift+t exec --no-startup-id ~/.config/rofi/bluetooth.sh
-bindsym $mod+Shift+a exec --no-startup-id ~/.config/rofi/volume.sh
-bindsym $mod+Ctrl+a exec --no-startup-id alacritty --class FloatingAudio -e alsamixer
-bindsym $mod+Shift+b exec --no-startup-id ~/.config/rofi/wallpaper.sh
-bindsym $mod+Shift+o exec --no-startup-id ~/.config/rofi/rgb.sh
-bindsym $mod+Shift+x exec --no-startup-id ~/.config/rofi/cursor.sh
+# Reload polybar
 bindsym $mod+Shift+p exec --no-startup-id ~/.config/polybar/launch.sh
-bindsym $mod+F1 exec --no-startup-id ~/.config/rofi/shortcuts.sh
-bindsym $mod+slash exec --no-startup-id ~/.config/rofi/shortcuts.sh
 
-# Unified Control Center (Super + Shift + S)
+# Unified Control Center (Super + Shift + S or Super + Escape)
 bindsym $mod+Shift+s exec --no-startup-id ~/.config/control-center/toggle.sh
+bindsym $mod+Escape exec --no-startup-id ~/.config/control-center/toggle.sh
 
 # Desktop Settings App (Super + I)
 bindsym $mod+i exec --no-startup-id ~/.local/bin/desktop-settings
-
-# Window Switcher (Super + Tab and Alt + Tab)
-bindsym $mod+Tab exec --no-startup-id rofi -show window -theme ~/.config/rofi/window.rasi
-bindsym Mod1+Tab exec --no-startup-id rofi -show window -theme ~/.config/rofi/window.rasi
-
-# Clipboard Manager (Super + Shift + V)
-bindsym $mod+Shift+v exec --no-startup-id ~/.config/rofi/clipboard.sh
 
 # Launch application launcher (Rofi)
 bindsym $mod+d exec --no-startup-id rofi -show drun
@@ -149,9 +131,8 @@ bindsym $mod+a focus parent
 bindsym $mod+Shift+c reload
 bindsym $mod+Shift+r restart
 
-# Power Menu (Shutdown, Reboot, Suspend, Logout)
-bindsym $mod+Shift+e exec --no-startup-id ~/.config/rofi/powermenu.sh
-bindsym $mod+Escape exec --no-startup-id ~/.config/rofi/powermenu.sh
+# Exit i3
+bindsym $mod+Shift+e exec "i3-nagbar -t warning -m 'Exit i3?' -B 'Yes, exit i3' 'i3-msg exit'"
 
 # ==============================================================================
 # Window Navigation
@@ -283,7 +264,6 @@ exec_always --no-startup-id ~/.config/dunst/launch.sh
 # Timeout: 10m screensaver (600s), DPMS standby 15m (900s), suspend 20m (1200s), off 30m (1800s)
 exec_always --no-startup-id xset s 600 600 +dpms dpms 900 1200 1800
 exec_always --no-startup-id bash -c 'pgrep -x xss-lock >/dev/null || xss-lock --transfer-sleep-lock -- ~/.config/i3/lock.sh'
-exec_always --no-startup-id bash -c 'pgrep -f clip_daemon.py >/dev/null || python3 ~/.config/rofi/clip_daemon.py'
 
 # ==============================================================================
 # Custom User Shortcuts

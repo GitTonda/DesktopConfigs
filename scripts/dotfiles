@@ -107,13 +107,10 @@ do_pull() {
             ln -sf "$script" "$HOME/.local/bin/$(basename "$script")"
         fi
     done
-    [ -f "$HOME/.config/rofi/shortcuts.py" ] && ln -sf "$HOME/.config/rofi/shortcuts.py" "$HOME/.local/bin/shortcuts-manager"
-
     chmod +x "$HOME/.config/polybar/launch.sh" 2>/dev/null || true
     chmod +x "$HOME/.config/polybar/scripts/"*.sh 2>/dev/null || true
     chmod +x "$HOME/.config/dunst/launch.sh" 2>/dev/null || true
     chmod +x "$HOME/.config/dunst/scripts/"*.sh 2>/dev/null || true
-    chmod +x "$HOME/.config/rofi/"*.sh "$HOME/.config/rofi/"*.py 2>/dev/null || true
     chmod +x "$HOME/.config/control-center/"*.sh "$HOME/.config/control-center/"*.py 2>/dev/null || true
     chmod +x "$HOME/.config/theme/apply-theme.sh" 2>/dev/null || true
     chmod +x "$HOME/.config/i3/screenshot.sh" "$HOME/.config/i3/lock.sh" 2>/dev/null || true

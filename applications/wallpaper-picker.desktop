@@ -2,7 +2,7 @@
 Type=Application
 Name=Wallpaper Selector
 Comment=Change desktop wallpaper with Rofi or Visual Gallery
-Exec=sh -c '"$HOME/.config/rofi/wallpaper.sh"'
+Exec=desktop-settings --page appearance
 Icon=preferences-desktop-wallpaper
 Terminal=false
 Categories=Utility;Settings;DesktopSettings;

@@ -95,6 +95,6 @@ subprocess.run([
 '
         ;;
     *)
-        exec ~/.config/rofi/system.sh
+        exec ~/.config/control-center/toggle.sh
         ;;
 esac
