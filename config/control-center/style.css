@@ -28,7 +28,7 @@ window {
 
 .main-box {
     background-color: rgba(17, 17, 27, @opacity@);
-    border: 2px solid @accent@;
+    border: 1px solid @accent_border@;
     padding: 16px;
 }
 
@@ -141,36 +141,37 @@ button.toggle-pill:hover {
     color: #a6adc8;
 }
 
-/* Active Pill State - Android Style Clear High Contrast Accent */
+/* Active Pill State - Refined Soft Accent */
 .toggle-pill.active,
 button.toggle-pill.active {
     background-image: none;
-    background-color: @accent@;
+    background-color: @accent_dim@;
     border: 1px solid @accent@;
 }
 
 .toggle-pill.active:hover,
 button.toggle-pill.active:hover {
     background-image: none;
-    background-color: @accent@;
+    background-color: @accent_dim@;
+    border: 1px solid @accent@;
 }
 
 .toggle-pill.active .pill-icon {
-    color: #11111b;
+    color: @accent@;
 }
 
 .toggle-pill.active .pill-title {
-    color: #11111b;
+    color: #cdd6f4;
     font-weight: bold;
 }
 
 .toggle-pill.active .pill-status {
-    color: #181825;
+    color: @accent@;
     font-weight: 600;
 }
 
 .toggle-pill.active .pill-chevron {
-    color: #11111b;
+    color: @accent@;
 }
 
 /* Slider Card */

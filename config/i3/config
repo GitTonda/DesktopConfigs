@@ -43,6 +43,7 @@ for_window [class="File-roller|org.gnome.FileRoller"] floating enable, move posi
 for_window [class="FloatingTerm|FloatingBtop|FloatingGPU|FloatingAudio|FloatingWifi|FloatingBluetooth"] floating enable, resize set 950 620, move position center
 for_window [class="(?i)control_center.*|ControlCenter"] floating enable, border none
 for_window [instance="(?i)control_center.*|ControlCenter"] floating enable, border none
+no_focus [class="(?i)control_center.*|ControlCenter"]
 for_window [class="(?i)desktop[-_]settings|DesktopSettings"] floating enable, resize set 960 640, move position center
 # Ori: main application window tiles; all dialogs, popups, and confirmation alerts float in center
 for_window [class="(?i)ori" window_type="normal"] floating disable

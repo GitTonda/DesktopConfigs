@@ -412,7 +412,7 @@ class ControlCenterWindow(Gtk.Window):
     def _on_map(self, widget, event):
         seat = Gdk.Display.get_default().get_default_seat()
         if seat:
-            seat.grab(self.get_window(), Gdk.SeatCapabilities.ALL_POINTING, True, None, None, None)
+            seat.grab(self.get_window(), Gdk.SeatCapabilities.ALL, True, None, None, None)
         GLib.timeout_add(150, self._mark_settled)
 
     def _mark_settled(self):
@@ -450,13 +450,27 @@ class ControlCenterWindow(Gtk.Window):
     def _apply_css(self):
         accent = get_accent_color()
         opacity = get_system_opacity()
+        try:
+            h = accent.lstrip('#')
+            r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+            accent_dim = f"rgba({r}, {g}, {b}, 0.20)"
+            accent_border = f"rgba({r}, {g}, {b}, 0.45)"
+        except Exception:
+            accent_dim = "rgba(137, 180, 250, 0.20)"
+            accent_border = "rgba(137, 180, 250, 0.45)"
+
         css_path = os.path.expanduser("~/.config/control-center/style.css")
         if not os.path.exists(css_path):
             css_path = os.path.expanduser("~/.local/share/dotfiles/config/control-center/style.css")
         if os.path.exists(css_path):
             with open(css_path, "r") as f:
                 raw_css = f.read()
-            css_data = raw_css.replace("@accent@", accent).replace("@opacity@", f"{opacity:.2f}")
+            css_data = (raw_css
+                .replace("@accent@", accent)
+                .replace("@accent_dim@", accent_dim)
+                .replace("@accent_border@", accent_border)
+                .replace("@opacity@", f"{opacity:.2f}")
+            )
             provider = Gtk.CssProvider()
             provider.load_from_data(css_data.encode("utf-8"))
             Gtk.StyleContext.add_provider_for_screen(
@@ -1241,11 +1255,10 @@ def main():
     win.move(x, y)
     win.show_all()
     win.set_keep_above(True)
-    win.present()
 
     subprocess.run([
         "i3-msg",
-        f'[class="(?i)control_center.*|ControlCenter"] border none, move position {x} {y}, focus'
+        f'[class="(?i)control_center.*|ControlCenter"] border none, move position {x} {y}'
     ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
 
     GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGTERM, lambda: (win.destroy(), GLib.SOURCE_REMOVE)[1])

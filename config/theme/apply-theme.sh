@@ -109,9 +109,10 @@ mkdir -p "$HOME/.config/i3"
 cat << I3CONF > "$HOME/.config/i3/colors.conf"
 set \$accent $ACCENT
 set \$bg $BG_DARK
-client.focused          \$accent \$bg #cdd6f4 \$accent \$accent
+set \$border_focused #6c7086
+client.focused          \$border_focused \$bg #cdd6f4 \$border_focused \$border_focused
 client.focused_inactive #313244 \$bg #a6adc8 #313244 #313244
-client.unfocused        \$bg #11111b #6c7086 \$bg \$bg
+client.unfocused        \$bg #11111b #45475a \$bg \$bg
 client.urgent           #f38ba8 \$bg #f38ba8 #f38ba8 #f38ba8
 client.placeholder      \$bg #11111b #cdd6f4 \$bg \$bg
 client.background       #11111b
