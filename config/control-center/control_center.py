@@ -849,37 +849,72 @@ class ControlCenterWindow(Gtk.Window):
 
     def _on_toggle_wifi(self, btn):
         curr = self.wifi_state["enabled"]
-        cmd = ["nmcli", "radio", "wifi", "off" if curr else "on"]
-        subprocess.run(cmd, check=False)
-        time.sleep(0.1)
-        self.wifi_state = get_wifi_state()
-        if self.wifi_state["enabled"]:
+        new_state = not curr
+        self.wifi_state["enabled"] = new_state
+        # Instant optimistic UI feedback
+        if new_state:
             self.wifi_btn.get_style_context().add_class("active")
             self.wifi_icon.set_text("󰤨")
+            self.wifi_sub.set_text("Connecting...")
         else:
             self.wifi_btn.get_style_context().remove_class("active")
             self.wifi_icon.set_text("󰤮")
-        self.wifi_sub.set_text(self.wifi_state["ssid"])
+            self.wifi_sub.set_text("Disconnected")
+
+        def _worker():
+            subprocess.run(["nmcli", "radio", "wifi", "on" if new_state else "off"], check=False)
+            st = get_wifi_state()
+            def _apply():
+                self.wifi_state = st
+                if st["enabled"]:
+                    self.wifi_btn.get_style_context().add_class("active")
+                    self.wifi_icon.set_text("󰤨")
+                else:
+                    self.wifi_btn.get_style_context().remove_class("active")
+                    self.wifi_icon.set_text("󰤮")
+                self.wifi_sub.set_text(st["ssid"])
+                return False
+            GLib.idle_add(_apply)
+
+        threading.Thread(target=_worker, daemon=True).start()
 
     def _on_toggle_bt(self, btn):
         curr = self.bt_state["powered"]
-        cmd = ["bluetoothctl", "power", "off" if curr else "on"]
-        subprocess.run(cmd, check=False)
-        time.sleep(0.1)
-        self.bt_state = get_bluetooth_state()
-        if self.bt_state["powered"]:
+        new_state = not curr
+        self.bt_state["powered"] = new_state
+        # Instant optimistic UI feedback
+        if new_state:
             self.bt_btn.get_style_context().add_class("active")
             self.bt_icon.set_text("󰂯")
+            self.bt_sub.set_text("Active")
         else:
             self.bt_btn.get_style_context().remove_class("active")
             self.bt_icon.set_text("󰂲")
-        self.bt_sub.set_text(self.bt_state["device"])
+            self.bt_sub.set_text("Off")
+
+        def _worker():
+            subprocess.run(["bluetoothctl", "power", "on" if new_state else "off"], check=False)
+            st = get_bluetooth_state()
+            def _apply():
+                self.bt_state = st
+                if st["powered"]:
+                    self.bt_btn.get_style_context().add_class("active")
+                    self.bt_icon.set_text("󰂯")
+                else:
+                    self.bt_btn.get_style_context().remove_class("active")
+                    self.bt_icon.set_text("󰂲")
+                self.bt_sub.set_text(st["device"])
+                return False
+            GLib.idle_add(_apply)
+
+        threading.Thread(target=_worker, daemon=True).start()
 
     def _on_toggle_mute(self, btn):
-        subprocess.run(["pactl", "set-sink-mute", "@DEFAULT_SINK@", "toggle"], check=False)
-        self.audio_state = get_audio_state()
-        muted = self.audio_state["muted"]
-        if muted:
+        curr_muted = self.audio_state["muted"]
+        new_muted = not curr_muted
+        self.audio_state["muted"] = new_muted
+        # Instant optimistic feedback
+        if new_muted:
             self.mute_btn.get_style_context().remove_class("active")
             self.mute_icon.set_text("󰝟")
             self.mute_sub.set_text("Muted")
@@ -888,11 +923,30 @@ class ControlCenterWindow(Gtk.Window):
             self.mute_icon.set_text("󰕾")
             self.mute_sub.set_text(f"{self.audio_state['volume']}%")
 
+        def _worker():
+            subprocess.run(["pactl", "set-sink-mute", "@DEFAULT_SINK@", "toggle"], check=False)
+            st = get_audio_state()
+            def _apply():
+                self.audio_state = st
+                if st["muted"]:
+                    self.mute_btn.get_style_context().remove_class("active")
+                    self.mute_icon.set_text("󰝟")
+                    self.mute_sub.set_text("Muted")
+                else:
+                    self.mute_btn.get_style_context().add_class("active")
+                    self.mute_icon.set_text("󰕾")
+                    self.mute_sub.set_text(f"{st['volume']}%")
+                return False
+            GLib.idle_add(_apply)
+
+        threading.Thread(target=_worker, daemon=True).start()
+
     def _on_toggle_mic(self, btn):
-        subprocess.run(["pactl", "set-source-mute", "@DEFAULT_SOURCE@", "toggle"], check=False)
-        self.audio_state = get_audio_state()
-        mic_muted = self.audio_state["mic_muted"]
-        if mic_muted:
+        curr_muted = self.audio_state["mic_muted"]
+        new_muted = not curr_muted
+        self.audio_state["mic_muted"] = new_muted
+        # Instant optimistic feedback
+        if new_muted:
             self.mic_btn.get_style_context().remove_class("active")
             self.mic_icon.set_text("󰍭")
             self.mic_sub.set_text("Muted")
@@ -901,15 +955,51 @@ class ControlCenterWindow(Gtk.Window):
             self.mic_icon.set_text("󰍬")
             self.mic_sub.set_text("Active")
 
+        def _worker():
+            subprocess.run(["pactl", "set-source-mute", "@DEFAULT_SOURCE@", "toggle"], check=False)
+            st = get_audio_state()
+            def _apply():
+                self.audio_state = st
+                if st["mic_muted"]:
+                    self.mic_btn.get_style_context().remove_class("active")
+                    self.mic_icon.set_text("󰍭")
+                    self.mic_sub.set_text("Muted")
+                else:
+                    self.mic_btn.get_style_context().add_class("active")
+                    self.mic_icon.set_text("󰍬")
+                    self.mic_sub.set_text("Active")
+                return False
+            GLib.idle_add(_apply)
+
+        threading.Thread(target=_worker, daemon=True).start()
+
     def _on_toggle_dnd(self, btn):
-        subprocess.run(["dunstctl", "set-paused", "toggle"], check=False)
-        self.dnd_state = get_dnd_state()
-        if self.dnd_state:
+        curr = self.dnd_state
+        new_state = not curr
+        self.dnd_state = new_state
+        # Instant optimistic feedback
+        if new_state:
             self.dnd_btn.get_style_context().add_class("active")
             self.dnd_sub.set_text("Active")
         else:
             self.dnd_btn.get_style_context().remove_class("active")
             self.dnd_sub.set_text("Off")
+
+        def _worker():
+            subprocess.run(["dunstctl", "set-paused", "toggle"], check=False)
+            st = get_dnd_state()
+            def _apply():
+                self.dnd_state = st
+                if st:
+                    self.dnd_btn.get_style_context().add_class("active")
+                    self.dnd_sub.set_text("Active")
+                else:
+                    self.dnd_btn.get_style_context().remove_class("active")
+                    self.dnd_sub.set_text("Off")
+                return False
+            GLib.idle_add(_apply)
+
+        threading.Thread(target=_worker, daemon=True).start()
 
 
 
@@ -1030,12 +1120,12 @@ class ControlCenterWindow(Gtk.Window):
         self._is_closing = False
         self._open_start_time = None
 
-        # Mac-like: emerges smoothly from top-right status bar icon
-        delta_x = 24
-        delta_y = 28
+        # Subtle macOS-like micro-motion: emerges from top-right icon
+        delta_x = 8
+        delta_y = 10
         self._open_start_x = target_x + delta_x
         self._open_start_y = target_y - delta_y
-        self._open_duration_ms = 260.0
+        self._open_duration_ms = 240.0
 
         self.set_opacity(0.0)
         self.move(self._open_start_x, self._open_start_y)
@@ -1054,11 +1144,11 @@ class ControlCenterWindow(Gtk.Window):
                 self._open_start_time = now
             elapsed = now - self._open_start_time
             p = min(1.0, elapsed / self._open_duration_ms)
-            # Smooth macOS quintic ease-out deceleration
-            ease = 1.0 - pow(1.0 - p, 3.5)
+            # Smooth macOS cubic ease-out deceleration
+            ease = 1.0 - pow(1.0 - p, 3.0)
             cur_x = int(round(self._open_start_x + (self._target_x - self._open_start_x) * ease))
             cur_y = int(round(self._open_start_y + (self._target_y - self._open_start_y) * ease))
-            cur_op = min(1.0, (1.0 - pow(1.0 - p, 2.5)) * 1.05)
+            cur_op = min(1.0, (1.0 - pow(1.0 - p, 2.0)) * 1.05)
 
             self.move(cur_x, cur_y)
             self.set_opacity(cur_op)
@@ -1088,12 +1178,12 @@ class ControlCenterWindow(Gtk.Window):
         start_x, start_y = self.get_position()
         start_opacity = self.get_opacity() if hasattr(self, 'get_opacity') else 1.0
 
-        # Mac-like: focuses and collapses into the top-right corner where the status icon is
-        delta_x = 24
-        delta_y = 28
+        # Focuses and collapses into the top-right corner where the status icon is
+        delta_x = 8
+        delta_y = 10
         end_x = self._target_x + delta_x
         end_y = self._target_y - delta_y
-        duration_ms = 240.0
+        duration_ms = 200.0
         start_time = None
 
         def _on_close_tick(widget, frame_clock):
@@ -1104,10 +1194,10 @@ class ControlCenterWindow(Gtk.Window):
             elapsed = now - start_time
             p = min(1.0, elapsed / duration_ms)
             # Smooth macOS ease-in acceleration towards the corner icon
-            ease = pow(p, 2.5)
+            ease = pow(p, 2.0)
             cur_x = int(round(start_x + (end_x - start_x) * ease))
             cur_y = int(round(start_y + (end_y - start_y) * ease))
-            cur_op = max(0.0, start_opacity * (1.0 - pow(p, 1.8)))
+            cur_op = max(0.0, start_opacity * (1.0 - pow(p, 1.5)))
 
             self.move(cur_x, cur_y)
             self.set_opacity(cur_op)
