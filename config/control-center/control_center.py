@@ -250,9 +250,12 @@ def get_notifications():
     return notifications
 
 
-def get_app_icon(app_name):
+def get_app_icon(app_name, summary="", body=""):
     a = (app_name or "").lower()
-    if "zen" in a or "browser" in a or "firefox" in a:
+    text = (summary + " " + body).lower()
+    if "screenshot" in a or "screenshot" in text:
+        return "󰹑"
+    elif "zen" in a or "browser" in a or "firefox" in a:
         return "󰈹"
     elif "discord" in a or "webcord" in a or "vesktop" in a:
         return "󰙯"
@@ -266,8 +269,10 @@ def get_app_icon(app_name):
         return "󰀨"
     elif "slack" in a:
         return "󰒱"
-    elif "mail" in a or "thunderbird" in a:
+    elif "mail" in a or "thunderbird" in a or "ticket" in text:
         return "󰇮"
+    elif "messaggio" in text or "whatsapp" in text or "chat" in text:
+        return "󰭹"
     elif "wifi" in a or "network" in a:
         return "󰤨"
     elif "bluetooth" in a:
@@ -756,36 +761,56 @@ class ControlCenterWindow(Gtk.Window):
         event_box = Gtk.EventBox()
         event_box.get_style_context().add_class("notif-card")
 
-        card_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+        card_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=14)
         event_box.add(card_box)
 
-        # 1. App Icon
-        icon_char = get_app_icon(notif["app"])
+        # 1. App Icon (Centrally balanced on the left)
+        icon_char = get_app_icon(notif["app"], notif.get("summary", ""), notif.get("body", ""))
         app_icon_lbl = Gtk.Label(label=icon_char)
         app_icon_lbl.get_style_context().add_class("notif-icon")
-        app_icon_lbl.set_valign(Gtk.Align.START)
+        app_icon_lbl.set_valign(Gtk.Align.CENTER)
         card_box.pack_start(app_icon_lbl, False, False, 0)
 
-        # 2. Content Box (App + Time, Title, Body)
-        content_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        # 2. Content Box (App + Bullet + Time, Title, Body)
+        content_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
 
-        hdr = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        app_lbl = Gtk.Label(label=notif["app"].upper(), xalign=0)
+        # Header: App name and relative time grouped together
+        hdr = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        hdr.set_margin_bottom(2)
+
+        display_app = notif["app"]
+        if display_app.lower() in ("dunstify", "system"):
+            if "screenshot" in notif.get("summary", "").lower():
+                display_app = "Screenshot"
+            elif "messaggio" in notif.get("body", "").lower():
+                display_app = "Messages"
+            else:
+                display_app = "System"
+
+        app_lbl = Gtk.Label(label=display_app.upper(), xalign=0)
         app_lbl.get_style_context().add_class("notif-app-name")
-        hdr.pack_start(app_lbl, True, True, 0)
+        hdr.pack_start(app_lbl, False, False, 0)
 
-        time_lbl = Gtk.Label(label=notif["time_str"], xalign=1)
+        dot_lbl = Gtk.Label(label="•")
+        dot_lbl.get_style_context().add_class("notif-bullet")
+        hdr.pack_start(dot_lbl, False, False, 0)
+
+        time_lbl = Gtk.Label(label=notif["time_str"], xalign=0)
         time_lbl.get_style_context().add_class("notif-time")
-        hdr.pack_end(time_lbl, False, False, 0)
+        hdr.pack_start(time_lbl, False, False, 0)
+
         content_box.pack_start(hdr, False, False, 0)
 
+        # Notification Title
         if notif["summary"]:
             title_lbl = Gtk.Label(label=notif["summary"], xalign=0)
             title_lbl.get_style_context().add_class("notif-title")
             title_lbl.set_ellipsize(Pango.EllipsizeMode.END)
             title_lbl.set_max_width_chars(38)
+            title_lbl.set_margin_bottom(1)
             content_box.pack_start(title_lbl, False, False, 0)
 
+        # Notification Body
         if notif["body"]:
             body_lbl = Gtk.Label(label=notif["body"], xalign=0)
             body_lbl.get_style_context().add_class("notif-body")
@@ -795,10 +820,11 @@ class ControlCenterWindow(Gtk.Window):
 
         card_box.pack_start(content_box, True, True, 0)
 
-        # 3. Dismiss button
+        # 3. Dismiss button (Cleanly aligned top-right)
         close_btn = Gtk.Button(label="󰅖")
         close_btn.get_style_context().add_class("notif-close-btn")
         close_btn.set_valign(Gtk.Align.START)
+        close_btn.set_margin_start(2)
         close_btn.set_tooltip_text("Dismiss notification")
 
         def _on_dismiss(btn):
