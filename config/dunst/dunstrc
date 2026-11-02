@@ -7,8 +7,8 @@
     follow = mouse
     width = 380
     height = 300
-    origin = top-right
-    offset = 17x54
+    origin = bottom-right
+    offset = 17x17
     scale = 0
     notification_limit = 5
 
@@ -22,11 +22,11 @@
     progress_bar_min_width = 180
     progress_bar_max_width = 320
     progress_bar_corner_radius = 0
-    highlight = "#2977af"
+    highlight = "#ffaa45"
 
     # Frame & Geometry (Squared Aesthetic)
     frame_width = 2
-    frame_color = "#2977af"
+    frame_color = "#ffaa45"
     separator_height = 0
     separator_color = frame
     corner_radius = 0
@@ -60,7 +60,7 @@
     # History & Lifetime
     sticky_history = yes
     history_length = 25
-    dmenu = /usr/bin/rofi -dmenu -p dunst:
+    dmenu = /home/tonda/.config/dunst/dmenu-action.sh
     browser = /usr/bin/xdg-open
     always_run_script = true
     title = Dunst
@@ -68,8 +68,8 @@
     ignore_dbusclose = false
 
     # Mouse actions
-    mouse_left_click = close_current
-    mouse_middle_click = do_action, close_current
+    mouse_left_click = do_action, close_current
+    mouse_middle_click = context
     mouse_right_click = close_all
 
 # ==============================================================================
@@ -79,22 +79,22 @@
 [urgency_low]
     background = "#181825"
     foreground = "#a6adc8"
-    frame_color = "#2977af"
-    highlight = "#2977af"
+    frame_color = "#ffaa45"
+    highlight = "#ffaa45"
     timeout = 4
 
 [urgency_normal]
-    background = "#111417"
+    background = "#171411"
     foreground = "#cdd6f4"
-    frame_color = "#2977af"
-    highlight = "#2977af"
+    frame_color = "#ffaa45"
+    highlight = "#ffaa45"
     timeout = 6
 
 [urgency_critical]
     background = "#1e1e2e"
     foreground = "#cdd6f4"
-    frame_color = "#2977af"
-    highlight = "#2977af"
+    frame_color = "#ffaa45"
+    highlight = "#ffaa45"
     timeout = 0
 
 # ==============================================================================
@@ -103,30 +103,30 @@
 
 [volume_osd]
     summary = "*Volume*"
-    highlight = "#2977af"
-    frame_color = "#2977af"
+    highlight = "#ffaa45"
+    frame_color = "#ffaa45"
     timeout = 2
 
 [brightness_osd]
     summary = "*Brightness*"
-    highlight = "#2977af"
-    frame_color = "#2977af"
+    highlight = "#ffaa45"
+    frame_color = "#ffaa45"
     timeout = 2
 
 [screenshot_rule]
     summary = "*Screenshot*"
-    frame_color = "#2977af"
-    highlight = "#2977af"
+    frame_color = "#ffaa45"
+    highlight = "#ffaa45"
     timeout = 3
 
 [network_rule]
     summary = "*Wi-Fi*"
-    frame_color = "#2977af"
-    highlight = "#2977af"
+    frame_color = "#ffaa45"
+    highlight = "#ffaa45"
     timeout = 4
 
 [calendar_rule]
     summary = "*Calendar*"
-    frame_color = "#2977af"
-    highlight = "#2977af"
+    frame_color = "#ffaa45"
+    highlight = "#ffaa45"
     timeout = 5

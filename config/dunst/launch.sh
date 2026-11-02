@@ -34,16 +34,17 @@ if [ -f "$I3_CONFIG" ]; then
     [ -n "$val_border" ] && BORDER_PX="$val_border"
 fi
 
-# 3. Calculate margin dynamically:
+# 3. Calculate margin dynamically for bottom-right placement:
 # Window edge = inner_gap + outer_gap + border
 TOTAL_EDGE=$(( GAPS_INNER + GAPS_OUTER + BORDER_PX ))
 PADDING=8
 
 OFFSET_X=$(( TOTAL_EDGE + PADDING ))
-OFFSET_Y=$(( POLY_H + TOTAL_EDGE + PADDING ))
+OFFSET_Y=$(( TOTAL_EDGE + PADDING ))
 
 DUNST_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/dunst/dunstrc"
 if [ -f "$DUNST_CONFIG" ]; then
+    sed -i -E "s/^\s*origin\s*=\s*[a-zA-Z-]+/    origin = bottom-right/" "$DUNST_CONFIG"
     sed -i -E "s/^\s*offset\s*=\s*[0-9]+x[0-9]+/    offset = ${OFFSET_X}x${OFFSET_Y}/" "$DUNST_CONFIG"
 fi
 
