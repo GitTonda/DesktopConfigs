@@ -405,6 +405,26 @@ button.notif-dropdown-btn:hover {
     color: #6c7086;
 }
 
+/* Scrollbar */
+scrollbar,
+scrollbar.vertical {
+    background: transparent;
+    border: none;
+    min-width: 4px;
+    margin: 0px 1px;
+}
+
+scrollbar slider {
+    background-color: #45475a;
+    border-radius: 0px;
+    min-width: 4px;
+    border: none;
+}
+
+scrollbar slider:hover {
+    background-color: @accent@;
+}
+
 /* Power Bar */
 .power-bar {
     margin-top: 4px;

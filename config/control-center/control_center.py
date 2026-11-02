@@ -656,8 +656,9 @@ class ControlCenterWindow(Gtk.Window):
         self.notif_list_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         self.notif_scrolled = Gtk.ScrolledWindow()
         self.notif_scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        self.notif_scrolled.set_max_content_height(480)
+        self.notif_scrolled.set_max_content_height(580)
         self.notif_scrolled.set_propagate_natural_height(True)
+        self.notif_scrolled.set_overlay_scrolling(False)
         self.notif_scrolled.add(self.notif_list_box)
         notif_section.pack_start(self.notif_scrolled, False, False, 0)
 
@@ -798,18 +799,23 @@ class ControlCenterWindow(Gtk.Window):
                     card = self._create_notification_card(notif)
                     overflow_box.pack_start(card, False, False, 0)
 
-                overflow_box.set_no_show_all(True)
-                overflow_box.set_visible(self._dropdown_expanded)
+                if self._dropdown_expanded:
+                    overflow_box.set_no_show_all(False)
+                    overflow_box.show_all()
+                else:
+                    overflow_box.set_no_show_all(True)
+                    overflow_box.hide()
 
                 def _on_toggle_dropdown(b):
                     self._dropdown_expanded = not self._dropdown_expanded
-                    overflow_box.set_visible(self._dropdown_expanded)
                     if self._dropdown_expanded:
-                        for c in overflow_box.get_children():
-                            c.show()
+                        overflow_box.set_no_show_all(False)
+                        overflow_box.show_all()
                         drop_icon.set_text("󰅃")
                         drop_lbl.set_text("Show less")
                     else:
+                        overflow_box.set_no_show_all(True)
+                        overflow_box.hide()
                         drop_icon.set_text("󰅀")
                         drop_lbl.set_text(f"Earlier notifications ({len(overflow_notifs)})")
                     self._update_window_height()
