@@ -374,7 +374,7 @@ class ControlCenterWindow(Gtk.Window):
         self.set_title("ControlCenter")
         self.set_role("pop-up")
         self.set_decorated(False)
-        self.set_resizable(False)
+        self.set_resizable(True)
         self.set_default_size(416, -1)
         self.set_app_paintable(True)
         self.set_skip_taskbar_hint(True)
@@ -397,6 +397,9 @@ class ControlCenterWindow(Gtk.Window):
         self.quickshare_state = get_quickshare_state()
         self.media_info = get_media_info()
         self.notifications = get_notifications()
+
+        # Dropdown accordion state
+        self._dropdown_expanded = False
 
         # Focus settling flag
         self._settled = False
@@ -514,7 +517,7 @@ class ControlCenterWindow(Gtk.Window):
             )
 
     def _build_ui(self):
-        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         main_box.get_style_context().add_class("main-box")
         self.add(main_box)
 
@@ -546,7 +549,12 @@ class ControlCenterWindow(Gtk.Window):
         main_box.pack_start(header_box, False, False, 0)
         main_box.pack_start(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL), False, False, 0)
 
-        # 2. Quick Toggles Grid (Wi-Fi, Bluetooth, Mute, Mic, DND, Quick Share)
+        # 2. Quick Access Section
+        quick_access_lbl = Gtk.Label(label="QUICK ACCESS", xalign=0)
+        quick_access_lbl.get_style_context().add_class("section-title")
+        main_box.pack_start(quick_access_lbl, False, False, 0)
+
+        # Quick Toggles Grid (Wi-Fi, Bluetooth, Mute, Mic, DND, Quick Share)
         grid = Gtk.Grid()
         grid.set_column_spacing(8)
         grid.set_row_spacing(8)
@@ -632,19 +640,23 @@ class ControlCenterWindow(Gtk.Window):
 
         self.notif_hdr = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         self.notif_hdr.get_style_context().add_class("notif-header-bar")
-        self.notif_hdr.set_no_show_all(True)
+
+        notif_title = Gtk.Label(label="NOTIFICATIONS", xalign=0)
+        notif_title.get_style_context().add_class("section-title")
+        self.notif_hdr.pack_start(notif_title, True, True, 0)
 
         self.notif_clear_btn = Gtk.Button(label="Clear")
         self.notif_clear_btn.get_style_context().add_class("notif-clear-btn")
         self.notif_clear_btn.set_tooltip_text("Clear all notifications")
         self.notif_clear_btn.connect("clicked", self._on_clear_all_notifications)
+        self.notif_clear_btn.set_no_show_all(True)
         self.notif_hdr.pack_end(self.notif_clear_btn, False, False, 0)
         notif_section.pack_start(self.notif_hdr, False, False, 0)
 
         self.notif_list_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         self.notif_scrolled = Gtk.ScrolledWindow()
         self.notif_scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        self.notif_scrolled.set_max_content_height(260)
+        self.notif_scrolled.set_max_content_height(480)
         self.notif_scrolled.set_propagate_natural_height(True)
         self.notif_scrolled.add(self.notif_list_box)
         notif_section.pack_start(self.notif_scrolled, False, False, 0)
@@ -736,7 +748,7 @@ class ControlCenterWindow(Gtk.Window):
             self.notif_list_box.remove(child)
 
         if not self.notifications:
-            self.notif_hdr.set_visible(False)
+            self.notif_clear_btn.set_visible(False)
             empty_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
             empty_box.get_style_context().add_class("notif-empty-box")
 
@@ -749,13 +761,87 @@ class ControlCenterWindow(Gtk.Window):
             empty_box.pack_start(empty_lbl, False, False, 0)
             self.notif_list_box.pack_start(empty_box, False, False, 0)
         else:
-            self.notif_hdr.set_visible(True)
+            self.notif_clear_btn.set_visible(True)
             self.notif_clear_btn.set_sensitive(True)
-            for notif in self.notifications[:6]:
+
+            top_notifs = self.notifications[:3]
+            overflow_notifs = self.notifications[3:]
+
+            for notif in top_notifs:
                 card = self._create_notification_card(notif)
                 self.notif_list_box.pack_start(card, False, False, 0)
 
+            if overflow_notifs:
+                dropdown_container = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+                dropdown_container.get_style_context().add_class("notif-dropdown-container")
+
+                drop_btn = Gtk.Button()
+                drop_btn.get_style_context().add_class("notif-dropdown-btn")
+
+                btn_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+                btn_box.set_halign(Gtk.Align.CENTER)
+                drop_btn.add(btn_box)
+
+                drop_icon = Gtk.Label(label="󰅃" if self._dropdown_expanded else "󰅀")
+                drop_icon.get_style_context().add_class("notif-dropdown-icon")
+                btn_box.pack_start(drop_icon, False, False, 0)
+
+                count = len(overflow_notifs)
+                btn_text = "Show less" if self._dropdown_expanded else f"Earlier notifications ({count})"
+                drop_lbl = Gtk.Label(label=btn_text)
+                drop_lbl.get_style_context().add_class("notif-dropdown-label")
+                btn_box.pack_start(drop_lbl, False, False, 0)
+
+                overflow_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+                overflow_box.get_style_context().add_class("notif-overflow-box")
+                for notif in overflow_notifs:
+                    card = self._create_notification_card(notif)
+                    overflow_box.pack_start(card, False, False, 0)
+
+                overflow_box.set_no_show_all(True)
+                overflow_box.set_visible(self._dropdown_expanded)
+
+                def _on_toggle_dropdown(b):
+                    self._dropdown_expanded = not self._dropdown_expanded
+                    overflow_box.set_visible(self._dropdown_expanded)
+                    if self._dropdown_expanded:
+                        for c in overflow_box.get_children():
+                            c.show()
+                        drop_icon.set_text("󰅃")
+                        drop_lbl.set_text("Show less")
+                    else:
+                        drop_icon.set_text("󰅀")
+                        drop_lbl.set_text(f"Earlier notifications ({len(overflow_notifs)})")
+                    self._update_window_height()
+
+                drop_btn.connect("clicked", _on_toggle_dropdown)
+                dropdown_container.pack_start(drop_btn, False, False, 0)
+                dropdown_container.pack_start(overflow_box, False, False, 0)
+                self.notif_list_box.pack_start(dropdown_container, False, False, 0)
+            else:
+                self._dropdown_expanded = False
+
         self.notif_list_box.show_all()
+
+    def _update_window_height(self):
+        self.check_resize()
+        while Gtk.events_pending():
+            Gtk.main_iteration()
+        _, nat_s = self.get_preferred_size()
+        h = min(nat_s.height, 920)
+        try:
+            xid = self.get_window().get_xid()
+            subprocess.run(["xdotool", "windowsize", str(xid), "416", str(h)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except Exception:
+            pass
+        self.resize(416, h)
+
+    def _on_clear_all_notifications(self, btn):
+        subprocess.run(["dunstctl", "history-clear"], check=False)
+        self.notifications = []
+        self._dropdown_expanded = False
+        self._populate_notifications()
+        self._update_window_height()
 
     def _create_notification_card(self, notif):
         event_box = Gtk.EventBox()
@@ -837,6 +923,7 @@ class ControlCenterWindow(Gtk.Window):
                 subprocess.run(["dunstctl", "history-rm", str(nid)], check=False)
             self.notifications = [n for n in self.notifications if n.get("id") != nid]
             self._populate_notifications()
+            self._update_window_height()
 
         close_btn.connect("clicked", _on_dismiss)
         card_box.pack_end(close_btn, False, False, 0)
@@ -850,11 +937,6 @@ class ControlCenterWindow(Gtk.Window):
 
         event_box.connect("button-press-event", _on_card_click)
         return event_box
-
-    def _on_clear_all_notifications(self, btn):
-        subprocess.run(["dunstctl", "history-clear"], check=False)
-        self.notifications = []
-        self._populate_notifications()
 
     def _create_toggle_pill(self, icon, title, status, is_active, has_chevron=False, on_toggle=None, on_chevron=None):
         pill_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)

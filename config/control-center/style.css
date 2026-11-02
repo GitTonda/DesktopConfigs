@@ -29,17 +29,17 @@ window {
 .main-box {
     background-color: rgba(17, 17, 27, @opacity@);
     border: 1px solid @accent_border@;
-    padding: 18px;
+    padding: 14px 16px;
 }
 
 /* Header */
 .header-box {
-    margin-bottom: 6px;
+    margin-bottom: 2px;
     padding: 0px 2px;
 }
 
 .header-user {
-    font-size: 10.5pt;
+    font-size: 9.5pt;
     font-weight: bold;
     color: #cdd6f4;
 }
@@ -51,9 +51,9 @@ button.settings-btn {
     border: 1px solid #313244;
     border-radius: 0px;
     color: #a6adc8;
-    font-size: 11pt;
-    min-width: 28px;
-    min-height: 28px;
+    font-size: 10pt;
+    min-width: 26px;
+    min-height: 26px;
     padding: 0px;
     margin: 0px;
     transition: all 120ms ease-in-out;
@@ -70,16 +70,17 @@ button.settings-btn:hover {
 separator {
     background-color: #313244;
     min-height: 1px;
-    margin: 8px 0px;
+    margin: 5px 0px;
 }
 
 /* Section Title */
 .section-title {
-    font-size: 8.5pt;
-    font-weight: bold;
+    font-size: 8pt;
+    font-weight: 700;
     color: #a6adc8;
-    letter-spacing: 0.5px;
-    margin-bottom: 6px;
+    letter-spacing: 0.6px;
+    margin-bottom: 4px;
+    margin-top: 1px;
 }
 
 /* Toggle Pills */
@@ -346,6 +347,47 @@ button.notif-close-btn {
 button.notif-close-btn:hover {
     color: #f38ba8;
     background: rgba(243, 139, 168, 0.15);
+}
+
+/* Notification Dropdown / Accordion */
+.notif-dropdown-container {
+    margin-top: 2px;
+}
+
+.notif-dropdown-btn,
+button.notif-dropdown-btn {
+    background-color: rgba(30, 30, 46, 0.60);
+    border: 1px solid #313244;
+    border-radius: 0px;
+    padding: 7px 12px;
+    margin: 0px;
+    transition: all 120ms ease;
+}
+
+.notif-dropdown-btn:hover,
+button.notif-dropdown-btn:hover {
+    background-color: rgba(49, 50, 68, 0.85);
+    border-color: @accent@;
+}
+
+.notif-dropdown-icon {
+    font-size: 9.5pt;
+    color: @accent@;
+}
+
+.notif-dropdown-label {
+    font-size: 8pt;
+    font-weight: 600;
+    color: #a6adc8;
+    letter-spacing: 0.4px;
+}
+
+.notif-dropdown-btn:hover .notif-dropdown-label {
+    color: #cdd6f4;
+}
+
+.notif-overflow-box {
+    margin-top: 2px;
 }
 
 .notif-empty-box {
