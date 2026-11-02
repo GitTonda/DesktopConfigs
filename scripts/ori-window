@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Ori - Tiling Window Launcher for i3wm Rice
+# Ori - Tiling Window Launcher for i3wm
 # ==============================================================================
 
 set -e
 export PATH="$HOME/.local/bin:$PATH"
 export OLLAMA_HOST="${OLLAMA_HOST:-http://127.0.0.1:11434}"
 
-# Execute Ori GUI directly (i3 tiles windows with class Ori automatically)
-exec "$HOME/.local/bin/ori" "$@"
+# If inside a terminal already, run directly; otherwise launch a dedicated Alacritty window
+if [ -t 0 ] && [ -t 1 ]; then
+    exec "$HOME/.local/bin/ori" "$@"
+else
+    exec alacritty --class "Ori,Ori" --title "Ori - Autonomous AI Agent" -e "$HOME/.local/bin/ori" "$@"
+fi

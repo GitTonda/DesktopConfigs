@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Version=1.4
+Name=Quick Share
+GenericName=File Sharing
+Comment=Nearby Share / Quick Share client for Linux (RQuickShare)
+Exec=/home/tonda/Applications/rquickshare %U
+Icon=/home/tonda/.local/share/icons/rquickshare.png
+Terminal=false
+StartupNotify=true
+StartupWMClass=dev.mandre.rquickshare
+Categories=Utility;Network;FileTransfer;
+Keywords=quickshare;nearby;share;transfer;android;

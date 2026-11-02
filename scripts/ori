@@ -1,17 +1,10 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Ori - Autonomous Local AI Assistant Launcher
+# Ori - Autonomous Terminal AI Agent (Antigravity Brain + Claude Code)
 # ==============================================================================
 
 set -e
 export PATH="$HOME/.local/bin:$PATH"
 export OLLAMA_HOST="${OLLAMA_HOST:-http://127.0.0.1:11434}"
 
-# If --cli or -c is requested, launch the terminal CLI
-if [[ "$1" == "--cli" || "$1" == "-c" ]]; then
-    shift
-    exec uv run --project "$HOME/.local/share/ori" ori "$@"
-fi
-
-# By default, launch the native PyQt6 GUI
-exec uv run --project "$HOME/.local/share/ori" ori-gui "$@"
+exec uv run --project "$HOME/.local/share/ori" ori "$@"

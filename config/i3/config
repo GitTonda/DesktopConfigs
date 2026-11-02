@@ -37,6 +37,7 @@ for_window [class="(?i)nm-applet"] floating enable
 for_window [class="(?i)nm-connection-editor"] floating enable
 for_window [class="(?i)blueman"] floating enable
 for_window [class="(?i)pavucontrol"] floating enable
+for_window [class="(?i)rquickshare"] floating enable, resize set 500 640, move position center
 for_window [class="(?i)ibus.*"] floating enable
 for_window [title="(?i)ibus.*"] floating enable
 for_window [class="File-roller|org.gnome.FileRoller"] floating enable, move position center
