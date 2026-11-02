@@ -196,6 +196,165 @@ def get_media_info():
     return {"active": False}
 
 
+def get_notifications():
+    notifications = []
+    try:
+        out = subprocess.check_output(["dunstctl", "history"], text=True, stderr=subprocess.DEVNULL)
+        data = json.loads(out).get("data", [[]])[0]
+
+        try:
+            with open("/proc/uptime", "r") as f:
+                uptime = float(f.read().split()[0])
+        except Exception:
+            uptime = time.time()
+
+        for item in data:
+            nid = item.get("id", {}).get("data", 0)
+            app = item.get("appname", {}).get("data", "").strip()
+            summary = item.get("summary", {}).get("data", "").strip()
+            body = item.get("body", {}).get("data", "").strip()
+            icon_path = item.get("icon_path", {}).get("data", "").strip()
+            ts = item.get("timestamp", {}).get("data", 0)
+
+            secs_ago = max(0, uptime - (ts / 1e6))
+            if secs_ago < 60:
+                time_str = "Just now"
+            elif secs_ago < 3600:
+                time_str = f"{int(secs_ago // 60)}m ago"
+            elif secs_ago < 86400:
+                time_str = f"{int(secs_ago // 3600)}h ago"
+            else:
+                time_str = f"{int(secs_ago // 86400)}d ago"
+
+            clean_body = " ".join(body.split())
+            if not app:
+                if "zen" in icon_path.lower() or "navigator" in icon_path.lower() or "ticket" in summary.lower() or "http" in body.lower():
+                    app = "Zen Browser"
+                elif "discord" in icon_path.lower():
+                    app = "Discord"
+                elif "spotify" in icon_path.lower():
+                    app = "Spotify"
+                else:
+                    app = "System"
+
+            notifications.append({
+                "id": nid,
+                "app": app,
+                "summary": summary,
+                "body": clean_body,
+                "icon_path": icon_path,
+                "time_str": time_str
+            })
+    except Exception:
+        pass
+    return notifications
+
+
+def get_app_icon(app_name):
+    a = (app_name or "").lower()
+    if "zen" in a or "browser" in a or "firefox" in a:
+        return "󰈹"
+    elif "discord" in a or "webcord" in a or "vesktop" in a:
+        return "󰙯"
+    elif "spotify" in a or "music" in a:
+        return "󰓇"
+    elif "quick" in a or "share" in a:
+        return "󰒗"
+    elif "alacritty" in a or "term" in a or "kitty" in a:
+        return "󰆍"
+    elif "telegram" in a:
+        return "󰀨"
+    elif "slack" in a:
+        return "󰒱"
+    elif "mail" in a or "thunderbird" in a:
+        return "󰇮"
+    elif "wifi" in a or "network" in a:
+        return "󰤨"
+    elif "bluetooth" in a:
+        return "󰂯"
+    else:
+        return "󰂚"
+
+
+def focus_notification_target(app_name, summary="", body=""):
+    app = (app_name or "").strip().lower()
+    summary_lower = (summary or "").lower()
+    body_lower = (body or "").lower()
+
+    try:
+        tree = json.loads(subprocess.check_output(["i3-msg", "-t", "get_tree"], text=True, stderr=subprocess.DEVNULL))
+        def collect_windows(node):
+            wins = []
+            if node.get("window") and node.get("window_properties"):
+                cls = (node.get("window_properties", {}).get("class") or "").lower()
+                inst = (node.get("window_properties", {}).get("instance") or "").lower()
+                title = (node.get("name") or "").lower()
+                wins.append({"con_id": node["id"], "class": cls, "instance": inst, "title": title})
+            for c in node.get("nodes", []) + node.get("floating_nodes", []):
+                wins.extend(collect_windows(c))
+            return wins
+
+        windows = collect_windows(tree)
+        target_id = None
+
+        aliases = {
+            "zen browser": "zen",
+            "browser": "zen",
+            "firefox": "zen",
+            "google-chrome": "chrome",
+            "discord": "discord",
+            "telegram": "telegramdesktop",
+            "terminal": "alacritty",
+            "code": "code",
+            "quick share": "rquickshare",
+            "quickshare": "rquickshare",
+            "rquickshare": "rquickshare",
+        }
+        search_terms = [app]
+        if app in aliases:
+            search_terms.append(aliases[app])
+
+        for term in search_terms:
+            if not term:
+                continue
+            for w in windows:
+                if term in w["class"] or term in w["instance"] or term in w["title"]:
+                    target_id = w["con_id"]
+                    break
+            if target_id:
+                break
+
+        if not target_id:
+            words = [wrd for wrd in (summary_lower + " " + body_lower).split() if len(wrd) > 3]
+            for wrd in words:
+                for w in windows:
+                    if wrd in w["title"] or wrd in w["class"]:
+                        target_id = w["con_id"]
+                        break
+                if target_id:
+                    break
+
+        if not target_id and ("ticket" in summary_lower or "http" in body_lower or "zen" in app):
+            for w in windows:
+                if "zen" in w["class"] or "navigator" in w["instance"]:
+                    target_id = w["con_id"]
+                    break
+
+        if target_id:
+            subprocess.run(["i3-msg", f"[con_id=\"{target_id}\"] focus"], check=False)
+            return True
+
+        if "zen" in app or "browser" in app:
+            subprocess.Popen(["flatpak", "run", "app.zen_browser.zen"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        elif "quick" in app:
+            subprocess.Popen([os.path.expanduser("~/Applications/rquickshare")], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        elif app and app not in ("system", "notification"):
+            subprocess.Popen([app], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return True
+    except Exception:
+        return False
+
+
 # ------------------------------------------------------------------------------
 # Main Window Class
 # ------------------------------------------------------------------------------
@@ -232,6 +391,7 @@ class ControlCenterWindow(Gtk.Window):
         self.dnd_state = get_dnd_state()
         self.quickshare_state = get_quickshare_state()
         self.media_info = get_media_info()
+        self.notifications = get_notifications()
 
         # Focus settling flag
         self._settled = False
@@ -459,6 +619,34 @@ class ControlCenterWindow(Gtk.Window):
         grid.attach(self.qs_btn, 1, 2, 1, 1)
 
         main_box.pack_start(grid, False, False, 0)
+        main_box.pack_start(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL), False, False, 0)
+
+        # 3. Notifications Section
+        notif_section = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        notif_section.get_style_context().add_class("notifications-section")
+
+        notif_hdr = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        notif_title = Gtk.Label(label="󰂚 NOTIFICATIONS", xalign=0)
+        notif_title.get_style_context().add_class("section-title")
+        notif_hdr.pack_start(notif_title, True, True, 0)
+
+        self.notif_clear_btn = Gtk.Button(label="Clear")
+        self.notif_clear_btn.get_style_context().add_class("notif-clear-btn")
+        self.notif_clear_btn.set_tooltip_text("Clear all notifications")
+        self.notif_clear_btn.connect("clicked", self._on_clear_all_notifications)
+        notif_hdr.pack_end(self.notif_clear_btn, False, False, 0)
+        notif_section.pack_start(notif_hdr, False, False, 0)
+
+        self.notif_list_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        self.notif_scrolled = Gtk.ScrolledWindow()
+        self.notif_scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        self.notif_scrolled.set_max_content_height(220)
+        self.notif_scrolled.set_propagate_natural_height(True)
+        self.notif_scrolled.add(self.notif_list_box)
+        notif_section.pack_start(self.notif_scrolled, False, False, 0)
+
+        self._populate_notifications()
+        main_box.pack_start(notif_section, False, False, 0)
 
         # Media Player Card (Visible only when playing/paused)
         if self.media_info.get("active"):
@@ -538,6 +726,105 @@ class ControlCenterWindow(Gtk.Window):
         power_box.pack_start(poweroff_btn, True, True, 0)
 
         main_box.pack_start(power_box, False, False, 0)
+
+    def _populate_notifications(self):
+        for child in self.notif_list_box.get_children():
+            self.notif_list_box.remove(child)
+
+        if not self.notifications:
+            self.notif_clear_btn.set_sensitive(False)
+            empty_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+            empty_box.get_style_context().add_class("notif-empty-box")
+
+            empty_icon = Gtk.Label(label="󰂛")
+            empty_icon.get_style_context().add_class("notif-empty-icon")
+            empty_lbl = Gtk.Label(label="No notifications")
+            empty_lbl.get_style_context().add_class("notif-empty-label")
+
+            empty_box.pack_start(empty_icon, False, False, 0)
+            empty_box.pack_start(empty_lbl, False, False, 0)
+            self.notif_list_box.pack_start(empty_box, False, False, 0)
+        else:
+            self.notif_clear_btn.set_sensitive(True)
+            for notif in self.notifications[:6]:
+                card = self._create_notification_card(notif)
+                self.notif_list_box.pack_start(card, False, False, 0)
+
+        self.notif_list_box.show_all()
+
+    def _create_notification_card(self, notif):
+        event_box = Gtk.EventBox()
+        event_box.get_style_context().add_class("notif-card")
+
+        card_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        event_box.add(card_box)
+
+        # 1. App Icon
+        icon_char = get_app_icon(notif["app"])
+        app_icon_lbl = Gtk.Label(label=icon_char)
+        app_icon_lbl.get_style_context().add_class("notif-icon")
+        app_icon_lbl.set_valign(Gtk.Align.START)
+        card_box.pack_start(app_icon_lbl, False, False, 0)
+
+        # 2. Content Box (App + Time, Title, Body)
+        content_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+
+        hdr = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        app_lbl = Gtk.Label(label=notif["app"].upper(), xalign=0)
+        app_lbl.get_style_context().add_class("notif-app-name")
+        hdr.pack_start(app_lbl, True, True, 0)
+
+        time_lbl = Gtk.Label(label=notif["time_str"], xalign=1)
+        time_lbl.get_style_context().add_class("notif-time")
+        hdr.pack_end(time_lbl, False, False, 0)
+        content_box.pack_start(hdr, False, False, 0)
+
+        if notif["summary"]:
+            title_lbl = Gtk.Label(label=notif["summary"], xalign=0)
+            title_lbl.get_style_context().add_class("notif-title")
+            title_lbl.set_ellipsize(Pango.EllipsizeMode.END)
+            title_lbl.set_max_width_chars(32)
+            content_box.pack_start(title_lbl, False, False, 0)
+
+        if notif["body"]:
+            body_lbl = Gtk.Label(label=notif["body"], xalign=0)
+            body_lbl.get_style_context().add_class("notif-body")
+            body_lbl.set_ellipsize(Pango.EllipsizeMode.END)
+            body_lbl.set_max_width_chars(36)
+            content_box.pack_start(body_lbl, False, False, 0)
+
+        card_box.pack_start(content_box, True, True, 0)
+
+        # 3. Dismiss button
+        close_btn = Gtk.Button(label="󰅖")
+        close_btn.get_style_context().add_class("notif-close-btn")
+        close_btn.set_valign(Gtk.Align.START)
+        close_btn.set_tooltip_text("Dismiss notification")
+
+        def _on_dismiss(btn):
+            nid = notif.get("id")
+            if nid:
+                subprocess.run(["dunstctl", "history-rm", str(nid)], check=False)
+            self.notifications = [n for n in self.notifications if n.get("id") != nid]
+            self._populate_notifications()
+
+        close_btn.connect("clicked", _on_dismiss)
+        card_box.pack_end(close_btn, False, False, 0)
+
+        def _on_card_click(w, event):
+            if event.button == 1:
+                self.destroy()
+                focus_notification_target(notif["app"], notif["summary"], notif["body"])
+                return True
+            return False
+
+        event_box.connect("button-press-event", _on_card_click)
+        return event_box
+
+    def _on_clear_all_notifications(self, btn):
+        subprocess.run(["dunstctl", "history-clear"], check=False)
+        self.notifications = []
+        self._populate_notifications()
 
     def _create_toggle_pill(self, icon, title, status, is_active, has_chevron=False, on_toggle=None, on_chevron=None):
         pill_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
