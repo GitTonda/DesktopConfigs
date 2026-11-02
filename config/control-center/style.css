@@ -251,7 +251,11 @@ button.media-btn:hover {
 
 /* Notifications Section */
 .notifications-section {
-    margin-top: 4px;
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
+
+.notif-header-bar {
     margin-bottom: 4px;
 }
 
@@ -261,9 +265,9 @@ button.notif-clear-btn {
     border: none;
     box-shadow: none;
     color: #6c7086;
-    font-size: 8.5pt;
+    font-size: 8pt;
     font-weight: 600;
-    padding: 3px 8px;
+    padding: 1px 4px;
     margin: 0;
     transition: all 120ms ease;
 }
@@ -278,7 +282,7 @@ button.notif-clear-btn:hover {
     background-color: rgba(30, 30, 46, 0.70);
     border: 1px solid #313244;
     border-radius: 0px;
-    padding: 12px 14px;
+    padding: 0px;
     margin-top: 0px;
     margin-bottom: 0px;
     transition: all 120ms ease;
@@ -292,7 +296,7 @@ button.notif-clear-btn:hover {
 .notif-icon {
     font-size: 16pt;
     color: @accent@;
-    min-width: 24px;
+    min-width: 28px;
 }
 
 .notif-app-name {
@@ -322,7 +326,7 @@ button.notif-clear-btn:hover {
 .notif-body {
     font-size: 8.5pt;
     color: #9399b2;
-    margin-top: 2px;
+    margin-top: 1px;
 }
 
 .notif-close-btn,
@@ -331,8 +335,8 @@ button.notif-close-btn {
     border: none;
     box-shadow: none;
     color: #585b70;
-    font-size: 9.5pt;
-    padding: 2px 5px;
+    font-size: 9pt;
+    padding: 2px 4px;
     margin: 0px;
     border-radius: 0px;
     transition: all 120ms ease;
@@ -345,7 +349,7 @@ button.notif-close-btn:hover {
 }
 
 .notif-empty-box {
-    padding: 22px 14px;
+    padding: 20px 14px;
 }
 
 .notif-empty-icon {

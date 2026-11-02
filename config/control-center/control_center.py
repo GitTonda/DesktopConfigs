@@ -627,25 +627,24 @@ class ControlCenterWindow(Gtk.Window):
         main_box.pack_start(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL), False, False, 0)
 
         # 3. Notifications Section
-        notif_section = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        notif_section = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         notif_section.get_style_context().add_class("notifications-section")
 
-        notif_hdr = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        notif_title = Gtk.Label(label="󰂚 NOTIFICATIONS", xalign=0)
-        notif_title.get_style_context().add_class("section-title")
-        notif_hdr.pack_start(notif_title, True, True, 0)
+        self.notif_hdr = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        self.notif_hdr.get_style_context().add_class("notif-header-bar")
+        self.notif_hdr.set_no_show_all(True)
 
         self.notif_clear_btn = Gtk.Button(label="Clear")
         self.notif_clear_btn.get_style_context().add_class("notif-clear-btn")
         self.notif_clear_btn.set_tooltip_text("Clear all notifications")
         self.notif_clear_btn.connect("clicked", self._on_clear_all_notifications)
-        notif_hdr.pack_end(self.notif_clear_btn, False, False, 0)
-        notif_section.pack_start(notif_hdr, False, False, 0)
+        self.notif_hdr.pack_end(self.notif_clear_btn, False, False, 0)
+        notif_section.pack_start(self.notif_hdr, False, False, 0)
 
         self.notif_list_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         self.notif_scrolled = Gtk.ScrolledWindow()
         self.notif_scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        self.notif_scrolled.set_max_content_height(240)
+        self.notif_scrolled.set_max_content_height(260)
         self.notif_scrolled.set_propagate_natural_height(True)
         self.notif_scrolled.add(self.notif_list_box)
         notif_section.pack_start(self.notif_scrolled, False, False, 0)
@@ -737,7 +736,7 @@ class ControlCenterWindow(Gtk.Window):
             self.notif_list_box.remove(child)
 
         if not self.notifications:
-            self.notif_clear_btn.set_sensitive(False)
+            self.notif_hdr.set_visible(False)
             empty_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
             empty_box.get_style_context().add_class("notif-empty-box")
 
@@ -750,6 +749,7 @@ class ControlCenterWindow(Gtk.Window):
             empty_box.pack_start(empty_lbl, False, False, 0)
             self.notif_list_box.pack_start(empty_box, False, False, 0)
         else:
+            self.notif_hdr.set_visible(True)
             self.notif_clear_btn.set_sensitive(True)
             for notif in self.notifications[:6]:
                 card = self._create_notification_card(notif)
@@ -762,6 +762,10 @@ class ControlCenterWindow(Gtk.Window):
         event_box.get_style_context().add_class("notif-card")
 
         card_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=14)
+        card_box.set_margin_start(14)
+        card_box.set_margin_end(12)
+        card_box.set_margin_top(12)
+        card_box.set_margin_bottom(12)
         event_box.add(card_box)
 
         # 1. App Icon (Centrally balanced on the left)
@@ -769,6 +773,7 @@ class ControlCenterWindow(Gtk.Window):
         app_icon_lbl = Gtk.Label(label=icon_char)
         app_icon_lbl.get_style_context().add_class("notif-icon")
         app_icon_lbl.set_valign(Gtk.Align.CENTER)
+        app_icon_lbl.set_halign(Gtk.Align.CENTER)
         card_box.pack_start(app_icon_lbl, False, False, 0)
 
         # 2. Content Box (App + Bullet + Time, Title, Body)
@@ -806,7 +811,7 @@ class ControlCenterWindow(Gtk.Window):
             title_lbl = Gtk.Label(label=notif["summary"], xalign=0)
             title_lbl.get_style_context().add_class("notif-title")
             title_lbl.set_ellipsize(Pango.EllipsizeMode.END)
-            title_lbl.set_max_width_chars(38)
+            title_lbl.set_max_width_chars(32)
             title_lbl.set_margin_bottom(1)
             content_box.pack_start(title_lbl, False, False, 0)
 
@@ -815,7 +820,7 @@ class ControlCenterWindow(Gtk.Window):
             body_lbl = Gtk.Label(label=notif["body"], xalign=0)
             body_lbl.get_style_context().add_class("notif-body")
             body_lbl.set_ellipsize(Pango.EllipsizeMode.END)
-            body_lbl.set_max_width_chars(42)
+            body_lbl.set_max_width_chars(36)
             content_box.pack_start(body_lbl, False, False, 0)
 
         card_box.pack_start(content_box, True, True, 0)
@@ -824,7 +829,6 @@ class ControlCenterWindow(Gtk.Window):
         close_btn = Gtk.Button(label="󰅖")
         close_btn.get_style_context().add_class("notif-close-btn")
         close_btn.set_valign(Gtk.Align.START)
-        close_btn.set_margin_start(2)
         close_btn.set_tooltip_text("Dismiss notification")
 
         def _on_dismiss(btn):
