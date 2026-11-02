@@ -29,13 +29,13 @@ window {
 .main-box {
     background-color: rgba(17, 17, 27, @opacity@);
     border: 1px solid @accent_border@;
-    padding: 16px;
+    padding: 18px;
 }
 
 /* Header */
 .header-box {
-    margin-bottom: 4px;
-    padding: 0px 3px;
+    margin-bottom: 6px;
+    padding: 0px 2px;
 }
 
 .header-user {
@@ -70,7 +70,7 @@ button.settings-btn:hover {
 separator {
     background-color: #313244;
     min-height: 1px;
-    margin: 4px 3px;
+    margin: 8px 0px;
 }
 
 /* Section Title */
@@ -78,6 +78,7 @@ separator {
     font-size: 8.5pt;
     font-weight: bold;
     color: #a6adc8;
+    letter-spacing: 0.5px;
     margin-bottom: 6px;
 }
 
@@ -88,7 +89,7 @@ separator {
     border: 1px solid #313244;
     border-radius: 0px;
     padding: 0px;
-    margin: 3px;
+    margin: 0px;
     transition: all 120ms ease-in-out;
 }
 
@@ -109,12 +110,12 @@ button.pill-main-btn {
 
 .pill-main-btn-full,
 button.pill-main-btn-full {
-    padding: 8px 10px;
+    padding: 9px 12px;
 }
 
 .pill-main-btn-split,
 button.pill-main-btn-split {
-    padding: 8px 4px 8px 10px;
+    padding: 9px 6px 9px 12px;
 }
 
 .pill-main-btn:hover,
@@ -129,7 +130,7 @@ button.pill-main-btn:active {
 
 .pill-icon {
     font-size: 15pt;
-    margin-right: 10px;
+    margin-right: 12px;
     color: #a6adc8;
 }
 
@@ -142,6 +143,7 @@ button.pill-main-btn:active {
 .pill-status {
     font-size: 8pt;
     color: #6c7086;
+    margin-top: 1px;
 }
 
 /* Chevron Sub-Button (Separate Click Target for Settings/Details) */
@@ -153,7 +155,7 @@ button.pill-chevron-btn {
     border-left: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: none;
     border-radius: 0px;
-    padding: 0px 10px;
+    padding: 0px 12px;
     margin: 0px;
     color: #6c7086;
     font-size: 10.5pt;
@@ -249,8 +251,8 @@ button.media-btn:hover {
 
 /* Notifications Section */
 .notifications-section {
-    margin-top: 2px;
-    margin-bottom: 2px;
+    margin-top: 4px;
+    margin-bottom: 4px;
 }
 
 .notif-clear-btn,
@@ -261,7 +263,7 @@ button.notif-clear-btn {
     color: #6c7086;
     font-size: 8.5pt;
     font-weight: 600;
-    padding: 2px 6px;
+    padding: 3px 8px;
     margin: 0;
     transition: all 120ms ease;
 }
@@ -276,9 +278,9 @@ button.notif-clear-btn:hover {
     background-color: rgba(30, 30, 46, 0.70);
     border: 1px solid #313244;
     border-radius: 0px;
-    padding: 8px 10px;
-    margin-top: 2px;
-    margin-bottom: 2px;
+    padding: 11px 13px;
+    margin-top: 0px;
+    margin-bottom: 0px;
     transition: all 120ms ease;
 }
 
@@ -288,15 +290,17 @@ button.notif-clear-btn:hover {
 }
 
 .notif-icon {
-    font-size: 13pt;
+    font-size: 14pt;
     color: @accent@;
-    margin-right: 2px;
+    margin-top: 1px;
+    margin-right: 4px;
 }
 
 .notif-app-name {
     font-size: 8pt;
     font-weight: bold;
     color: #a6adc8;
+    letter-spacing: 0.5px;
 }
 
 .notif-time {
@@ -305,14 +309,15 @@ button.notif-clear-btn:hover {
 }
 
 .notif-title {
-    font-size: 9pt;
+    font-size: 9.5pt;
     font-weight: 600;
     color: #cdd6f4;
 }
 
 .notif-body {
-    font-size: 8pt;
+    font-size: 8.5pt;
     color: #a6adc8;
+    margin-top: 2px;
 }
 
 .notif-close-btn,
@@ -321,9 +326,9 @@ button.notif-close-btn {
     border: none;
     box-shadow: none;
     color: #585b70;
-    font-size: 9.5pt;
-    padding: 2px 4px;
-    margin: -4px -4px 0 0;
+    font-size: 10pt;
+    padding: 3px 5px;
+    margin: 0px;
     border-radius: 0px;
     transition: all 120ms ease;
 }
@@ -335,7 +340,7 @@ button.notif-close-btn:hover {
 }
 
 .notif-empty-box {
-    padding: 14px 12px;
+    padding: 22px 14px;
 }
 
 .notif-empty-icon {
@@ -351,7 +356,7 @@ button.notif-close-btn:hover {
 
 /* Power Bar */
 .power-bar {
-    margin-top: 2px;
+    margin-top: 4px;
 }
 
 .power-btn,
@@ -359,7 +364,7 @@ button.power-btn {
     background-image: none;
     background-color: rgba(30, 30, 46, 0.70);
     border: 1px solid #313244;
-    padding: 8px 12px;
+    padding: 10px 14px;
     font-size: 13pt;
     color: #cdd6f4;
     transition: all 120ms ease;

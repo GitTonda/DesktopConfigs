@@ -370,7 +370,7 @@ class ControlCenterWindow(Gtk.Window):
         self.set_role("pop-up")
         self.set_decorated(False)
         self.set_resizable(False)
-        self.set_default_size(390, -1)
+        self.set_default_size(416, -1)
         self.set_app_paintable(True)
         self.set_skip_taskbar_hint(True)
         self.set_skip_pager_hint(True)
@@ -509,7 +509,7 @@ class ControlCenterWindow(Gtk.Window):
             )
 
     def _build_ui(self):
-        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         main_box.get_style_context().add_class("main-box")
         self.add(main_box)
 
@@ -543,8 +543,8 @@ class ControlCenterWindow(Gtk.Window):
 
         # 2. Quick Toggles Grid (Wi-Fi, Bluetooth, Mute, Mic, DND, Quick Share)
         grid = Gtk.Grid()
-        grid.set_column_spacing(6)
-        grid.set_row_spacing(6)
+        grid.set_column_spacing(8)
+        grid.set_row_spacing(8)
         grid.set_column_homogeneous(True)
 
         # Wi-Fi Pill
@@ -622,7 +622,7 @@ class ControlCenterWindow(Gtk.Window):
         main_box.pack_start(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL), False, False, 0)
 
         # 3. Notifications Section
-        notif_section = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        notif_section = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         notif_section.get_style_context().add_class("notifications-section")
 
         notif_hdr = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
@@ -637,10 +637,10 @@ class ControlCenterWindow(Gtk.Window):
         notif_hdr.pack_end(self.notif_clear_btn, False, False, 0)
         notif_section.pack_start(notif_hdr, False, False, 0)
 
-        self.notif_list_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        self.notif_list_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         self.notif_scrolled = Gtk.ScrolledWindow()
         self.notif_scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        self.notif_scrolled.set_max_content_height(220)
+        self.notif_scrolled.set_max_content_height(240)
         self.notif_scrolled.set_propagate_natural_height(True)
         self.notif_scrolled.add(self.notif_list_box)
         notif_section.pack_start(self.notif_scrolled, False, False, 0)
@@ -696,7 +696,7 @@ class ControlCenterWindow(Gtk.Window):
         main_box.pack_start(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL), False, False, 0)
 
         # 3. Session Actions (Bottom Row: Lock, Suspend, Reboot, Shutdown)
-        power_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        power_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         power_box.get_style_context().add_class("power-bar")
         power_box.set_homogeneous(True)
 
@@ -756,7 +756,7 @@ class ControlCenterWindow(Gtk.Window):
         event_box = Gtk.EventBox()
         event_box.get_style_context().add_class("notif-card")
 
-        card_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        card_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
         event_box.add(card_box)
 
         # 1. App Icon
@@ -767,9 +767,9 @@ class ControlCenterWindow(Gtk.Window):
         card_box.pack_start(app_icon_lbl, False, False, 0)
 
         # 2. Content Box (App + Time, Title, Body)
-        content_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        content_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
 
-        hdr = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        hdr = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         app_lbl = Gtk.Label(label=notif["app"].upper(), xalign=0)
         app_lbl.get_style_context().add_class("notif-app-name")
         hdr.pack_start(app_lbl, True, True, 0)
@@ -783,14 +783,14 @@ class ControlCenterWindow(Gtk.Window):
             title_lbl = Gtk.Label(label=notif["summary"], xalign=0)
             title_lbl.get_style_context().add_class("notif-title")
             title_lbl.set_ellipsize(Pango.EllipsizeMode.END)
-            title_lbl.set_max_width_chars(32)
+            title_lbl.set_max_width_chars(38)
             content_box.pack_start(title_lbl, False, False, 0)
 
         if notif["body"]:
             body_lbl = Gtk.Label(label=notif["body"], xalign=0)
             body_lbl.get_style_context().add_class("notif-body")
             body_lbl.set_ellipsize(Pango.EllipsizeMode.END)
-            body_lbl.set_max_width_chars(36)
+            body_lbl.set_max_width_chars(42)
             content_box.pack_start(body_lbl, False, False, 0)
 
         card_box.pack_start(content_box, True, True, 0)
@@ -856,8 +856,8 @@ class ControlCenterWindow(Gtk.Window):
         title_lbl.set_ellipsize(Pango.EllipsizeMode.END)
 
         display_status = status
-        if len(display_status) > 13:
-            display_status = display_status[:11] + "..."
+        if len(display_status) > 16:
+            display_status = display_status[:14] + "..."
         status_lbl = Gtk.Label(label=display_status, xalign=0)
         status_lbl.get_style_context().add_class("pill-status")
         status_lbl.set_ellipsize(Pango.EllipsizeMode.END)
