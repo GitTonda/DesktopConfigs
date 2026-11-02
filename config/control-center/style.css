@@ -82,61 +82,97 @@ separator {
 }
 
 /* Toggle Pills */
-.toggle-pill,
-button.toggle-pill {
+.toggle-pill {
     background-image: none;
     background-color: rgba(30, 30, 46, 0.70);
     border: 1px solid #313244;
-    padding: 9px 12px;
+    border-radius: 0px;
+    padding: 0px;
     margin: 3px;
     transition: all 120ms ease-in-out;
 }
 
-.toggle-pill:hover,
-button.toggle-pill:hover {
-    background-image: none;
-    background-color: rgba(49, 50, 68, 0.85);
+.toggle-pill:hover {
     border-color: #585b70;
 }
 
-.toggle-pill .pill-icon {
+/* Main Pill Button */
+.pill-main-btn,
+button.pill-main-btn {
+    background: transparent;
+    background-image: none;
+    border: none;
+    box-shadow: none;
+    border-radius: 0px;
+    margin: 0px;
+}
+
+.pill-main-btn-full,
+button.pill-main-btn-full {
+    padding: 8px 10px;
+}
+
+.pill-main-btn-split,
+button.pill-main-btn-split {
+    padding: 8px 4px 8px 10px;
+}
+
+.pill-main-btn:hover,
+button.pill-main-btn:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.pill-main-btn:active,
+button.pill-main-btn:active {
+    background-color: rgba(255, 255, 255, 0.09);
+}
+
+.pill-icon {
     font-size: 15pt;
     margin-right: 10px;
     color: #a6adc8;
 }
 
-.toggle-pill .pill-title {
+.pill-title {
     font-size: 9.5pt;
     font-weight: 600;
     color: #cdd6f4;
 }
 
-.toggle-pill .pill-status {
+.pill-status {
     font-size: 8pt;
     color: #6c7086;
 }
 
-.pill-chevron {
-    font-size: 10pt;
-    color: #585b70;
-    margin-left: 2px;
+/* Chevron Sub-Button (Separate Click Target for Settings/Details) */
+.pill-chevron-btn,
+button.pill-chevron-btn {
+    background: transparent;
+    background-image: none;
+    border: none;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: none;
+    border-radius: 0px;
+    padding: 0px 10px;
+    margin: 0px;
+    color: #6c7086;
+    font-size: 10.5pt;
+    transition: all 120ms ease-in-out;
 }
 
-.toggle-pill:hover .pill-chevron {
-    color: #a6adc8;
+.pill-chevron-btn:hover,
+button.pill-chevron-btn:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+    color: #cdd6f4;
+}
+
+.pill-chevron-btn:active,
+button.pill-chevron-btn:active {
+    background-color: rgba(255, 255, 255, 0.18);
 }
 
 /* Active Pill State - Refined Soft Accent */
-.toggle-pill.active,
-button.toggle-pill.active {
-    background-image: none;
-    background-color: @accent_dim@;
-    border: 1px solid @accent@;
-}
-
-.toggle-pill.active:hover,
-button.toggle-pill.active:hover {
-    background-image: none;
+.toggle-pill.active {
     background-color: @accent_dim@;
     border: 1px solid @accent@;
 }
@@ -155,8 +191,14 @@ button.toggle-pill.active:hover {
     font-weight: 600;
 }
 
-.toggle-pill.active .pill-chevron {
+.toggle-pill.active .pill-chevron-btn {
+    border-left: 1px solid rgba(255, 255, 255, 0.15);
     color: @accent@;
+}
+
+.toggle-pill.active .pill-chevron-btn:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
 }
 
 /* Slider Card */

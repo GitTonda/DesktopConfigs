@@ -164,6 +164,19 @@ def get_dnd_state():
     return is_paused
 
 
+def get_quickshare_state():
+    is_running = False
+    try:
+        res = subprocess.run(["pgrep", "-f", "rquickshare"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        is_running = (res.returncode == 0)
+    except Exception:
+        pass
+    return {
+        "running": is_running,
+        "status": "Active" if is_running else "Off"
+    }
+
+
 def get_brightness():
     # 0. Check cache file
     cache_file = os.path.expanduser("~/.config/theme/brightness")
@@ -358,6 +371,7 @@ class ControlCenterWindow(Gtk.Window):
         self.wifi_state = get_wifi_state()
         self.bt_state = get_bluetooth_state()
         self.dnd_state = get_dnd_state()
+        self.quickshare_state = get_quickshare_state()
         self.brightness = get_brightness()
         self.media_info = get_media_info()
 
@@ -512,80 +526,82 @@ class ControlCenterWindow(Gtk.Window):
         main_box.pack_start(header_box, False, False, 0)
         main_box.pack_start(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL), False, False, 0)
 
-        # 2. Quick Toggles Grid (Wi-Fi, Bluetooth, Mute, Mic, DND, Wallpaper)
-        toggles_title = Gtk.Label(label="QUICK TOGGLES", xalign=0)
-        toggles_title.get_style_context().add_class("section-title")
-        main_box.pack_start(toggles_title, False, False, 0)
-
+        # 2. Quick Toggles Grid (Wi-Fi, Bluetooth, Mute, Mic, DND, Quick Share)
         grid = Gtk.Grid()
         grid.set_column_spacing(6)
         grid.set_row_spacing(6)
         grid.set_column_homogeneous(True)
 
         # Wi-Fi Pill
-        self.wifi_btn, self.wifi_icon, self.wifi_sub = self._create_toggle_pill(
+        self.wifi_btn, self.wifi_icon, self.wifi_sub, self.wifi_chev = self._create_toggle_pill(
             icon="󰤨" if self.wifi_state["enabled"] else "󰤮",
             title="Wi-Fi",
             status=self.wifi_state["ssid"],
             is_active=self.wifi_state["enabled"],
-            has_chevron=True
+            has_chevron=True,
+            on_toggle=self._on_toggle_wifi,
+            on_chevron=self._on_wifi_chevron
         )
-        self.wifi_btn.connect("clicked", self._on_toggle_wifi)
         self.wifi_btn.connect("button-press-event", self._on_wifi_right_click)
         grid.attach(self.wifi_btn, 0, 0, 1, 1)
 
         # Bluetooth Pill
-        self.bt_btn, self.bt_icon, self.bt_sub = self._create_toggle_pill(
+        self.bt_btn, self.bt_icon, self.bt_sub, self.bt_chev = self._create_toggle_pill(
             icon="󰂯" if self.bt_state["powered"] else "󰂲",
             title="Bluetooth",
             status=self.bt_state["device"],
             is_active=self.bt_state["powered"],
-            has_chevron=True
+            has_chevron=True,
+            on_toggle=self._on_toggle_bt,
+            on_chevron=self._on_bt_chevron
         )
-        self.bt_btn.connect("clicked", self._on_toggle_bt)
         self.bt_btn.connect("button-press-event", self._on_bt_right_click)
         grid.attach(self.bt_btn, 1, 0, 1, 1)
 
         # Audio Mute Pill
-        self.mute_btn, self.mute_icon, self.mute_sub = self._create_toggle_pill(
+        self.mute_btn, self.mute_icon, self.mute_sub, _ = self._create_toggle_pill(
             icon="󰝟" if self.audio_state["muted"] else "󰕾",
             title="Audio Out",
             status="Muted" if self.audio_state["muted"] else f"{self.audio_state['volume']}%",
-            is_active=not self.audio_state["muted"]
+            is_active=not self.audio_state["muted"],
+            has_chevron=False,
+            on_toggle=self._on_toggle_mute
         )
-        self.mute_btn.connect("clicked", self._on_toggle_mute)
         grid.attach(self.mute_btn, 0, 1, 1, 1)
 
         # Mic Mute Pill
-        self.mic_btn, self.mic_icon, self.mic_sub = self._create_toggle_pill(
+        self.mic_btn, self.mic_icon, self.mic_sub, _ = self._create_toggle_pill(
             icon="󰍭" if self.audio_state["mic_muted"] else "󰍬",
             title="Microphone",
             status="Muted" if self.audio_state["mic_muted"] else "Active",
-            is_active=not self.audio_state["mic_muted"]
+            is_active=not self.audio_state["mic_muted"],
+            has_chevron=False,
+            on_toggle=self._on_toggle_mic
         )
-        self.mic_btn.connect("clicked", self._on_toggle_mic)
         grid.attach(self.mic_btn, 1, 1, 1, 1)
 
         # DND Pill
-        self.dnd_btn, self.dnd_icon, self.dnd_sub = self._create_toggle_pill(
+        self.dnd_btn, self.dnd_icon, self.dnd_sub, _ = self._create_toggle_pill(
             icon="󱤓",
             title="Do Not Disturb",
             status="Active" if self.dnd_state else "Off",
-            is_active=self.dnd_state
+            is_active=self.dnd_state,
+            has_chevron=False,
+            on_toggle=self._on_toggle_dnd
         )
-        self.dnd_btn.connect("clicked", self._on_toggle_dnd)
         grid.attach(self.dnd_btn, 0, 2, 1, 1)
 
-        # Wallpaper / Theme Pill
-        self.wall_btn, _, _ = self._create_toggle_pill(
-            icon="󰸉",
-            title="Appearance",
-            status="Customize",
-            is_active=False,
-            has_chevron=True
+        # Quick Share Pill
+        self.qs_btn, self.qs_icon, self.qs_sub, self.qs_chev = self._create_toggle_pill(
+            icon="󰒘",
+            title="Quick Share",
+            status=self.quickshare_state["status"],
+            is_active=self.quickshare_state["running"],
+            has_chevron=True,
+            on_toggle=self._on_toggle_quickshare,
+            on_chevron=self._on_quickshare_chevron
         )
-        self.wall_btn.connect("clicked", self._on_open_wallpaper_settings)
-        grid.attach(self.wall_btn, 1, 2, 1, 1)
+        grid.attach(self.qs_btn, 1, 2, 1, 1)
 
         main_box.pack_start(grid, False, False, 0)
         main_box.pack_start(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL), False, False, 0)
@@ -771,40 +787,59 @@ class ControlCenterWindow(Gtk.Window):
 
         main_box.pack_start(power_box, False, False, 0)
 
-    def _create_toggle_pill(self, icon, title, status, is_active, has_chevron=False):
-        btn = Gtk.Button()
-        btn.get_style_context().add_class("toggle-pill")
+    def _create_toggle_pill(self, icon, title, status, is_active, has_chevron=False, on_toggle=None, on_chevron=None):
+        pill_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+        pill_box.get_style_context().add_class("toggle-pill")
         if is_active:
-            btn.get_style_context().add_class("active")
+            pill_box.get_style_context().add_class("active")
 
-        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        btn.add(box)
+        # Main toggle button
+        main_btn = Gtk.Button()
+        main_btn.get_style_context().add_class("pill-main-btn")
+        if has_chevron:
+            main_btn.get_style_context().add_class("pill-main-btn-split")
+        else:
+            main_btn.get_style_context().add_class("pill-main-btn-full")
+
+        if on_toggle:
+            main_btn.connect("clicked", on_toggle)
+
+        btn_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        main_btn.add(btn_box)
 
         icon_lbl = Gtk.Label(label=icon)
         icon_lbl.get_style_context().add_class("pill-icon")
-        box.pack_start(icon_lbl, False, False, 0)
+        btn_box.pack_start(icon_lbl, False, False, 0)
 
         txt_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1)
         title_lbl = Gtk.Label(label=title, xalign=0)
         title_lbl.get_style_context().add_class("pill-title")
+        title_lbl.set_ellipsize(Pango.EllipsizeMode.END)
 
-        # Trim long status
         display_status = status
-        if len(display_status) > 14:
-            display_status = display_status[:12] + "..."
+        if len(display_status) > 13:
+            display_status = display_status[:11] + "..."
         status_lbl = Gtk.Label(label=display_status, xalign=0)
         status_lbl.get_style_context().add_class("pill-status")
+        status_lbl.set_ellipsize(Pango.EllipsizeMode.END)
 
         txt_box.pack_start(title_lbl, False, False, 0)
         txt_box.pack_start(status_lbl, False, False, 0)
-        box.pack_start(txt_box, True, True, 0)
+        btn_box.pack_start(txt_box, True, True, 0)
 
+        pill_box.pack_start(main_btn, True, True, 0)
+
+        chev_btn = None
         if has_chevron:
-            chev = Gtk.Label(label="󰅂")
-            chev.get_style_context().add_class("pill-chevron")
-            box.pack_end(chev, False, False, 0)
+            chev_btn = Gtk.Button()
+            chev_btn.get_style_context().add_class("pill-chevron-btn")
+            chev_lbl = Gtk.Label(label="󰅂")
+            chev_btn.add(chev_lbl)
+            if on_chevron:
+                chev_btn.connect("clicked", on_chevron)
+            pill_box.pack_end(chev_btn, False, False, 0)
 
-        return btn, icon_lbl, status_lbl
+        return pill_box, icon_lbl, status_lbl, chev_btn
 
     # --------------------------------------------------------------------------
     # Callbacks & Actions
@@ -823,6 +858,49 @@ class ControlCenterWindow(Gtk.Window):
         elif fallback_cmd:
             subprocess.Popen(fallback_cmd, start_new_session=True)
 
+    def _on_wifi_chevron(self, btn):
+        self._open_settings_page("wifi", ["alacritty", "--class", "FloatingWifi", "-e", "nmtui"])
+
+    def _on_bt_chevron(self, btn):
+        self._open_settings_page("bluetooth", ["alacritty", "--class", "FloatingBluetooth", "-e", "bluetoothctl"])
+
+    def _on_quickshare_chevron(self, btn):
+        self.destroy()
+        subprocess.Popen(["/home/tonda/Applications/rquickshare"], start_new_session=True)
+        time.sleep(0.1)
+        subprocess.run(["i3-msg", '[class="(?i)rquickshare"] focus'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+
+    def _on_toggle_quickshare(self, btn):
+        curr = self.quickshare_state["running"]
+        new_state = not curr
+        self.quickshare_state["running"] = new_state
+        if new_state:
+            self.qs_btn.get_style_context().add_class("active")
+            self.qs_sub.set_text("Active")
+        else:
+            self.qs_btn.get_style_context().remove_class("active")
+            self.qs_sub.set_text("Off")
+
+        def _worker():
+            if new_state:
+                subprocess.Popen(["/home/tonda/Applications/rquickshare"], start_new_session=True)
+            else:
+                subprocess.run(["pkill", "-f", "rquickshare"], check=False)
+            time.sleep(0.3)
+            st = get_quickshare_state()
+            def _apply():
+                self.quickshare_state = st
+                if st["running"]:
+                    self.qs_btn.get_style_context().add_class("active")
+                    self.qs_sub.set_text("Active")
+                else:
+                    self.qs_btn.get_style_context().remove_class("active")
+                    self.qs_sub.set_text("Off")
+                return False
+            GLib.idle_add(_apply)
+
+        threading.Thread(target=_worker, daemon=True).start()
+
     def _on_wifi_right_click(self, btn, event):
         if event.button == 3: # Right click
             self._open_settings_page("wifi", ["alacritty", "--class", "FloatingWifi", "-e", "nmtui"])
@@ -834,14 +912,6 @@ class ControlCenterWindow(Gtk.Window):
             self._open_settings_page("bluetooth", ["alacritty", "--class", "FloatingBluetooth", "-e", "bluetoothctl"])
             return True
         return False
-
-    def _on_open_wallpaper_settings(self, btn):
-        self._open_settings_page("appearance", [
-            "feh", "-t", "-E", "180", "-y", "140", "-W", "1080", "-H", "720",
-            "--title", "Wallpaper Gallery - Click to Apply",
-            "--action", os.path.expanduser("~/.config/theme/apply-theme.sh '%f'"),
-            os.path.expanduser("~/Pictures/Wallpapers")
-        ])
 
     def _on_toggle_wifi(self, btn):
         curr = self.wifi_state["enabled"]
@@ -1225,11 +1295,9 @@ def main():
         pass
 
     win = ControlCenterWindow()
-    x, y = calculate_target_position(win, inset=10)
-
-    # Offset by -2, -2 to counteract i3 floating container decoration border offset
-    win.move(x - 2, y - 2)
     win.show_all()
+    x, y = calculate_target_position(win, inset=10)
+    win.move(x, y)
     win.set_keep_above(True)
 
     subprocess.run([
