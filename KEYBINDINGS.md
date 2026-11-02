@@ -10,7 +10,7 @@ Il tasto modificatore principale è **`Super`** (noto anche come tasto **Windows
 
 | Scorciatoia | Azione | Note / Finestra |
 |---|---|---|
-| **`Super + Shift + S`** | **Pannello di Controllo Unificato** | Flyout GTK3 moderno: Wi-Fi, Bluetooth, Audio, DND, Telemetria, Sessione |
+| **`Super + C`** o **`Super + Escape`** | **Pannello di Controllo Unificato** | Flyout GTK3 moderno: Wi-Fi, Bluetooth, Audio, DND, Quick Share, Notifiche, Media |
 | **`Super + Tab`** o **`Alt + Tab`** | **Selettore Finestre (Window Switcher)** | Passa tra tutte le finestre aperte con anteprima workspace e icone |
 | **`Super + Shift + V`** | **Gestore Appunti (Clipboard)** | Cronologia appunti con ricerca fuzzy e anteprima |
 | **`Super + Return`** | **Terminale** | Apre Alacritty (stile terminale trasparente Mocha) |
@@ -72,19 +72,24 @@ Il tasto modificatore principale è **`Super`** (noto anche come tasto **Windows
 
 ## 🔊 5. Tasti Multimediali, Audio, Schermo & Screenshot
 
-| Tasto Hardware / Scorciatoia | Azione |
-|---|---|
-| **`XF86AudioRaiseVolume`** | Alza il volume del 5% (**con blocco hardware di sicurezza a max 100%**) |
-| **`XF86AudioLowerVolume`** | Abbassa il volume del 5% |
-| **`XF86AudioMute`** | Attiva / Disattiva il muto per gli altoparlanti |
-| **`XF86AudioMicMute`** | Attiva / Disattiva il muto per il microfono |
-| **`XF86AudioPlay`** | Riproduci / Pausa (Spotify, browser, playerctl, mpv) |
-| **`XF86AudioNext`** | Traccia successiva |
-| **`XF86AudioPrev`** | Traccia precedente |
-| **`XF86MonBrightnessUp`** | Aumenta luminosità display del 10% (supporta laptop e monitor esterni) |
-| **`XF86MonBrightnessDown`** | Diminuisce luminosità display del 10% |
-| **`Print`** o **`F13`** o **`Super + Shift + S`** | **Screenshot ad area ritagliata** (copia diretta negli appunti PNG con notifica) |
-| **`Shift + Print`** | **Screenshot a schermo intero** (copia diretta negli appunti) |
+> [!NOTE]
+> **Tastiera Keychron K10 Pro:**
+> * **Selettore hardware su "Mac":** i tasti `F1`–`F12` inviano direttamente i controlli multimediali. Premere `Fn + F1..F12` per i tasti funzione standard.
+> * **Selettore hardware su "Windows":** i tasti `F1`–`F12` inviano i tasti funzione standard. Premere `Fn + F1..F12` per i controlli multimediali.
+
+| Tasto Hardware / Scorciatoia | Azione | Note |
+|---|---|---|
+| **`XF86AudioRaiseVolume`** o **`Super + F12`** | Alza il volume del 5% | Blocco hardware a max 100% con OSD Dunst |
+| **`XF86AudioLowerVolume`** o **`Super + F11`** | Abbassa il volume del 5% | OSD Dunst con barra percentuale |
+| **`XF86AudioMute`** o **`Super + F10`** | Attiva / Disattiva il muto audio | Mostra notifica OSD Mute |
+| **`XF86AudioMicMute`** | Attiva / Disattiva il muto microfono | Toggle via `pactl` |
+| **`XF86AudioPlay`** | Riproduci / Pausa | `playerctl` (Spotify, browser, mpv) |
+| **`XF86AudioNext`** | Traccia successiva | `playerctl` |
+| **`XF86AudioPrev`** | Traccia precedente | `playerctl` |
+| **`XF86MonBrightnessUp`** | Aumenta luminosità del 10% | Regola monitor esterno HDMI via `xrandr` (20%–100%) |
+| **`XF86MonBrightnessDown`** | Diminuisce luminosità del 10% | Regola monitor esterno HDMI via `xrandr` (20%–100%) |
+| **`Print`** o **`F13`** o **`Super + Shift + S`** | **Screenshot ad area ritagliata** | Copia diretta negli appunti PNG con notifica |
+| **`Shift + Print`** | **Screenshot a schermo intero** | Copia diretta negli appunti PNG |
 
 ---
 
