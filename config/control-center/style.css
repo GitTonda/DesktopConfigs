@@ -201,78 +201,6 @@ button.pill-chevron-btn:active {
     color: #ffffff;
 }
 
-/* Slider Card */
-.slider-card {
-    background-color: rgba(30, 30, 46, 0.65);
-    border: 1px solid #313244;
-    padding: 10px 12px;
-    margin-top: 4px;
-    margin-bottom: 4px;
-}
-
-.slider-card:hover {
-    border-color: #45475a;
-}
-
-.slider-label {
-    font-size: 9.5pt;
-    color: #cdd6f4;
-}
-
-.slider-value {
-    font-size: 9.5pt;
-    font-weight: bold;
-    color: @accent@;
-}
-
-scale trough {
-    background-color: #313244;
-    min-height: 6px;
-    border-radius: 0px;
-    border: none;
-}
-
-scale highlight {
-    background-color: @accent@;
-    border-radius: 0px;
-    border: none;
-}
-
-scale slider {
-    background-color: #cdd6f4;
-    min-height: 14px;
-    min-width: 14px;
-    margin: -4px;
-    border-radius: 0px;
-    border: 1px solid #11111b;
-}
-
-scale slider:hover {
-    background-color: #ffffff;
-}
-
-/* Device Switcher Button */
-.device-btn,
-button.device-btn {
-    background-image: none;
-    background-color: rgba(24, 24, 37, 0.70);
-    border: 1px solid #313244;
-    padding: 7px 10px;
-    margin-top: 6px;
-}
-
-.device-btn:hover,
-button.device-btn:hover {
-    background-image: none;
-    background-color: rgba(49, 50, 68, 0.85);
-    border-color: @accent@;
-}
-
-.device-btn label {
-    font-size: 8.5pt;
-    color: #cdd6f4;
-}
-
 /* Media Card */
 .media-card {
     background-color: rgba(30, 30, 46, 0.65);
@@ -319,46 +247,9 @@ button.media-btn:hover {
     border-color: @accent@;
 }
 
-/* Hardware Telemetry Card */
-.hardware-card {
-    background-color: rgba(30, 30, 46, 0.65);
-    border: 1px solid #313244;
-    padding: 10px 12px;
-    margin-top: 4px;
-    margin-bottom: 4px;
-}
-
-.hardware-card:hover {
-    border-color: @accent@;
-    background-color: rgba(49, 50, 68, 0.70);
-}
-
-.hw-label {
-    font-size: 8.5pt;
-    color: #cdd6f4;
-}
-
-.hw-value {
-    font-size: 8.5pt;
-    color: #a6adc8;
-}
-
-progressbar trough {
-    background-color: #313244;
-    min-height: 6px;
-    border-radius: 0px;
-    border: none;
-}
-
-progressbar progress {
-    background-color: @accent@;
-    border-radius: 0px;
-    border: none;
-}
-
 /* Power Bar */
 .power-bar {
-    margin-top: 8px;
+    margin-top: 2px;
 }
 
 .power-btn,

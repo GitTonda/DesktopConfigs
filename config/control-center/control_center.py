@@ -177,85 +177,6 @@ def get_quickshare_state():
     }
 
 
-def get_brightness():
-    # 0. Check cache file
-    cache_file = os.path.expanduser("~/.config/theme/brightness")
-    if os.path.exists(cache_file):
-        try:
-            with open(cache_file, "r") as f:
-                val = int(f.read().strip())
-                return max(10, min(100, val))
-        except Exception:
-            pass
-
-    # 1. Check brightnessctl backlight class
-    try:
-        out = subprocess.check_output(["brightnessctl", "-m"], text=True, stderr=subprocess.DEVNULL)
-        for line in out.splitlines():
-            parts = line.split(",")
-            if len(parts) >= 5 and parts[1] == "backlight":
-                b = int(parts[3].replace("%", ""))
-                try:
-                    os.makedirs(os.path.dirname(cache_file), exist_ok=True)
-                    with open(cache_file, "w") as f:
-                        f.write(str(b))
-                except Exception:
-                    pass
-                return b
-    except Exception:
-        pass
-
-    # 2. Check xrandr
-    try:
-        out = subprocess.check_output(["xrandr", "--verbose"], text=True, stderr=subprocess.DEVNULL)
-        m = re.search(r"Brightness:\s*([0-9.]+)", out)
-        if m:
-            val = float(m.group(1))
-            b = int(round(val * 100))
-            try:
-                os.makedirs(os.path.dirname(cache_file), exist_ok=True)
-                with open(cache_file, "w") as f:
-                    f.write(str(b))
-            except Exception:
-                pass
-            return b
-    except Exception:
-        pass
-    return 100
-
-
-def set_brightness(pct):
-    pct = max(10, min(100, pct))
-    cache_file = os.path.expanduser("~/.config/theme/brightness")
-    try:
-        os.makedirs(os.path.dirname(cache_file), exist_ok=True)
-        with open(cache_file, "w") as f:
-            f.write(str(pct))
-    except Exception:
-        pass
-
-    # 1. Check brightnessctl
-    try:
-        out = subprocess.check_output(["brightnessctl", "-m"], text=True, stderr=subprocess.DEVNULL)
-        for line in out.splitlines():
-            parts = line.split(",")
-            if len(parts) >= 5 and parts[1] == "backlight":
-                subprocess.run(["brightnessctl", "set", f"{pct}%"], check=False)
-                return
-    except Exception:
-        pass
-
-    # 2. Check xrandr
-    try:
-        out = subprocess.check_output(["xrandr", "--query"], text=True, stderr=subprocess.DEVNULL)
-        outputs = [line.split()[0] for line in out.splitlines() if " connected" in line]
-        ratio = round(pct / 100.0, 2)
-        for mon in outputs:
-            subprocess.run(["xrandr", "--output", mon, "--brightness", str(ratio)], check=False)
-    except Exception:
-        pass
-
-
 def get_media_info():
     try:
         status = subprocess.check_output(["playerctl", "status"], text=True, stderr=subprocess.DEVNULL).strip()
@@ -273,68 +194,6 @@ def get_media_info():
     except Exception:
         pass
     return {"active": False}
-
-
-def get_memory_info():
-    total_gb = 0.0
-    used_gb = 0.0
-    pct = 0
-    try:
-        with open("/proc/meminfo", "r") as f:
-            lines = f.readlines()
-        data = {}
-        for line in lines:
-            parts = line.split(":")
-            if len(parts) == 2:
-                data[parts[0].strip()] = int(parts[1].split()[0])
-        total = data.get("MemTotal", 1)
-        avail = data.get("MemAvailable", total)
-        used = total - avail
-        pct = int(round((used / total) * 100))
-        total_gb = total / (1024.0 * 1024.0)
-        used_gb = used / (1024.0 * 1024.0)
-    except Exception:
-        pass
-    return {"pct": pct, "used_gb": used_gb, "total_gb": total_gb}
-
-
-_last_cpu_time = 0.0
-_last_cpu_stat = (0.0, 0.0)
-
-
-def _read_proc_stat():
-    try:
-        with open("/proc/stat", "r") as f:
-            parts = f.readline().split()[1:]
-            vals = [float(x) for x in parts]
-            total = sum(vals)
-            idle = vals[3] + (vals[4] if len(parts) > 4 else 0.0)
-            return total, idle
-    except Exception:
-        return 0.0, 0.0
-
-
-def get_cpu_info():
-    global _last_cpu_time, _last_cpu_stat
-    now = time.time()
-    t, i = _read_proc_stat()
-    if _last_cpu_stat[0] > 0 and (now - _last_cpu_time) > 0.05:
-        dt = t - _last_cpu_stat[0]
-        di = i - _last_cpu_stat[1]
-        _last_cpu_stat = (t, i)
-        _last_cpu_time = now
-        if dt > 0:
-            pct = int(round(100.0 * (1.0 - (di / dt))))
-            return min(100, max(0, pct))
-    _last_cpu_stat = (t, i)
-    _last_cpu_time = now
-    try:
-        with open("/proc/loadavg", "r") as f:
-            load = float(f.read().split()[0])
-            cpus = os.cpu_count() or 1
-            return int(min(100, max(0, round((load / cpus) * 100))))
-    except Exception:
-        return 0
 
 
 # ------------------------------------------------------------------------------
@@ -372,7 +231,6 @@ class ControlCenterWindow(Gtk.Window):
         self.bt_state = get_bluetooth_state()
         self.dnd_state = get_dnd_state()
         self.quickshare_state = get_quickshare_state()
-        self.brightness = get_brightness()
         self.media_info = get_media_info()
 
         # Focus settling flag
@@ -380,9 +238,6 @@ class ControlCenterWindow(Gtk.Window):
 
         self._build_ui()
         self._apply_css()
-
-        # Telemetry live refresh
-        GLib.timeout_add(1500, self._update_hw_stats)
 
         # Listen for workspace switches to dismiss automatically
         self._start_workspace_listener()
@@ -593,7 +448,7 @@ class ControlCenterWindow(Gtk.Window):
 
         # Quick Share Pill
         self.qs_btn, self.qs_icon, self.qs_sub, self.qs_chev = self._create_toggle_pill(
-            icon="󰒘",
+            icon="󰒗",
             title="Quick Share",
             status=self.quickshare_state["status"],
             is_active=self.quickshare_state["running"],
@@ -604,66 +459,10 @@ class ControlCenterWindow(Gtk.Window):
         grid.attach(self.qs_btn, 1, 2, 1, 1)
 
         main_box.pack_start(grid, False, False, 0)
-        main_box.pack_start(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL), False, False, 0)
-
-        # 3. Interactive Volume & Brightness Slider Card
-        slider_card = Gtk.EventBox()
-        slider_card_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-        slider_card_box.get_style_context().add_class("slider-card")
-        slider_card.add(slider_card_box)
-
-        # Volume Row
-        vol_hdr = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        vol_title = Gtk.Label(label="󰕾 Master Volume", xalign=0)
-        vol_title.get_style_context().add_class("slider-label")
-        vol_hdr.pack_start(vol_title, True, True, 0)
-
-        self.vol_val_lbl = Gtk.Label(label=f"{self.audio_state['volume']}%", xalign=1)
-        self.vol_val_lbl.get_style_context().add_class("slider-value")
-        vol_hdr.pack_end(self.vol_val_lbl, False, False, 0)
-        slider_card_box.pack_start(vol_hdr, False, False, 0)
-
-        self.vol_scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 100, 1)
-        self.vol_scale.set_value(self.audio_state["volume"])
-        self.vol_scale.set_draw_value(False)
-        self.vol_scale.connect("value-changed", self._on_scale_volume_changed)
-        slider_card_box.pack_start(self.vol_scale, False, False, 0)
-
-        # Brightness Row
-        bri_hdr = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        bri_title = Gtk.Label(label="󰃠 Brightness", xalign=0)
-        bri_title.get_style_context().add_class("slider-label")
-        bri_hdr.pack_start(bri_title, True, True, 0)
-
-        self.bri_val_lbl = Gtk.Label(label=f"{self.brightness}%", xalign=1)
-        self.bri_val_lbl.get_style_context().add_class("slider-value")
-        bri_hdr.pack_end(self.bri_val_lbl, False, False, 0)
-        slider_card_box.pack_start(bri_hdr, False, False, 0)
-
-        self.bri_scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 10, 100, 1)
-        self.bri_scale.set_value(self.brightness)
-        self.bri_scale.set_draw_value(False)
-        self.bri_scale.connect("value-changed", self._on_scale_brightness_changed)
-        slider_card_box.pack_start(self.bri_scale, False, False, 0)
-
-        # Sink device switcher button
-        sink_short = self.audio_state["sink_desc"]
-        if len(sink_short) > 28:
-            sink_short = sink_short[:25] + "..."
-        self.sink_btn = Gtk.Button(label=f"󰓃 Device: {sink_short}")
-        self.sink_btn.get_style_context().add_class("device-btn")
-        lbl = self.sink_btn.get_child()
-        if isinstance(lbl, Gtk.Label):
-            lbl.set_ellipsize(Pango.EllipsizeMode.END)
-            lbl.set_max_width_chars(26)
-        self.sink_btn.connect("clicked", self._on_switch_output_device)
-        slider_card_box.pack_start(self.sink_btn, False, False, 0)
-
-        slider_card.connect("scroll-event", self._on_scroll_volume)
-        main_box.pack_start(slider_card, False, False, 0)
 
         # Media Player Card (Visible only when playing/paused)
         if self.media_info.get("active"):
+            main_box.pack_start(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL), False, False, 0)
             media_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
             media_card.get_style_context().add_class("media-card")
 
@@ -706,56 +505,9 @@ class ControlCenterWindow(Gtk.Window):
 
             main_box.pack_start(media_card, False, False, 0)
 
-        # 4. Hardware Telemetry Card (Clickable to launch btop)
-        hw_card = Gtk.EventBox()
-        hw_card_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        hw_card_box.get_style_context().add_class("hardware-card")
-        hw_card.add(hw_card_box)
+        main_box.pack_start(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL), False, False, 0)
 
-        hw_hdr = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        hw_title = Gtk.Label(label="󰍛 HARDWARE TELEMETRY", xalign=0)
-        hw_title.get_style_context().add_class("section-title")
-        hw_hdr.pack_start(hw_title, True, True, 0)
-
-        hw_hint = Gtk.Label(label="Click: btop 󰓅", xalign=1)
-        hw_hint.get_style_context().add_class("hw-value")
-        hw_hdr.pack_end(hw_hint, False, False, 0)
-        hw_card_box.pack_start(hw_hdr, False, False, 0)
-
-        # CPU bar
-        cpu_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        cpu_pct = get_cpu_info()
-        cpu_lbl = Gtk.Label(label="CPU Load", xalign=0)
-        cpu_lbl.get_style_context().add_class("hw-label")
-        self.cpu_val = Gtk.Label(label=f"{cpu_pct}%", xalign=1)
-        self.cpu_val.get_style_context().add_class("hw-value")
-        cpu_box.pack_start(cpu_lbl, True, True, 0)
-        cpu_box.pack_end(self.cpu_val, False, False, 0)
-        hw_card_box.pack_start(cpu_box, False, False, 0)
-
-        self.cpu_bar = Gtk.ProgressBar()
-        self.cpu_bar.set_fraction(cpu_pct / 100.0)
-        hw_card_box.pack_start(self.cpu_bar, False, False, 0)
-
-        # RAM bar
-        mem = get_memory_info()
-        ram_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        ram_lbl = Gtk.Label(label="Memory (RAM)", xalign=0)
-        ram_lbl.get_style_context().add_class("hw-label")
-        self.ram_val = Gtk.Label(label=f"{mem['used_gb']:.1f} / {mem['total_gb']:.1f} GB ({mem['pct']}%)", xalign=1)
-        self.ram_val.get_style_context().add_class("hw-value")
-        ram_box.pack_start(ram_lbl, True, True, 0)
-        ram_box.pack_end(self.ram_val, False, False, 0)
-        hw_card_box.pack_start(ram_box, False, False, 0)
-
-        self.ram_bar = Gtk.ProgressBar()
-        self.ram_bar.set_fraction(mem['pct'] / 100.0)
-        hw_card_box.pack_start(self.ram_bar, False, False, 0)
-
-        hw_card.connect("button-press-event", self._on_launch_btop)
-        main_box.pack_start(hw_card, False, False, 0)
-
-        # 5. Session Actions (Bottom Row: Lock, Suspend, Reboot, Shutdown)
+        # 3. Session Actions (Bottom Row: Lock, Suspend, Reboot, Shutdown)
         power_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         power_box.get_style_context().add_class("power-bar")
         power_box.set_homogeneous(True)
@@ -1091,36 +843,6 @@ class ControlCenterWindow(Gtk.Window):
 
 
 
-    def _on_scroll_volume(self, widget, event):
-        curr = int(round(self.vol_scale.get_value()))
-        if event.direction == Gdk.ScrollDirection.UP:
-            new_val = min(100, curr + 5)
-        elif event.direction == Gdk.ScrollDirection.DOWN:
-            new_val = max(0, curr - 5)
-        elif event.direction == Gdk.ScrollDirection.SMOOTH:
-            _, _, dy = event.get_scroll_deltas()
-            new_val = min(100, curr + 5) if dy < 0 else max(0, curr - 5)
-        else:
-            return False
-        self.vol_scale.set_value(new_val)
-        return True
-
-    def _on_scale_volume_changed(self, scale):
-        val = int(round(scale.get_value()))
-        self.vol_val_lbl.set_text(f"{val}%")
-        subprocess.run(["pactl", "set-sink-volume", "@DEFAULT_SINK@", f"{val}%"], check=False)
-        # If unmuted now, update pill
-        if self.audio_state["muted"]:
-            subprocess.run(["pactl", "set-sink-mute", "@DEFAULT_SINK@", "0"], check=False)
-            self.mute_btn.get_style_context().add_class("active")
-            self.mute_icon.set_text("󰕾")
-        self.mute_sub.set_text(f"{val}%")
-
-    def _on_scale_brightness_changed(self, scale):
-        val = int(round(scale.get_value()))
-        self.bri_val_lbl.set_text(f"{val}%")
-        set_brightness(val)
-
     def _run_media(self, action):
         subprocess.run(["playerctl", action], check=False)
         time.sleep(0.1)
@@ -1137,42 +859,6 @@ class ControlCenterWindow(Gtk.Window):
             play_icon = "󰏤" if self.media_info.get("status") == "Playing" else "󰐊"
             self.play_btn.set_label(play_icon)
 
-    def _on_switch_output_device(self, btn):
-        # Cycle through sinks
-        try:
-            out = subprocess.check_output(["pactl", "list", "short", "sinks"], text=True, stderr=subprocess.DEVNULL)
-            sinks = [line.split()[1] for line in out.strip().splitlines() if line]
-            if len(sinks) > 1:
-                cur_out = subprocess.check_output(["pactl", "get-default-sink"], text=True, stderr=subprocess.DEVNULL).strip()
-                try:
-                    idx = sinks.index(cur_out)
-                    nxt = sinks[(idx + 1) % len(sinks)]
-                except ValueError:
-                    nxt = sinks[0]
-                subprocess.run(["pactl", "set-default-sink", nxt], check=False)
-                # Move active inputs
-                inputs_out = subprocess.check_output(["pactl", "list", "short", "sink-inputs"], text=True, stderr=subprocess.DEVNULL)
-                for line in inputs_out.strip().splitlines():
-                    if line:
-                        inp_id = line.split()[0]
-                        subprocess.run(["pactl", "move-sink-input", inp_id, nxt], check=False)
-                time.sleep(0.1)
-                self.audio_state = get_audio_state()
-                desc = self.audio_state["sink_desc"]
-                if len(desc) > 28:
-                    desc = desc[:25] + "..."
-                self.sink_btn.set_label(f"󰓃 Device: {desc}")
-                lbl = self.sink_btn.get_child()
-                if isinstance(lbl, Gtk.Label):
-                    lbl.set_ellipsize(Pango.EllipsizeMode.END)
-                    lbl.set_max_width_chars(26)
-        except Exception:
-            pass
-
-    def _on_launch_btop(self, box, event):
-        self.destroy()
-        subprocess.Popen(["alacritty", "--class", "FloatingBtop", "-e", "btop"])
-
     def _run_action(self, cmd):
         self.destroy()
         # Expand user in cmd
@@ -1187,17 +873,6 @@ class ControlCenterWindow(Gtk.Window):
 
     def _on_focus_out(self, widget, event):
         return False
-
-    def _update_hw_stats(self):
-        cpu_pct = get_cpu_info()
-        mem = get_memory_info()
-        if hasattr(self, 'cpu_val') and hasattr(self, 'cpu_bar'):
-            self.cpu_val.set_text(f"{cpu_pct}%")
-            self.cpu_bar.set_fraction(cpu_pct / 100.0)
-        if hasattr(self, 'ram_val') and hasattr(self, 'ram_bar'):
-            self.ram_val.set_text(f"{mem['used_gb']:.1f} / {mem['total_gb']:.1f} GB ({mem['pct']}%)")
-            self.ram_bar.set_fraction(mem['pct'] / 100.0)
-        return True
 
 # ------------------------------------------------------------------------------
 # Entry Point & Dynamic Placement
