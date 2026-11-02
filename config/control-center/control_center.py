@@ -403,7 +403,10 @@ class ControlCenterWindow(Gtk.Window):
 
         # Focus settling flag
         self._settled = False
+        self._menu_active = False
+        self._destroying = False
 
+        self._build_power_menu()
         self._build_ui()
         self._apply_css()
 
@@ -457,6 +460,8 @@ class ControlCenterWindow(Gtk.Window):
         return False
 
     def _on_button_press(self, widget, event):
+        if getattr(self, '_menu_active', False):
+            return False
         alloc = self.get_allocation()
         # Any click outside the control center bounds dismisses it
         if event.x < 0 or event.y < 0 or event.x > alloc.width or event.y > alloc.height:
@@ -466,6 +471,7 @@ class ControlCenterWindow(Gtk.Window):
         return False
 
     def _on_destroy(self, widget):
+        self._destroying = True
         if hasattr(self, '_i3_sub_proc') and self._i3_sub_proc:
             try:
                 self._i3_sub_proc.terminate()
@@ -521,7 +527,7 @@ class ControlCenterWindow(Gtk.Window):
         main_box.get_style_context().add_class("main-box")
         self.add(main_box)
 
-        # 1. Header (User & Hostname & Settings)
+        # 1. Header (User & Hostname & Header Action Buttons)
         header_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         header_box.get_style_context().add_class("header-box")
 
@@ -538,13 +544,29 @@ class ControlCenterWindow(Gtk.Window):
         user_lbl.set_valign(Gtk.Align.CENTER)
         header_box.pack_start(user_lbl, True, True, 0)
 
+        # Header Action Buttons Box: [Settings 󰒓] [Power 󰐥]
+        actions_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        actions_box.set_valign(Gtk.Align.CENTER)
+
         # Settings App button (opens desktop-settings)
         settings_btn = Gtk.Button(label="󰒓")
+        settings_btn.get_style_context().add_class("header-btn")
         settings_btn.get_style_context().add_class("settings-btn")
-        settings_btn.set_tooltip_text("Open Settings")
+        settings_btn.set_tooltip_text("Open Settings (Super+I)")
         settings_btn.set_valign(Gtk.Align.CENTER)
         settings_btn.connect("clicked", self._on_open_settings)
-        header_box.pack_end(settings_btn, False, False, 0)
+        actions_box.pack_start(settings_btn, False, False, 0)
+
+        # Power (On/Off) button on top right (opens power menu)
+        self.power_btn = Gtk.Button(label="󰐥")
+        self.power_btn.get_style_context().add_class("header-btn")
+        self.power_btn.get_style_context().add_class("power-header-btn")
+        self.power_btn.set_tooltip_text("Power & Session Options")
+        self.power_btn.set_valign(Gtk.Align.CENTER)
+        self.power_btn.connect("button-press-event", self._on_power_btn_press)
+        actions_box.pack_start(self.power_btn, False, False, 0)
+
+        header_box.pack_end(actions_box, False, False, 0)
 
         main_box.pack_start(header_box, False, False, 0)
         main_box.pack_start(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL), False, False, 0)
@@ -709,40 +731,6 @@ class ControlCenterWindow(Gtk.Window):
             media_card.pack_start(ctrl_box, False, False, 0)
 
             main_box.pack_start(media_card, False, False, 0)
-
-        main_box.pack_start(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL), False, False, 0)
-
-        # 3. Session Actions (Bottom Row: Lock, Suspend, Reboot, Shutdown)
-        power_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        power_box.get_style_context().add_class("power-bar")
-        power_box.set_homogeneous(True)
-
-        lock_btn = Gtk.Button(label="󰌾")
-        lock_btn.set_tooltip_text("Lock session (Super+Ctrl+L)")
-        lock_btn.get_style_context().add_class("power-btn")
-        lock_btn.connect("clicked", lambda b: self._run_action(["~/.config/i3/lock.sh"]))
-        power_box.pack_start(lock_btn, True, True, 0)
-
-        sleep_btn = Gtk.Button(label="󰤄")
-        sleep_btn.set_tooltip_text("Suspend system")
-        sleep_btn.get_style_context().add_class("power-btn")
-        sleep_btn.connect("clicked", lambda b: self._run_action(["systemctl", "suspend"]))
-        power_box.pack_start(sleep_btn, True, True, 0)
-
-        reboot_btn = Gtk.Button(label="󰑓")
-        reboot_btn.set_tooltip_text("Reboot computer")
-        reboot_btn.get_style_context().add_class("power-btn")
-        reboot_btn.connect("clicked", lambda b: self._run_action(["systemctl", "reboot"]))
-        power_box.pack_start(reboot_btn, True, True, 0)
-
-        poweroff_btn = Gtk.Button(label="󰐥")
-        poweroff_btn.set_tooltip_text("Shutdown computer")
-        poweroff_btn.get_style_context().add_class("power-btn")
-        poweroff_btn.get_style_context().add_class("danger")
-        poweroff_btn.connect("clicked", lambda b: self._run_action(["systemctl", "poweroff"]))
-        power_box.pack_start(poweroff_btn, True, True, 0)
-
-        main_box.pack_start(power_box, False, False, 0)
 
     def _populate_notifications(self):
         for child in self.notif_list_box.get_children():
@@ -1263,6 +1251,79 @@ class ControlCenterWindow(Gtk.Window):
         if hasattr(self, 'play_btn'):
             play_icon = "󰏤" if self.media_info.get("status") == "Playing" else "󰐊"
             self.play_btn.set_label(play_icon)
+
+    def _build_power_menu(self):
+        self.power_menu = Gtk.Menu()
+        self.power_menu.get_style_context().add_class("power-popup-menu")
+
+        options = [
+            ("󰌾", "Lock Screen", lambda: self._run_action(["~/.config/i3/lock.sh"]), False),
+            ("󰤄", "Suspend", lambda: self._run_action(["systemctl", "suspend"]), False),
+            ("󰑓", "Restart", lambda: self._run_action(["systemctl", "reboot"]), False),
+            ("󰐥", "Shut Down", lambda: self._run_action(["systemctl", "poweroff"]), True),
+            (None, None, None, False),
+            ("󰍃", "Log Out", lambda: self._run_action(["i3-msg", "exit"]), False),
+        ]
+
+        for icon, title, action, is_danger in options:
+            if icon is None:
+                sep = Gtk.SeparatorMenuItem()
+                self.power_menu.append(sep)
+                continue
+
+            item = Gtk.MenuItem()
+            item.get_style_context().add_class("power-menu-item")
+            if is_danger:
+                item.get_style_context().add_class("danger")
+
+            item_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+            item_box.set_margin_start(4)
+            item_box.set_margin_end(8)
+            item_box.set_margin_top(2)
+            item_box.set_margin_bottom(2)
+
+            icon_lbl = Gtk.Label(label=icon)
+            icon_lbl.get_style_context().add_class("power-menu-icon")
+            if is_danger:
+                icon_lbl.get_style_context().add_class("danger")
+
+            title_lbl = Gtk.Label(label=title, xalign=0)
+            title_lbl.get_style_context().add_class("power-menu-label")
+
+            item_box.pack_start(icon_lbl, False, False, 0)
+            item_box.pack_start(title_lbl, True, True, 0)
+            item.add(item_box)
+
+            item.connect("activate", lambda w, act=action: act())
+            self.power_menu.append(item)
+
+        self.power_menu.show_all()
+        self.power_menu.connect("deactivate", self._on_power_menu_deactivate)
+
+    def _on_power_btn_press(self, widget, event):
+        if event.button in (1, 3):
+            self._menu_active = True
+            seat = Gdk.Display.get_default().get_default_seat()
+            if seat:
+                seat.ungrab()
+            self.power_btn.get_style_context().add_class("active")
+            self.power_menu.popup_at_widget(
+                self.power_btn,
+                Gdk.Gravity.SOUTH_EAST,
+                Gdk.Gravity.NORTH_EAST,
+                event
+            )
+            return True
+        return False
+
+    def _on_power_menu_deactivate(self, menu):
+        self._menu_active = False
+        if hasattr(self, 'power_btn'):
+            self.power_btn.get_style_context().remove_class("active")
+        if self.get_visible() and not getattr(self, '_destroying', False):
+            seat = Gdk.Display.get_default().get_default_seat()
+            if seat:
+                seat.grab(self.get_window(), Gdk.SeatCapabilities.ALL, True, None, None, None)
 
     def _run_action(self, cmd):
         self.destroy()

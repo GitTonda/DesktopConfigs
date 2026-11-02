@@ -44,8 +44,11 @@ window {
     color: #cdd6f4;
 }
 
+.header-btn,
 .settings-btn,
-button.settings-btn {
+button.settings-btn,
+.power-header-btn,
+button.power-header-btn {
     background: rgba(30, 30, 46, 0.70);
     background-image: none;
     border: 1px solid #313244;
@@ -64,6 +67,15 @@ button.settings-btn:hover {
     color: @accent@;
     background: rgba(49, 50, 68, 0.85);
     border-color: @accent@;
+}
+
+.power-header-btn:hover,
+button.power-header-btn:hover,
+.power-header-btn.active,
+button.power-header-btn.active {
+    color: #f38ba8;
+    background: rgba(243, 139, 168, 0.20);
+    border-color: #f38ba8;
 }
 
 /* Section Separator */
@@ -425,34 +437,65 @@ scrollbar slider:hover {
     background-color: @accent@;
 }
 
-/* Power Bar */
-.power-bar {
-    margin-top: 4px;
+/* Power Popup Menu */
+menu.power-popup-menu,
+menu {
+    background-color: rgba(24, 24, 37, 0.98);
+    border: 1px solid @accent_border@;
+    border-radius: 0px;
+    padding: 4px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65);
 }
 
-.power-btn,
-button.power-btn {
-    background-image: none;
-    background-color: rgba(30, 30, 46, 0.70);
-    border: 1px solid #313244;
-    padding: 10px 14px;
-    font-size: 13pt;
+menuitem.power-menu-item,
+menuitem {
+    border-radius: 0px;
+    padding: 6px 12px;
     color: #cdd6f4;
-    transition: all 120ms ease;
+    transition: all 100ms ease;
 }
 
-.power-btn:hover,
-button.power-btn:hover {
-    background-image: none;
-    background-color: @accent@;
+menuitem.power-menu-item:hover,
+menuitem:hover {
+    background-color: @accent_dim@;
     border-color: @accent@;
-    color: #11111b;
+    color: @accent@;
 }
 
-.power-btn.danger:hover,
-button.power-btn.danger:hover {
-    background-image: none;
-    background-color: #f38ba8;
+menuitem.power-menu-item.danger:hover,
+menuitem.danger:hover {
+    background-color: rgba(243, 139, 168, 0.20);
     border-color: #f38ba8;
-    color: #11111b;
+    color: #f38ba8;
+}
+
+.power-menu-icon {
+    font-size: 11.5pt;
+    color: @accent@;
+    min-width: 20px;
+}
+
+.power-menu-icon.danger {
+    color: #f38ba8;
+}
+
+.power-menu-label {
+    font-size: 9.5pt;
+    font-weight: 500;
+    color: #cdd6f4;
+}
+
+menuitem:hover .power-menu-label {
+    color: @accent@;
+}
+
+menuitem.danger:hover .power-menu-label {
+    color: #f38ba8;
+}
+
+menu separator,
+menu separator.horizontal {
+    background-color: #313244;
+    min-height: 1px;
+    margin: 4px 2px;
 }
