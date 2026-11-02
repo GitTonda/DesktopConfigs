@@ -1349,7 +1349,10 @@ class DesktopSettingsWindow(Gtk.Window):
         header_box.pack_start(title_box, False, False, 0)
 
         close_btn = Gtk.Button(label="󰅖")
+        close_btn.get_style_context().add_class("header-btn")
         close_btn.get_style_context().add_class("header-close-btn")
+        close_btn.set_tooltip_text("Close (Esc)")
+        close_btn.set_valign(Gtk.Align.CENTER)
         close_btn.connect("clicked", lambda b: self.destroy())
         header_box.pack_end(close_btn, False, False, 0)
 
@@ -1442,6 +1445,15 @@ class DesktopSettingsWindow(Gtk.Window):
     def _apply_css(self):
         accent = get_accent_color()
         opacity = get_system_opacity()
+        try:
+            h = accent.lstrip('#')
+            r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+            accent_dim = f"rgba({r}, {g}, {b}, 0.18)"
+            accent_border = f"rgba({r}, {g}, {b}, 0.45)"
+        except Exception:
+            accent_dim = "rgba(137, 180, 250, 0.18)"
+            accent_border = "rgba(137, 180, 250, 0.45)"
+
         css_path = os.path.expanduser("~/.config/desktop-settings/style.css")
         if not os.path.exists(css_path):
             css_path = os.path.expanduser("~/.local/share/dotfiles/config/desktop-settings/style.css")
@@ -1451,6 +1463,8 @@ class DesktopSettingsWindow(Gtk.Window):
                 raw = f.read()
             css_data = (
                 raw.replace("@accent@", accent)
+                   .replace("@accent_dim@", accent_dim)
+                   .replace("@accent_border@", accent_border)
                    .replace("@opacity@", f"{opacity:.2f}")
                    .replace("@header_opacity@", f"{min(1.0, opacity + 0.10):.2f}")
                    .replace("@sidebar_opacity@", f"{min(1.0, opacity + 0.05):.2f}")
