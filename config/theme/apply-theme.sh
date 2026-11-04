@@ -110,7 +110,7 @@ cat << I3CONF > "$HOME/.config/i3/colors.conf"
 set \$accent $ACCENT
 set \$bg $BG_DARK
 set \$border_focused #6c7086
-client.focused          \$border_focused \$bg #cdd6f4 \$border_focused \$border_focused
+client.focused          \$border_focused \$bg #cdd6f4 \$accent \$border_focused
 client.focused_inactive #313244 \$bg #a6adc8 #313244 #313244
 client.unfocused        \$bg #11111b #45475a \$bg \$bg
 client.urgent           #f38ba8 \$bg #f38ba8 #f38ba8 #f38ba8
