@@ -17,7 +17,7 @@ import colorsys
 import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('Gdk', '3.0')
-from gi.repository import Gtk, Gdk, GLib, Pango
+from gi.repository import Gtk, Gdk, GLib, Pango, GdkPixbuf
 
 
 # ------------------------------------------------------------------------------
@@ -1053,11 +1053,13 @@ class AppearancePage(Gtk.ScrolledWindow):
             ("#94e2d5", "Teal"),
         ]
 
+        self.swatch_btns = []
         cur_acc = get_accent_color().lower()
         for hex_col, name in accents:
             btn = Gtk.Button()
             btn.set_tooltip_text(f"{name} ({hex_col})")
             btn.get_style_context().add_class("color-swatch-btn")
+            self.swatch_btns.append((btn, hex_col))
             prov = Gtk.CssProvider()
             border_col = "#ffffff" if hex_col.lower() == cur_acc else "#313244"
             css = f"button, button.color-swatch-btn {{ background-image: none; background-color: {hex_col}; background: {hex_col}; min-width: 32px; min-height: 32px; border: 2px solid {border_col}; border-radius: 0px; box-shadow: none; }}"
@@ -1102,13 +1104,24 @@ class AppearancePage(Gtk.ScrolledWindow):
                 wp_btn = Gtk.Button()
                 wp_btn.get_style_context().add_class("wp-item-btn")
                 wp_btn_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+                # Thumbnail preview
+                try:
+                    pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(wp_path, 180, 100, True)
+                    img = Gtk.Image.new_from_pixbuf(pixbuf)
+                    wp_btn_box.pack_start(img, False, False, 0)
+                except Exception:
+                    wp_btn_box.pack_start(Gtk.Label(label="󰸉"), False, False, 0)
                 name_lbl = Gtk.Label(label=os.path.basename(wp_path))
                 name_lbl.set_ellipsize(Pango.EllipsizeMode.END)
                 name_lbl.set_max_width_chars(20)
-                wp_btn_box.pack_start(Gtk.Label(label="󰸉"), False, False, 0)
                 wp_btn_box.pack_start(name_lbl, False, False, 0)
                 wp_btn.add(wp_btn_box)
-                wp_btn.connect("clicked", lambda b, p=wp_path: subprocess.Popen([os.path.expanduser("~/.config/theme/apply-theme.sh"), p]))
+
+                def _apply_wallpaper(b, p=wp_path):
+                    subprocess.Popen([os.path.expanduser("~/.config/theme/apply-theme.sh"), p])
+                    GLib.timeout_add(1200, self._refresh_css_after_theme)
+
+                wp_btn.connect("clicked", _apply_wallpaper)
                 wp_flow.add(wp_btn)
 
             card_wp.pack_start(wp_flow, False, False, 0)
@@ -1118,11 +1131,23 @@ class AppearancePage(Gtk.ScrolledWindow):
 
         content.pack_start(card_wp, False, False, 0)
 
-    def _on_pick_accent(self, hex_col):
-        apply_accent_color(hex_col)
+    def _refresh_css_after_theme(self):
         toplevel = self.get_toplevel()
         if hasattr(toplevel, "_apply_css"):
             toplevel._apply_css()
+        if hasattr(self, "swatch_btns"):
+            cur_acc = get_accent_color().lower()
+            for btn, hex_col in self.swatch_btns:
+                border_col = "#ffffff" if hex_col.lower() == cur_acc else "#313244"
+                prov = Gtk.CssProvider()
+                css = f"button, button.color-swatch-btn {{ background-image: none; background-color: {hex_col}; background: {hex_col}; min-width: 32px; min-height: 32px; border: 2px solid {border_col}; border-radius: 0px; box-shadow: none; }}"
+                prov.load_from_data(css.encode())
+                btn.get_style_context().add_provider(prov, Gtk.STYLE_PROVIDER_PRIORITY_USER)
+        return False
+
+    def _on_pick_accent(self, hex_col):
+        apply_accent_color(hex_col)
+        self._refresh_css_after_theme()
 
     def _on_opacity_change(self, scale):
         pct = int(round(scale.get_value()))
@@ -1494,6 +1519,8 @@ class DesktopSettingsWindow(Gtk.Window):
 # ------------------------------------------------------------------------------
 
 def main():
+    GLib.set_prgname("desktop-settings")
+    GLib.set_application_name("Settings")
     parser = argparse.ArgumentParser(description="Catppuccin Mocha Desktop Settings")
     parser.add_argument("--page", "-p", choices=["wifi", "network", "bluetooth", "sound", "audio", "display", "appearance", "notifications", "shortcuts", "system"], default=None, help="Directly open a specific settings page")
     args = parser.parse_args()

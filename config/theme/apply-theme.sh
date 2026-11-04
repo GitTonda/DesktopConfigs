@@ -110,7 +110,7 @@ cat << I3CONF > "$HOME/.config/i3/colors.conf"
 set \$accent $ACCENT
 set \$bg $BG_DARK
 set \$border_focused #6c7086
-client.focused          \$border_focused \$bg #cdd6f4 \$accent \$border_focused
+client.focused          \$accent \$bg #cdd6f4 \$accent \$accent
 client.focused_inactive #313244 \$bg #a6adc8 #313244 #313244
 client.unfocused        \$bg #11111b #45475a \$bg \$bg
 client.urgent           #f38ba8 \$bg #f38ba8 #f38ba8 #f38ba8
@@ -128,7 +128,7 @@ cat << PBAR > "$HOME/.config/polybar/colors.ini"
 accent = $ACCENT
 PBAR
 if [ -n "$DISPLAY" ]; then
-    "$HOME/.config/polybar/launch.sh" >/dev/null 2>&1 || true
+    polybar-msg cmd restart >/dev/null 2>&1 || "$HOME/.config/polybar/launch.sh" >/dev/null 2>&1 || true
 fi
 
 # 6. Update Rofi Theme Accent & Background (Uniform Frosted Transparency)
@@ -263,7 +263,7 @@ for gtk_ver in ['gtk-3.0', 'gtk-4.0']:
         f.write(f'[Settings]\ngtk-theme-name=Adwaita-dark\ngtk-icon-theme-name=Papirus-Dark\ngtk-cursor-theme-name={theme}\ngtk-cursor-theme-size=24\ngtk-font-name=JetBrainsMono Nerd Font 10\ngtk-application-prefer-dark-theme=1\n')
 
     # Update GTK CSS accent & background colors
-    for base_d in [f'{home}/.config/{gtk_ver}', f'{home}/DesktopConfigs/config/{gtk_ver}']:
+    for base_d in [f'{home}/.config/{gtk_ver}', f'{home}/.local/share/dotfiles/config/{gtk_ver}']:
         css_path = f'{base_d}/gtk.css'
         if os.path.exists(css_path):
             try:
@@ -307,7 +307,7 @@ zen_bases = [
 # Source template folders
 template_dirs = [
     os.path.expanduser('~/.config/zen'),
-    os.path.expanduser('~/DesktopConfigs/config/zen')
+    os.path.expanduser('~/.local/share/dotfiles/config/zen')
 ]
 
 target_dirs = []
