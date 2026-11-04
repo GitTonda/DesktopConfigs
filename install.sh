@@ -315,8 +315,8 @@ elif command -v pacman >/dev/null 2>&1; then
     fi
 
     if command -v yay >/dev/null 2>&1; then
-        step_sub "Synchronizing AUR packages (i3lock-color, papirus-folders-catppuccin)..."
-        yay -S --needed --noconfirm i3lock-color papirus-folders-catppuccin-git 2>/dev/null || true
+        step_sub "Synchronizing AUR packages (i3lock-color, papirus-folders-catppuccin, r-quick-share-bin)..."
+        yay -S --needed --noconfirm i3lock-color papirus-folders-catppuccin-git r-quick-share-bin 2>/dev/null || true
         step_success "AUR packages installed"
     fi
 
@@ -353,7 +353,7 @@ elif command -v apt >/dev/null 2>&1; then
         network-manager bluez rfkill brightnessctl playerctl maim xclip xdotool xdg-utils \
         ranger mpv ncdu btop nvtop nano curl unzip git python3 ffmpeg fonts-font-awesome papirus-icon-theme \
         thunar thunar-volman thunar-archive-plugin file-roller tumbler tumbler-plugins-extra ffmpegthumbnailer gvfs gvfs-backends \
-        fzf bat ripgrep fd-find xss-lock imagemagick xsettingsd zoxide libnotify-bin python3-gi gir1.2-gtk-3.0
+        fzf bat ripgrep fd-find xss-lock imagemagick xsettingsd zoxide libnotify-bin python3-gi gir1.2-gtk-3.0 gir1.2-gdkpixbuf-2.0 jq
     step_success "Debian packages installed"
 
     # Symlink Debian-specific binary names (batcat -> bat, fdfind -> fd)
@@ -407,6 +407,59 @@ elif command -v dnf >/dev/null 2>&1; then
     step_success "Fedora packages installed"
 fi
 
+# Ensure RQuickShare (Nearby Share / Quick Share) is installed
+install_rquickshare() {
+    if command -v rquickshare >/dev/null 2>&1 || command -v r-quick-share >/dev/null 2>&1 || [ -x "$HOME/Applications/rquickshare" ]; then
+        if command -v r-quick-share >/dev/null 2>&1 && ! command -v rquickshare >/dev/null 2>&1; then
+            mkdir -p "$HOME/.local/bin"
+            ln -sf "$(which r-quick-share)" "$HOME/.local/bin/rquickshare"
+        fi
+        step_success "RQuickShare verified"
+        return 0
+    fi
+
+    step_sub "Installing RQuickShare (Android Nearby Share / Quick Share)..."
+    mkdir -p "$HOME/.local/bin" "$HOME/Applications"
+
+    if command -v yay >/dev/null 2>&1; then
+        yay -S --needed --noconfirm r-quick-share-bin 2>/dev/null || true
+        if command -v r-quick-share >/dev/null 2>&1; then
+            ln -sf "$(which r-quick-share)" "$HOME/.local/bin/rquickshare"
+            step_success "RQuickShare installed via AUR"
+            return 0
+        fi
+    fi
+
+    if command -v apt >/dev/null 2>&1; then
+        local deb_url=$(curl -s "https://api.github.com/repos/Martichou/rquickshare/releases/latest" 2>/dev/null | grep -o 'https://[^"]*glibc-2.39_amd64\.deb' | head -n1)
+        [ -z "$deb_url" ] && deb_url="https://github.com/Martichou/rquickshare/releases/download/v0.11.5/r-quick-share-main_v0.11.5_glibc-2.39_amd64.deb"
+        local tmp_deb=$(mktemp /tmp/rquickshare_XXXXXX.deb)
+        if curl -fsSL "$deb_url" -o "$tmp_deb" 2>/dev/null; then
+            sudo apt install -y "$tmp_deb" 2>/dev/null || sudo dpkg -i "$tmp_deb" 2>/dev/null || true
+            rm -f "$tmp_deb"
+            if command -v r-quick-share >/dev/null 2>&1; then
+                ln -sf "$(which r-quick-share)" "$HOME/.local/bin/rquickshare"
+                step_success "RQuickShare installed via deb package"
+                return 0
+            fi
+        fi
+    fi
+
+    # Universal AppImage fallback
+    local appimg_url=$(curl -s "https://api.github.com/repos/Martichou/rquickshare/releases/latest" 2>/dev/null | grep -o 'https://[^"]*glibc-2.39_amd64\.AppImage' | head -n1)
+    [ -z "$appimg_url" ] && appimg_url="https://github.com/Martichou/rquickshare/releases/download/v0.11.5/r-quick-share-main_v0.11.5_glibc-2.39_amd64.AppImage"
+    if curl -fsSL "$appimg_url" -o "$HOME/Applications/rquickshare" 2>/dev/null; then
+        chmod +x "$HOME/Applications/rquickshare"
+        ln -sf "$HOME/Applications/rquickshare" "$HOME/.local/bin/rquickshare"
+        step_success "RQuickShare installed to ~/Applications/rquickshare"
+        return 0
+    fi
+}
+
+if [ "$CONFIGS_ONLY" = false ] && [ "$DRY_RUN" = false ]; then
+    run_task "Verifying and synchronizing RQuickShare" install_rquickshare
+fi
+
 # ==============================================================================
 # 2. Typography & Fonts
 # ==============================================================================
@@ -441,7 +494,7 @@ if [ "$DRY_RUN" = true ]; then
 else
     backup_existing_configs() {
         mkdir -p "$BACKUP_DIR"
-        for app in i3 polybar alacritty rofi picom dunst fastfetch btop dxvk environment.d MangoHud control-center desktop-settings zen Thunar xsettingsd; do
+        for app in i3 polybar alacritty rofi picom dunst fastfetch btop dxvk environment.d MangoHud control-center desktop-settings zen Thunar xsettingsd gtk-3.0 gtk-4.0; do
             if [ -d "$HOME/.config/$app" ] || [ -f "$HOME/.config/$app" ]; then
                 cp -a "$HOME/.config/$app" "$BACKUP_DIR/" 2>/dev/null || true
             fi
@@ -494,6 +547,7 @@ else
         ln -sf "$DOTFILES_DIR/scripts/dotfiles" "$HOME/.local/bin/update-desktop"
         ln -sf "$DOTFILES_DIR/scripts/dotfiles" "$HOME/.local/bin/desktop-update"
         ln -sf "$HOME/.config/rofi/shortcuts.py" "$HOME/.local/bin/shortcuts-manager"
+        ln -sf "$HOME/.config/dunst/dmenu-action.sh" "$HOME/.local/bin/dmenu-action"
 
         # System-wide binary links if sudo permits
         if command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
@@ -502,10 +556,29 @@ else
             sudo ln -sf "$HOME/.config/rofi/shortcuts.py" "/usr/local/bin/shortcuts-manager" 2>/dev/null || true
         fi
 
+        # Dynamically adapt paths to user's home directory
+        sed -i "s|/home/tonda|$HOME|g" "$HOME/.config/dunst/dunstrc" 2>/dev/null || true
+        sed -i "s|/home/tonda|$HOME|g" "$HOME/.config/gtk-3.0/bookmarks" 2>/dev/null || true
+        sed -i "s|/home/tonda|$HOME|g" "$HOME/.config/systemd/user/"*.service 2>/dev/null || true
+
+        # Ensure relative symlinks in systemd user default.target.wants
+        if [ -d "$HOME/.config/systemd/user/default.target.wants" ]; then
+            (
+                cd "$HOME/.config/systemd/user/default.target.wants"
+                [ -f "../polybar.service" ] && ln -sf ../polybar.service polybar.service 2>/dev/null || true
+            )
+        fi
+        if command -v systemctl >/dev/null 2>&1; then
+            systemctl --user daemon-reload 2>/dev/null || true
+        fi
+
         # Desktop Launchers & Icons
         mkdir -p "$HOME/.local/share/applications" "$HOME/.local/share/icons"
         if [ -d "$DOTFILES_DIR/applications" ]; then
             cp -r "$DOTFILES_DIR/applications/"* "$HOME/.local/share/applications/" 2>/dev/null || true
+            for df in "$HOME/.local/share/applications/"*.desktop; do
+                [ -f "$df" ] && sed -i "s|/home/tonda|$HOME|g" "$df" 2>/dev/null || true
+            done
         fi
 
         # Wallpapers
@@ -523,7 +596,7 @@ else
         # Optimized batch permission configuration
         chmod +x \
             "$HOME/.config/polybar/launch.sh" "$HOME/.config/polybar/scripts/"*.sh \
-            "$HOME/.config/dunst/launch.sh" "$HOME/.config/dunst/scripts/"*.sh \
+            "$HOME/.config/dunst/launch.sh" "$HOME/.config/dunst/scripts/"*.sh "$HOME/.config/dunst/"*.sh \
             "$HOME/.config/rofi/"*.sh "$HOME/.config/rofi/"*.py \
             "$HOME/.config/control-center/"*.sh "$HOME/.config/control-center/"*.py \
             "$HOME/.config/desktop-settings/"*.py \

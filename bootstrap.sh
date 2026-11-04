@@ -9,14 +9,14 @@ set -e
 REPO_URL="https://github.com/GitTonda/DesktopConfigs.git"
 
 # Discover appropriate target directory
-if [ -d "$HOME/DesktopConfigs/.git" ]; then
-    TARGET_DIR="$HOME/DesktopConfigs"
-elif [ -d "${XDG_DATA_HOME:-$HOME/.local/share}/dotfiles/.git" ]; then
+if [ -d "${XDG_DATA_HOME:-$HOME/.local/share}/dotfiles/.git" ]; then
     TARGET_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/dotfiles"
+elif [ -d "$HOME/DesktopConfigs/.git" ]; then
+    TARGET_DIR="$HOME/DesktopConfigs"
 elif [ -d "$HOME/dotfiles/.git" ]; then
     TARGET_DIR="$HOME/dotfiles"
 else
-    TARGET_DIR="$HOME/DesktopConfigs"
+    TARGET_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/dotfiles"
 fi
 
 # ------------------------------------------------------------------------------

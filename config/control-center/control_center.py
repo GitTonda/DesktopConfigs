@@ -177,6 +177,16 @@ def get_quickshare_state():
     }
 
 
+def get_quickshare_bin():
+    found = shutil.which("rquickshare") or shutil.which("r-quick-share")
+    if found:
+        return found
+    for p in [os.path.expanduser("~/Applications/rquickshare"), os.path.expanduser("~/.local/bin/rquickshare")]:
+        if os.path.isfile(p) and os.access(p, os.X_OK):
+            return p
+    return "rquickshare"
+
+
 def get_media_info():
     try:
         status = subprocess.check_output(["playerctl", "status"], text=True, stderr=subprocess.DEVNULL).strip()
@@ -1011,7 +1021,7 @@ class ControlCenterWindow(Gtk.Window):
 
     def _on_quickshare_chevron(self, btn):
         self.destroy()
-        subprocess.Popen(["/home/tonda/Applications/rquickshare"], start_new_session=True)
+        subprocess.Popen([get_quickshare_bin()], start_new_session=True)
         time.sleep(0.1)
         subprocess.run(["i3-msg", '[class="(?i)rquickshare"] focus'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
 
@@ -1028,7 +1038,7 @@ class ControlCenterWindow(Gtk.Window):
 
         def _worker():
             if new_state:
-                subprocess.Popen(["/home/tonda/Applications/rquickshare"], start_new_session=True)
+                subprocess.Popen([get_quickshare_bin()], start_new_session=True)
             else:
                 subprocess.run(["pkill", "-f", "rquickshare"], check=False)
             time.sleep(0.3)
